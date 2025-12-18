@@ -10,8 +10,6 @@
 		ED1B0F072EE76EF7003D55B1 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED1B0F062EE76EF7003D55B1 /* WidgetKit.framework */; };
 		ED1B0F092EE76EF7003D55B1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED1B0F082EE76EF7003D55B1 /* SwiftUI.framework */; };
 		ED1B0F1A2EE76EF9003D55B1 /* FocusFlowWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		EDA85C0C2EEB807900D0B709 /* Focusflow_Logo.jpg in Resources */ = {isa = PBXBuildFile; fileRef = EDA85C0B2EEB807900D0B709 /* Focusflow_Logo.jpg */; };
-		EDEC8A6F2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg in Resources */ = {isa = PBXBuildFile; fileRef = EDEC8A6E2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,10 +40,7 @@
 		ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FocusFlowWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED1B0F062EE76EF7003D55B1 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		ED1B0F082EE76EF7003D55B1 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		ED1B0F242EE77753003D55B1 /* FocusFlowWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusFlowWidgetsExtension.entitlements; sourceTree = "<group>"; };
-		EDA85C0B2EEB807900D0B709 /* Focusflow_Logo.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = Focusflow_Logo.jpg; sourceTree = "<group>"; };
 		EDC8FE202EDE12DF00F74D0F /* FocusFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FocusFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		EDEC8A6E2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg */ = {isa = PBXFileReference; lastKnownFileType = text; path = Focusflow_SVG_Logo.svg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -59,10 +54,10 @@
 		ED1B0F222EE77058003D55B1 /* Exceptions for "FocusFlow" folder in "FocusFlowWidgetsExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"Core/Utilities/Notifications+Names.swift",
 				Shared/FocusSessionAttributes.swift,
 				Shared/FocusSessionBridge.swift,
 				Shared/FocusSessionStore.swift,
-				"Shared/Notifications+Names.swift",
 				Shared/ToggleFocusPauseIntent.swift,
 			);
 			target = ED1B0F032EE76EF7003D55B1 /* FocusFlowWidgetsExtension */;
@@ -128,9 +123,6 @@
 		EDC8FE172EDE12DF00F74D0F = {
 			isa = PBXGroup;
 			children = (
-				EDA85C0B2EEB807900D0B709 /* Focusflow_Logo.jpg */,
-				EDEC8A6E2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg */,
-				ED1B0F242EE77753003D55B1 /* FocusFlowWidgetsExtension.entitlements */,
 				EDC8FE222EDE12DF00F74D0F /* FocusFlow */,
 				ED1B0F0A2EE76EF7003D55B1 /* FocusFlowWidgets */,
 				ED1B0F052EE76EF7003D55B1 /* Frameworks */,
@@ -248,8 +240,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EDA85C0C2EEB807900D0B709 /* Focusflow_Logo.jpg in Resources */,
-				EDEC8A6F2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,7 +276,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = FocusFlowWidgetsExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FocusFlow/Resources/FocusFlowWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 77BJCE9J3U;
@@ -318,7 +308,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = FocusFlowWidgetsExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FocusFlow/Resources/FocusFlowWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 77BJCE9J3U;
@@ -472,7 +462,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = FocusFlow/FocusFlow.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FocusFlow/Resources/FocusFlow.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 77BJCE9J3U;
@@ -515,7 +505,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = FocusFlow/FocusFlow.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FocusFlow/Resources/FocusFlow.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 77BJCE9J3U;
