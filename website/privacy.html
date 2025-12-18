@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Privacy Policy for FocusFlow – Be Present by Soft Computers." />
+  <title>Privacy Policy | FocusFlow – Be Present</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="./assets/focusflow_app_icon.png" type="image/png" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <div class="brand">
+      <img class="logo" src="./assets/focusflow_app_icon.png" alt="FocusFlow app icon" />
+      <div class="brand-text">
+        <div class="company">Soft Computers</div>
+        <div class="product">FocusFlow – Be Present</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="./index.html">Home</a>
+      <a class="btn primary" href="mailto:Info@softcomputers.ca">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="section">
+    <div class="container">
+      <h2 class="h2">Privacy Policy</h2>
+      <p class="p" style="margin-bottom:14px;">
+        Effective date: <span id="eff"></span><br/>
+        Contact: <a href="mailto:Info@softcomputers.ca">Info@softcomputers.ca</a>
+      </p>
+
+      <div class="callout">
+        <p class="p">
+          This Privacy Policy explains how FocusFlow – Be Present (“FocusFlow”, “the app”) handles information.
+          Soft Computers (“we”, “us”) is the developer of FocusFlow.
+        </p>
+      </div>
+
+      <div style="height:18px"></div>
+
+      <h3>1) Summary</h3>
+      <ul class="bullets">
+        <li><strong>Guest Mode:</strong> your data is stored locally on your device.</li>
+        <li><strong>Signed-in Mode (optional):</strong> your data may be synced to a cloud backend to support backup and multi-device use.</li>
+        <li>We do not sell personal information and the app is not ad-supported.</li>
+        <li>We do not require photo library access (avatars are symbol-based).</li>
+      </ul>
+
+      <h3>2) Data the app stores</h3>
+      <p class="p">Depending on how you use FocusFlow, we may store:</p>
+      <ul class="bullets">
+        <li><strong>Account data (Signed-in Mode only):</strong> email address (if provided), display name, and authentication identifiers needed to keep you signed in.</li>
+        <li><strong>Focus data:</strong> session duration, timestamps, and optional intention text; plus derived stats such as totals and streaks.</li>
+        <li><strong>Habit data:</strong> habit names, schedules/reminders, and completion/check-ins.</li>
+        <li><strong>Settings & preferences:</strong> themes, goals, reminder preferences, and sound/haptic settings.</li>
+      </ul>
+
+      <h3>3) Where your data is stored</h3>
+      <ul class="bullets">
+        <li><strong>Guest Mode:</strong> on your device only.</li>
+        <li><strong>Signed-in Mode:</strong> synced to a cloud backend used to provide the service (e.g., authentication and database hosting).</li>
+      </ul>
+      <p class="p">
+        We use access controls designed to isolate each user’s data and prevent mixing between accounts.
+      </p>
+
+      <h3>4) What we do not collect</h3>
+      <ul class="bullets">
+        <li>We do not request access to your photos, contacts, or precise location.</li>
+        <li>We do not sell personal information.</li>
+      </ul>
+
+      <h3>5) How we use data</h3>
+      <ul class="bullets">
+        <li>To provide the app’s features (focus sessions, habits, stats, achievements, personalization).</li>
+        <li>To sync your data when you choose to sign in.</li>
+        <li>To respond to support requests and improve reliability.</li>
+      </ul>
+
+      <h3>6) Sharing</h3>
+      <p class="p">
+        We share data only when necessary to operate the service (for example, cloud infrastructure providers),
+        or when required by law. We do not sell personal information.
+      </p>
+
+      <h3>7) Diagnostics</h3>
+      <p class="p">
+        iOS may generate diagnostics such as crash logs depending on your device settings.
+        If diagnostics are available to us, we use them only to troubleshoot and improve app stability.
+      </p>
+
+      <h3>8) Retention</h3>
+      <ul class="bullets">
+        <li><strong>Guest Mode:</strong> data remains until you delete the app or reset data inside the app.</li>
+        <li><strong>Signed-in Mode:</strong> synced data is retained to provide the service unless you request deletion.</li>
+      </ul>
+
+      <h3>9) Your requests</h3>
+      <p class="p">
+        You may request access or deletion of account-associated data by emailing
+        <a href="mailto:Info@softcomputers.ca">Info@softcomputers.ca</a>. We may ask you to verify account ownership.
+      </p>
+
+      <h3>10) Changes</h3>
+      <p class="p">
+        We may update this Privacy Policy from time to time. The latest version will be posted here with an updated effective date.
+      </p>
+
+      <div class="callout" style="margin-top:18px;">
+        <p class="p">
+          Questions? Contact <a href="mailto:Info@softcomputers.ca">Info@softcomputers.ca</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div>© <span id="year"></span> Soft Computers</div>
+    <div><a href="./index.html">Home</a> • <a href="mailto:Info@softcomputers.ca">Contact</a></div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  const d = new Date();
+  const fmt = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById("eff").textContent = fmt;
+</script>
+
+</body>
+</html>
