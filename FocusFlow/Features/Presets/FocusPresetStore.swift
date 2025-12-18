@@ -203,6 +203,14 @@ final class FocusPresetStore: ObservableObject {
         }
     }
 
+    /// ✅ NEW: Read presets directly from disk (used for “bootstrap/guard” decisions).
+    private func readPresetsFromDisk(namespace: String? = nil) -> [FocusPreset] {
+        let ns = namespace ?? activeNamespace
+        let diskKey = "\(Keys.presets)_\(ns)"
+        guard let data = UserDefaults.standard.data(forKey: diskKey) else { return [] }
+        return (try? JSONDecoder().decode([FocusPreset].self, from: data)) ?? []
+    }
+
     private func loadActivePresetID() {
         guard let idString = UserDefaults.standard.string(forKey: key(Keys.activePresetID)),
               let id = UUID(uuidString: idString) else {
@@ -218,6 +226,40 @@ final class FocusPresetStore: ObservableObject {
         } else {
             UserDefaults.standard.removeObject(forKey: key(Keys.activePresetID))
         }
+    }
+
+    // MARK: - Remote merge/guards
+
+    private func isDefaultsOnly(_ list: [FocusPreset]) -> Bool {
+        !list.isEmpty && list.allSatisfy { $0.isSystemDefault == true }
+    }
+
+    private func hasAnyCustom(_ list: [FocusPreset]) -> Bool {
+        list.contains(where: { $0.isSystemDefault == false })
+    }
+
+    /// Merge remote into local:
+    /// - Prefer remote for IDs it contains
+    /// - Keep any local-only custom presets if remote looks suspicious (defaults-only)
+    private func applyRemoteSafely(remotePresets: [FocusPreset], remoteActiveId: UUID?) {
+        // Snapshot what we truly have persisted (not just in-memory)
+        let disk = readPresetsFromDisk()
+
+        // If remote is defaults-only but disk/local has custom, do NOT overwrite.
+        // This is the exact scenario causing “custom preset disappears on relaunch”.
+        if isDefaultsOnly(remotePresets), hasAnyCustom(disk) {
+            print("SYNC[PRESETS] ⚠️ remoteDefaultsOnly_keepLocal=true diskCustomCount=\(disk.filter { !$0.isSystemDefault }.count)")
+            // Keep local as-is; engine will push local up on next change / bootstrap.
+            // We still can apply remoteActiveId only if it matches an existing preset.
+            if let rid = remoteActiveId, presets.contains(where: { $0.id == rid }) {
+                activePresetID = rid
+            }
+            return
+        }
+
+        // Normal: apply remote (authoritative)
+        presets = remotePresets
+        activePresetID = remoteActiveId
     }
 
     // MARK: - Sync wiring
@@ -240,8 +282,14 @@ final class FocusPresetStore: ObservableObject {
         FocusPresetSyncEngine.shared.start(
             presetsPublisher: presetsPublisher,
             activePresetIdPublisher: activePublisher,
-            getLocalPresets: { [weak self] in self?.presets ?? [] },
+
+            // ✅ Use disk snapshot so bootstrap/guards use persisted truth.
+            getLocalPresets: { [weak self] in
+                guard let self else { return [] }
+                return self.readPresetsFromDisk()
+            },
             getLocalActivePresetId: { [weak self] in self?.activePresetID },
+
             seedDefaults: { [weak self] in
                 guard let self else { return [] }
                 return self.seedDefaultsIfNeeded()
@@ -251,8 +299,7 @@ final class FocusPresetStore: ObservableObject {
                 self.isApplyingNamespaceOrRemote = true
                 defer { self.isApplyingNamespaceOrRemote = false }
 
-                self.presets = remotePresets
-                self.activePresetID = remoteActiveId
+                self.applyRemoteSafely(remotePresets: remotePresets, remoteActiveId: remoteActiveId)
             }
         )
 

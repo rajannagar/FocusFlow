@@ -36,6 +36,14 @@ final class FocusStatsSyncEngine {
     private var applyRemoteSessions: (([FocusSession]) -> Void)?
     private var applyRemoteSettings: ((FocusStatsSettingsLocal) -> Void)?
 
+    // ✅ NEW: Snapshot local state so an empty cloud pull cannot wipe local.
+    private var getLocalSessions: (() -> [FocusSession])?
+    private var getLocalSettings: (() -> FocusStatsSettingsLocal)?
+
+    // ✅ NEW: Prevent overlapping pulls if auth flaps quickly.
+    private var sessionsPullInFlight = false
+    private var settingsPullInFlight = false
+
     // MARK: - Logging
 
     private static let isoFormatter: ISO8601DateFormatter = {
@@ -85,9 +93,13 @@ final class FocusStatsSyncEngine {
 
     /// Start once. Pass in publishers from your local store (StatsManager) and closures
     /// to apply cloud -> local updates.
+    ///
+    /// ✅ Updated: also pass local snapshot closures so we can protect against "empty pull wipes local".
     func start(
         sessionsPublisher: AnyPublisher<[FocusSession], Never>,
         settingsPublisher: AnyPublisher<FocusStatsSettingsLocal, Never>,
+        getLocalSessions: @escaping () -> [FocusSession],
+        getLocalSettings: @escaping () -> FocusStatsSettingsLocal,
         applyRemoteSessions: @escaping ([FocusSession]) -> Void,
         applyRemoteSettings: @escaping (FocusStatsSettingsLocal) -> Void
     ) {
@@ -98,6 +110,9 @@ final class FocusStatsSyncEngine {
         self.settingsPublisher = settingsPublisher
         self.applyRemoteSessions = applyRemoteSessions
         self.applyRemoteSettings = applyRemoteSettings
+
+        self.getLocalSessions = getLocalSessions
+        self.getLocalSettings = getLocalSettings
 
         // 1) Auth changes -> pull baseline + flush deletes (if possible)
         auth.$state
@@ -148,6 +163,9 @@ final class FocusStatsSyncEngine {
 
         lastKnownSessionIDs = []
         pendingSessionDeletes = []
+
+        sessionsPullInFlight = false
+        settingsPullInFlight = false
     }
 
     func resetPullState() {
@@ -158,6 +176,9 @@ final class FocusStatsSyncEngine {
         suppressNextSettingsPush = false
 
         lastKnownSessionIDs = []
+
+        sessionsPullInFlight = false
+        settingsPullInFlight = false
     }
 
     // MARK: - Auth logging + safety reset
@@ -197,6 +218,9 @@ final class FocusStatsSyncEngine {
 
             lastKnownSessionIDs = []
             pendingSessionDeletes = loadPendingDeletes(for: userId)
+
+            sessionsPullInFlight = false
+            settingsPullInFlight = false
 
             log("activeUser=\(userId.uuidString)")
         }
@@ -267,57 +291,76 @@ final class FocusStatsSyncEngine {
     // MARK: - Pull baseline (sessions + settings)
 
     private func pullIfPossible() {
-        guard let session = auth.currentUserSession, session.isGuest == false else {
-            // Mode logging is handled in handleAuthStateChange; keep this quiet.
-            return
-        }
-        guard let token = session.accessToken, token.isEmpty == false else {
-            // Mode logging is handled in handleAuthStateChange; keep this quiet.
-            return
-        }
+        guard let session = auth.currentUserSession, session.isGuest == false else { return }
+        guard let token = session.accessToken, token.isEmpty == false else { return }
 
         ensureActiveUser(session.userId)
 
-        // Sessions
-        if hasPulledSessionsOnce == false {
-            hasPulledSessionsOnce = true
+        // ✅ Snapshot locals BEFORE any cloud apply
+        let localSessionsBefore = (getLocalSessions?() ?? [])
+        let localSettingsBefore = getLocalSettings?()
 
-            Task {
+        // Sessions
+        if hasPulledSessionsOnce == false, sessionsPullInFlight == false {
+            hasPulledSessionsOnce = true
+            sessionsPullInFlight = true
+
+            Task { [weak self] in
+                guard let self else { return }
+                defer { self.sessionsPullInFlight = false }
+
                 do {
-                    let records = try await sessionsAPI.fetchSessions(userId: session.userId, accessToken: token)
+                    let records = try await self.sessionsAPI.fetchSessions(userId: session.userId, accessToken: token)
 
                     // Stable order in storage: oldest -> newest
                     let mapped = records
                         .map { FocusSession.fromRecord($0) }
                         .sorted { $0.date < $1.date }
 
+                    // ✅ If cloud returns empty but local has sessions, don't wipe local.
+                    if mapped.isEmpty, !localSessionsBefore.isEmpty {
+                        self.log("⚠️ remoteSessionsEmpty_keepLocal=true localCount=\(localSessionsBefore.count)")
+                        // Bootstrap cloud from local so next launch is consistent.
+                        self.pushSessionsIfPossible(
+                            sessions: localSessionsBefore,
+                            reason: "bootstrapFromLocal(remoteEmpty)",
+                            accessToken: token,
+                            userId: session.userId
+                        )
+                        return
+                    }
+
                     // Baseline IDs BEFORE applying
-                    lastKnownSessionIDs = Set(mapped.map(\.id))
+                    self.lastKnownSessionIDs = Set(mapped.map(\.id))
 
                     // Suppress echo push
-                    suppressNextSessionsPush = true
+                    self.suppressNextSessionsPush = true
 
                     DispatchQueue.main.async { [weak self] in
                         self?.applyRemoteSessions?(mapped)
                         self?.log("pulledSessions=\(mapped.count)")
                     }
                 } catch {
-                    hasPulledSessionsOnce = false
-                    log("sessionsPullFailed=\(describe(error))")
+                    self.hasPulledSessionsOnce = false
+                    self.log("sessionsPullFailed=\(self.describe(error))")
                 }
             }
         }
 
         // Settings
-        if hasPulledSettingsOnce == false {
+        if hasPulledSettingsOnce == false, settingsPullInFlight == false {
             hasPulledSettingsOnce = true
+            settingsPullInFlight = true
 
-            Task {
+            Task { [weak self] in
+                guard let self else { return }
+                defer { self.settingsPullInFlight = false }
+
                 do {
-                    if let record = try await settingsAPI.fetchSettings(userId: session.userId, accessToken: token) {
+                    if let record = try await self.settingsAPI.fetchSettings(userId: session.userId, accessToken: token) {
                         let local = FocusStatsSettingsLocal(record: record)
 
-                        suppressNextSettingsPush = true
+                        self.suppressNextSettingsPush = true
 
                         DispatchQueue.main.async { [weak self] in
                             self?.applyRemoteSettings?(local)
@@ -325,11 +368,21 @@ final class FocusStatsSyncEngine {
                         }
                     } else {
                         // No row yet (first login). We'll create it on first local change/push.
-                        log("pulledSettings=false (no row yet; will create on push)")
+                        self.log("pulledSettings=false (no row yet; will create on push)")
+
+                        // ✅ Optional: if we already have local settings, bootstrap them immediately.
+                        if let localSettingsBefore {
+                            self.pushSettingsIfPossible(
+                                settings: localSettingsBefore,
+                                reason: "bootstrapSettings(localExistsCloudMissing)",
+                                accessToken: token,
+                                userId: session.userId
+                            )
+                        }
                     }
                 } catch {
-                    hasPulledSettingsOnce = false
-                    log("settingsPullFailed=\(describe(error))")
+                    self.hasPulledSettingsOnce = false
+                    self.log("settingsPullFailed=\(self.describe(error))")
                 }
             }
         }
@@ -345,12 +398,13 @@ final class FocusStatsSyncEngine {
     ) {
         let upserts = sessions.toUpsertRecords(userId: userId)
 
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             do {
-                _ = try await sessionsAPI.upsertSessions(upserts, accessToken: accessToken)
-                log("pushedSessions=\(upserts.count) reason=\(reason)")
+                _ = try await self.sessionsAPI.upsertSessions(upserts, accessToken: accessToken)
+                self.log("pushedSessions=\(upserts.count) reason=\(reason)")
             } catch {
-                log("sessionsPushFailed reason=\(reason) error=\(describe(error))")
+                self.log("sessionsPushFailed reason=\(reason) error=\(self.describe(error))")
             }
         }
     }
@@ -365,9 +419,10 @@ final class FocusStatsSyncEngine {
     ) {
         let args = settings.toUpsertArguments(userId: userId)
 
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             do {
-                _ = try await settingsAPI.upsertSettings(
+                _ = try await self.settingsAPI.upsertSettings(
                     userId: args.userId,
                     dailyGoalMinutes: args.dailyGoalMinutes,
                     hiddenHistorySessionIds: args.hiddenHistorySessionIds,
@@ -376,9 +431,9 @@ final class FocusStatsSyncEngine {
                     lifetimeBestStreak: args.lifetimeBestStreak,
                     accessToken: accessToken
                 )
-                log("pushedSettings=true reason=\(reason)")
+                self.log("pushedSettings=true reason=\(reason)")
             } catch {
-                log("settingsPushFailed reason=\(reason) error=\(describe(error))")
+                self.log("settingsPushFailed reason=\(reason) error=\(self.describe(error))")
             }
         }
     }
@@ -394,22 +449,24 @@ final class FocusStatsSyncEngine {
 
         let idsToDelete = Array(pendingSessionDeletes)
 
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
+
             var succeeded: [UUID] = []
 
             for id in idsToDelete {
                 do {
-                    try await sessionsAPI.deleteSession(id: id, accessToken: token)
+                    try await self.sessionsAPI.deleteSession(id: id, accessToken: token)
                     succeeded.append(id)
                 } catch {
-                    log("remoteSessionDeleteFailed id=\(id.uuidString) error=\(describe(error))")
+                    self.log("remoteSessionDeleteFailed id=\(id.uuidString) error=\(self.describe(error))")
                 }
             }
 
             if !succeeded.isEmpty {
-                pendingSessionDeletes.subtract(succeeded)
-                savePendingDeletes(for: session.userId, pendingSessionDeletes)
-                log("flushedSessionDeletes=\(succeeded.count)")
+                self.pendingSessionDeletes.subtract(succeeded)
+                self.savePendingDeletes(for: session.userId, self.pendingSessionDeletes)
+                self.log("flushedSessionDeletes=\(succeeded.count)")
             }
         }
     }

@@ -3,7 +3,15 @@ import Combine
 
 // MARK: - Cloud rows
 
-private struct FocusPresetRow: Codable {
+/// IMPORTANT:
+/// PostgREST (Supabase) requires that when you POST an **array** of JSON objects,
+/// every object must have the **exact same keys**.
+/// Swift's default Codable encoding **omits nil optionals**, which causes mixed keys
+/// across rows (some include `emoji`, others omit it), triggering:
+/// PGRST102: "All object keys must match"
+///
+/// So we custom-encode optionals as explicit `null` to keep keys stable.
+private struct FocusPresetRow: Encodable {
     let userId: UUID
     let id: UUID
     let name: String
@@ -27,15 +35,41 @@ private struct FocusPresetRow: Codable {
         case externalMusicAppRaw = "external_music_app_raw"
         case sortOrder = "sort_order"
     }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(userId, forKey: .userId)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(durationSeconds, forKey: .durationSeconds)
+        try c.encode(soundId, forKey: .soundId)
+
+        // ✅ Encode nils as explicit null so every object has same keys.
+        if let emoji { try c.encode(emoji, forKey: .emoji) } else { try c.encodeNil(forKey: .emoji) }
+        try c.encode(isSystemDefault, forKey: .isSystemDefault)
+        if let themeRaw { try c.encode(themeRaw, forKey: .themeRaw) } else { try c.encodeNil(forKey: .themeRaw) }
+        if let externalMusicAppRaw { try c.encode(externalMusicAppRaw, forKey: .externalMusicAppRaw) } else { try c.encodeNil(forKey: .externalMusicAppRaw) }
+
+        try c.encode(sortOrder, forKey: .sortOrder)
+    }
 }
 
-private struct FocusPresetSettingsRow: Codable {
+/// Settings is a single object (not an array) so key-mismatch isn't an issue,
+/// but we still encode nil as null for consistency.
+private struct FocusPresetSettingsRow: Encodable {
     let userId: UUID
     let activePresetId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case activePresetId = "active_preset_id"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(userId, forKey: .userId)
+        if let activePresetId { try c.encode(activePresetId, forKey: .activePresetId) }
+        else { try c.encodeNil(forKey: .activePresetId) }
     }
 }
 
@@ -172,6 +206,11 @@ final class FocusPresetSyncEngine {
     ) async {
         defer { pullInFlight = false }
 
+        // ✅ Snapshot local BEFORE we apply anything from cloud.
+        // This prevents the "remote empty -> applyRemote wipes local -> bootstrap sees empty local" bug.
+        let localBefore = getLocalPresets()
+        let localActiveBefore = getLocalActivePresetId()
+
         do {
             // 1) Pull presets
             let presetsData = try await SupabaseREST.request(
@@ -185,7 +224,34 @@ final class FocusPresetSyncEngine {
                 bearerToken: bearerToken
             )
 
-            let rows = (try? SupabaseJSON.decoder.decode([FocusPresetRow].self, from: presetsData)) ?? []
+            // Decode permissively; include sortOrder from row.
+            struct FocusPresetRowDecodable: Decodable {
+                let userId: UUID
+                let id: UUID
+                let name: String
+                let durationSeconds: Int
+                let soundId: String
+                let emoji: String?
+                let isSystemDefault: Bool
+                let themeRaw: String?
+                let externalMusicAppRaw: String?
+                let sortOrder: Int
+
+                enum CodingKeys: String, CodingKey {
+                    case userId = "user_id"
+                    case id
+                    case name
+                    case durationSeconds = "duration_seconds"
+                    case soundId = "sound_id"
+                    case emoji
+                    case isSystemDefault = "is_system_default"
+                    case themeRaw = "theme_raw"
+                    case externalMusicAppRaw = "external_music_app_raw"
+                    case sortOrder = "sort_order"
+                }
+            }
+
+            let rows = (try? SupabaseJSON.decoder.decode([FocusPresetRowDecodable].self, from: presetsData)) ?? []
             let remotePresets: [FocusPreset] = rows.map {
                 FocusPreset(
                     id: $0.id,
@@ -199,8 +265,6 @@ final class FocusPresetSyncEngine {
                 )
             }
 
-            lastKnownRemoteIds = Set(remotePresets.map { $0.id })
-
             // 2) Pull settings
             let settingsData = try await SupabaseREST.request(
                 path: "rest/v1/focus_preset_settings",
@@ -213,32 +277,55 @@ final class FocusPresetSyncEngine {
                 bearerToken: bearerToken
             )
 
-            let settingsRows = (try? SupabaseJSON.decoder.decode([FocusPresetSettingsRow].self, from: settingsData)) ?? []
+            struct FocusPresetSettingsRowDecodable: Decodable {
+                let userId: UUID
+                let activePresetId: UUID?
+
+                enum CodingKeys: String, CodingKey {
+                    case userId = "user_id"
+                    case activePresetId = "active_preset_id"
+                }
+            }
+
+            let settingsRows = (try? SupabaseJSON.decoder.decode([FocusPresetSettingsRowDecodable].self, from: settingsData)) ?? []
             let remoteActiveId = settingsRows.first?.activePresetId
 
-            // Apply remote -> local
+            print("SYNC[PRESETS] pulled=\(remotePresets.count)")
+
+            // ✅ If cloud is empty but we have local data, DO NOT wipe local.
+            // Instead: treat local as source-of-truth and bootstrap push.
+            if remotePresets.isEmpty, !localBefore.isEmpty {
+                hasPulledOnce = true
+                // lastKnownRemoteIds stays empty here; we will update it after a successful push.
+                await pushPresets(force: true, presets: localBefore, reason: "pushLocalBootstrap(remoteEmpty)")
+                if remoteActiveId == nil, let localActiveBefore {
+                    await pushSettings(force: true, activePresetId: localActiveBefore, reason: "bootstrapActivePreset(remoteEmpty)")
+                }
+                return
+            }
+
+            // Normal path: apply remote to local
+            lastKnownRemoteIds = Set(remotePresets.map { $0.id })
+
             suppressPresetsPush = true
             suppressSettingsPush = true
             applyRemote(remotePresets, remoteActiveId)
             hasPulledOnce = true
 
-            print("SYNC[PRESETS] pulled=\(remotePresets.count)")
-
-            // If cloud is empty, bootstrap from local or defaults (and push)
-            if remotePresets.isEmpty {
-                let local = getLocalPresets()
-                if local.isEmpty {
-                    let seeded = seedDefaults()
-                    if !seeded.isEmpty {
-                        await pushPresets(force: true, presets: seeded, reason: "seedDefaults")
-                    }
-                } else {
-                    await pushPresets(force: true, presets: local, reason: "pushLocalBootstrap")
+            // If cloud is empty AND local was also empty, seed defaults then push.
+            if remotePresets.isEmpty, localBefore.isEmpty {
+                let seeded = seedDefaults()
+                if !seeded.isEmpty {
+                    // Apply seeded locally (optional, but helps UI immediately)
+                    suppressPresetsPush = true
+                    suppressSettingsPush = true
+                    applyRemote(seeded, remoteActiveId ?? localActiveBefore)
+                    await pushPresets(force: true, presets: seeded, reason: "seedDefaults")
                 }
             }
 
             // If settings missing but local has an active id, push it
-            if remoteActiveId == nil, let localActive = getLocalActivePresetId() {
+            if remoteActiveId == nil, let localActive = localActiveBefore {
                 await pushSettings(force: true, activePresetId: localActive, reason: "bootstrapActivePreset")
             }
         } catch {

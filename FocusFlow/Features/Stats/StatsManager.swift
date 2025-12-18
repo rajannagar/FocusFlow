@@ -73,6 +73,9 @@ final class StatsManager: ObservableObject {
     // ✅ Start sync engine once
     private var didStartSyncEngine = false
 
+    // ✅ Cache the settings publisher so we can also build a synchronous getter.
+    private var makeSettingsSnapshot: (() -> FocusStatsSettingsLocal)?
+
     private init() {
         observeAuthChanges()
 
@@ -283,9 +286,42 @@ final class StatsManager: ObservableObject {
             }
             .eraseToAnyPublisher()
 
+        // ✅ Synchronous snapshot getter for the sync engine "bootstrap / empty pull protection".
+        self.makeSettingsSnapshot = { [weak self] in
+            guard let self else {
+                return FocusStatsSettingsLocal(
+                    dailyGoalMinutes: 60,
+                    hiddenHistorySessionIDs: [],
+                    lifetimeFocusSeconds: 0,
+                    lifetimeSessionCount: 0,
+                    lifetimeBestStreak: 0
+                )
+            }
+            return FocusStatsSettingsLocal(
+                dailyGoalMinutes: self.dailyGoalMinutes,
+                hiddenHistorySessionIDs: self.hiddenHistorySessionIDs,
+                lifetimeFocusSeconds: self.lifetimeFocusSeconds,
+                lifetimeSessionCount: self.lifetimeSessionCount,
+                lifetimeBestStreak: self.lifetimeBestStreak
+            )
+        }
+
         FocusStatsSyncEngine.shared.start(
             sessionsPublisher: $sessions.eraseToAnyPublisher(),
             settingsPublisher: settingsSnapshotPublisher,
+            getLocalSessions: { [weak self] in
+                self?.sessions ?? []
+            },
+            getLocalSettings: { [weak self] in
+                self?.makeSettingsSnapshot?() ??
+                FocusStatsSettingsLocal(
+                    dailyGoalMinutes: 60,
+                    hiddenHistorySessionIDs: [],
+                    lifetimeFocusSeconds: 0,
+                    lifetimeSessionCount: 0,
+                    lifetimeBestStreak: 0
+                )
+            },
             applyRemoteSessions: { [weak self] cloudSessions in
                 guard let self else { return }
                 self.replaceSessionsFromSyncEngine(cloudSessions)
