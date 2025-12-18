@@ -154,13 +154,6 @@ enum AppTheme: String, CaseIterable, Identifiable {
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
-    // MARK: - Focus sound source helper
-
-    enum FocusSoundSource {
-        case builtin
-        case spotify
-    }
-
     // MARK: - External music app selection
 
     enum ExternalMusicApp: String, CaseIterable, Identifiable, Codable {
@@ -177,16 +170,6 @@ final class AppSettings: ObservableObject {
             case .youtubeMusic: return "YouTube Music"
             }
         }
-    }
-
-    // MARK: - Spotify history model
-
-    struct SpotifyHistoryItem: Identifiable, Codable, Equatable {
-        let id: String
-        let uri: String
-        let name: String
-        let artist: String
-        let lastUsedAt: Date
     }
 
     // MARK: - Namespace handling (prevents account bleed)
@@ -259,12 +242,6 @@ final class AppSettings: ObservableObject {
         selectedFocusSound = .lightRainAmbient
         selectedExternalMusicApp = nil
 
-        spotifyEnabledForFocus = false
-        spotifyTrackURI = nil
-        spotifyTrackName = nil
-        spotifyArtistName = nil
-        spotifyHistory = []
-
         // Load from namespace
         loadAll()
 
@@ -307,12 +284,6 @@ final class AppSettings: ObservableObject {
         defaults.removeObject(forKey: "\(Keys.profileImageData)_\(namespace)")
         defaults.removeObject(forKey: "\(Keys.selectedFocusSound)_\(namespace)")
         defaults.removeObject(forKey: "\(Keys.externalMusicApp)_\(namespace)")
-
-        defaults.removeObject(forKey: "\(Keys.spotifyEnabledForFocus)_\(namespace)")
-        defaults.removeObject(forKey: "\(Keys.spotifyTrackURI)_\(namespace)")
-        defaults.removeObject(forKey: "\(Keys.spotifyTrackName)_\(namespace)")
-        defaults.removeObject(forKey: "\(Keys.spotifyArtistName)_\(namespace)")
-        defaults.removeObject(forKey: "\(Keys.spotifyHistory)_\(namespace)")
 
         print("AppSettings: wiped local storage for namespace=\(namespace)")
     }
@@ -411,84 +382,8 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    // MARK: - Spotify focus settings (kept local; still namespaced)
-
-    @Published var spotifyEnabledForFocus: Bool {
-        didSet {
-            guard !isApplyingNamespace else { return }
-            UserDefaults.standard.set(spotifyEnabledForFocus, forKey: key(Keys.spotifyEnabledForFocus))
-        }
-    }
-
-    @Published var spotifyTrackURI: String? {
-        didSet {
-            guard !isApplyingNamespace else { return }
-            let defaults = UserDefaults.standard
-            if let uri = spotifyTrackURI {
-                defaults.set(uri, forKey: key(Keys.spotifyTrackURI))
-            } else {
-                defaults.removeObject(forKey: key(Keys.spotifyTrackURI))
-            }
-        }
-    }
-
-    @Published var spotifyTrackName: String? {
-        didSet {
-            guard !isApplyingNamespace else { return }
-            let defaults = UserDefaults.standard
-            if let name = spotifyTrackName {
-                defaults.set(name, forKey: key(Keys.spotifyTrackName))
-            } else {
-                defaults.removeObject(forKey: key(Keys.spotifyTrackName))
-            }
-        }
-    }
-
-    @Published var spotifyArtistName: String? {
-        didSet {
-            guard !isApplyingNamespace else { return }
-            let defaults = UserDefaults.standard
-            if let artist = spotifyArtistName {
-                defaults.set(artist, forKey: key(Keys.spotifyArtistName))
-            } else {
-                defaults.removeObject(forKey: key(Keys.spotifyArtistName))
-            }
-        }
-    }
-
-    @Published var spotifyHistory: [SpotifyHistoryItem] {
-        didSet {
-            guard !isApplyingNamespace else { return }
-            let defaults = UserDefaults.standard
-            if let data = try? JSONEncoder().encode(spotifyHistory) {
-                defaults.set(data, forKey: key(Keys.spotifyHistory))
-            } else {
-                defaults.removeObject(forKey: key(Keys.spotifyHistory))
-            }
-        }
-    }
-
     /// Session-only (not persisted)
     @Published var isFocusTimerRunning: Bool = false
-
-    // MARK: - Convenience
-
-    var hasSpotifyFocusTrack: Bool {
-        spotifyEnabledForFocus && spotifyTrackURI != nil
-    }
-
-    var currentFocusSoundSource: FocusSoundSource {
-        hasSpotifyFocusTrack ? .spotify : .builtin
-    }
-
-    var spotifyDisplayTitle: String? {
-        guard let name = spotifyTrackName else { return nil }
-        if let artist = spotifyArtistName, !artist.isEmpty {
-            return "\(name) • \(artist)"
-        } else {
-            return name
-        }
-    }
 
     // MARK: - Init
 
@@ -515,12 +410,6 @@ final class AppSettings: ObservableObject {
         self.selectedFocusSound = .lightRainAmbient
 
         self.selectedExternalMusicApp = nil
-
-        self.spotifyEnabledForFocus = false
-        self.spotifyTrackURI = nil
-        self.spotifyTrackName = nil
-        self.spotifyArtistName = nil
-        self.spotifyHistory = []
 
         observeAuthChanges()
         applyNamespace(for: AuthManager.shared.state)
@@ -569,18 +458,6 @@ final class AppSettings: ObservableObject {
         } else {
             self.selectedExternalMusicApp = nil
         }
-
-        self.spotifyEnabledForFocus = defaults.object(forKey: key(Keys.spotifyEnabledForFocus)) as? Bool ?? false
-        self.spotifyTrackURI = defaults.string(forKey: key(Keys.spotifyTrackURI))
-        self.spotifyTrackName = defaults.string(forKey: key(Keys.spotifyTrackName))
-        self.spotifyArtistName = defaults.string(forKey: key(Keys.spotifyArtistName))
-
-        if let data = defaults.data(forKey: key(Keys.spotifyHistory)),
-           let decoded = try? JSONDecoder().decode([SpotifyHistoryItem].self, from: data) {
-            self.spotifyHistory = decoded
-        } else {
-            self.spotifyHistory = []
-        }
     }
 
     /// ✅ Returns "today at hour:minute" (safe for DatePicker / scheduling)
@@ -592,30 +469,6 @@ final class AppSettings: ObservableObject {
         comps.minute = minute
         comps.second = 0
         return cal.date(from: comps) ?? now
-    }
-
-    // MARK: - Spotify history helper
-
-    func registerSpotifyFocusSelection(uri: String, name: String, artist: String) {
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedArtist = artist.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let item = SpotifyHistoryItem(
-            id: uri,
-            uri: uri,
-            name: trimmedName,
-            artist: trimmedArtist,
-            lastUsedAt: Date()
-        )
-
-        var copy = spotifyHistory.filter { $0.uri != uri }
-        copy.insert(item, at: 0)
-
-        if copy.count > 30 {
-            copy = Array(copy.prefix(30))
-        }
-
-        spotifyHistory = copy
     }
 
     // MARK: - ✅ Sync wiring
@@ -767,12 +620,6 @@ final class AppSettings: ObservableObject {
         static let selectedFocusSound = "ff_selectedFocusSound"
 
         static let externalMusicApp = "ff_externalMusicApp"
-
-        // Spotify integration (kept local)
-        static let spotifyEnabledForFocus = "ff_spotifyEnabledForFocus"
-        static let spotifyTrackURI = "ff_spotifyTrackURI"
-        static let spotifyTrackName = "ff_spotifyTrackName"
-        static let spotifyArtistName = "ff_spotifyArtistName"
-        static let spotifyHistory = "ff_spotifyHistory"
     }
 }
+
