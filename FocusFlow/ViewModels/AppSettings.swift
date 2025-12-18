@@ -148,7 +148,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
     var accentColor: Color { accentPrimary }
 }
 
-// MARK: - App-wide settings / profile
+// MARK: - App-wide settings / profile (namespaced + synced)
 
 @MainActor
 final class AppSettings: ObservableObject {
@@ -156,123 +156,331 @@ final class AppSettings: ObservableObject {
 
     // MARK: - Focus sound source helper
 
-    /// Which engine should the timer use for focus sound.
     enum FocusSoundSource {
         case builtin
         case spotify
     }
 
-    // MARK: - Published properties
+    // MARK: - External music app selection
+
+    enum ExternalMusicApp: String, CaseIterable, Identifiable, Codable {
+        case spotify
+        case appleMusic
+        case youtubeMusic
+
+        var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .spotify:      return "Spotify"
+            case .appleMusic:   return "Apple Music"
+            case .youtubeMusic: return "YouTube Music"
+            }
+        }
+    }
+
+    // MARK: - Spotify history model
+
+    struct SpotifyHistoryItem: Identifiable, Codable, Equatable {
+        let id: String
+        let uri: String
+        let name: String
+        let artist: String
+        let lastUsedAt: Date
+    }
+
+    // MARK: - Namespace handling (prevents account bleed)
+
+    private var activeNamespace: String = "guest"
+    private var lastNamespace: String? = nil
+
+    private var cancellables = Set<AnyCancellable>()
+    private var isApplyingNamespace = false
+
+    private func namespace(for state: AuthState) -> String {
+        switch state {
+        case .authenticated(let session):
+            return session.isGuest ? "guest" : session.userId.uuidString
+        case .unauthenticated, .unknown:
+            return "guest"
+        }
+    }
+
+    private func key(_ base: String) -> String {
+        "\(base)_\(activeNamespace)"
+    }
+
+    private func observeAuthChanges() {
+        AuthManager.shared.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newState in
+                self?.applyNamespace(for: newState)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func applyNamespace(for state: AuthState) {
+        let newNamespace = namespace(for: state)
+
+        if newNamespace == activeNamespace, lastNamespace != nil {
+            return
+        }
+
+        // If real account -> guest, wipe guest so it stays clean/safe
+        if newNamespace == "guest", let last = lastNamespace, last != "guest" {
+            wipeLocalStorage(namespace: "guest")
+        }
+
+        lastNamespace = activeNamespace
+        activeNamespace = newNamespace
+
+        isApplyingNamespace = true
+        defer { isApplyingNamespace = false }
+
+        // Reset in-memory to defaults first (prevents UI mixing)
+        displayName = "You"
+        tagline = "Staying focused."
+        avatarID = "sparkles"
+
+        accountFullName = ""
+        accountEmail = nil
+
+        selectedTheme = .forest
+        profileTheme = .forest
+
+        soundEnabled = true
+        hapticsEnabled = true
+
+        dailyReminderEnabled = false
+        dailyReminderTime = Self.makeDate(hour: 9, minute: 0)
+
+        profileImageData = nil
+
+        selectedFocusSound = .lightRainAmbient
+        selectedExternalMusicApp = nil
+
+        spotifyEnabledForFocus = false
+        spotifyTrackURI = nil
+        spotifyTrackName = nil
+        spotifyArtistName = nil
+        spotifyHistory = []
+
+        // Load from namespace
+        loadAll()
+
+        // If authenticated, stash session email into namespaced storage (nice to have)
+        if case .authenticated(let session) = state, session.isGuest == false {
+            if (accountEmail == nil || accountEmail?.isEmpty == true), let e = session.email, !e.isEmpty {
+                accountEmail = e
+            }
+        }
+
+        // Keep sync engines from leaking state across accounts
+        if newNamespace == "guest" {
+            UserPreferencesSyncEngine.shared.disableSyncAndResetCloudState()
+            UserProfileSyncEngine.shared.disableSyncAndResetCloudState()
+        }
+
+        print("AppSettings: active namespace -> \(activeNamespace)")
+    }
+
+    private func wipeLocalStorage(namespace: String) {
+        let defaults = UserDefaults.standard
+
+        defaults.removeObject(forKey: "\(Keys.displayName)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.tagline)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.avatarID)_\(namespace)")
+
+        defaults.removeObject(forKey: "\(Keys.accountFullName)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.accountEmail)_\(namespace)")
+
+        defaults.removeObject(forKey: "\(Keys.selectedTheme)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.profileTheme)_\(namespace)")
+
+        defaults.removeObject(forKey: "\(Keys.soundEnabled)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.hapticsEnabled)_\(namespace)")
+
+        defaults.removeObject(forKey: "\(Keys.dailyReminderEnabled)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.reminderHour)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.reminderMinute)_\(namespace)")
+
+        defaults.removeObject(forKey: "\(Keys.profileImageData)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.selectedFocusSound)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.externalMusicApp)_\(namespace)")
+
+        defaults.removeObject(forKey: "\(Keys.spotifyEnabledForFocus)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.spotifyTrackURI)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.spotifyTrackName)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.spotifyArtistName)_\(namespace)")
+        defaults.removeObject(forKey: "\(Keys.spotifyHistory)_\(namespace)")
+
+        print("AppSettings: wiped local storage for namespace=\(namespace)")
+    }
+
+    // MARK: - Published properties (persisted per namespace)
 
     @Published var displayName: String {
-        didSet { UserDefaults.standard.set(displayName, forKey: Keys.displayName) }
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(displayName, forKey: key(Keys.displayName)) } }
     }
 
     @Published var tagline: String {
-        didSet { UserDefaults.standard.set(tagline, forKey: Keys.tagline) }
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(tagline, forKey: key(Keys.tagline)) } }
+    }
+
+    /// ✅ Avatar id (SF Symbol choice) — synced via user_preferences
+    @Published var avatarID: String {
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(avatarID, forKey: key(Keys.avatarID)) } }
+    }
+
+    /// ✅ Identity fields (synced via user_profiles)
+    @Published var accountFullName: String {
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(accountFullName, forKey: key(Keys.accountFullName)) } }
+    }
+
+    @Published var accountEmail: String? {
+        didSet {
+            guard !isApplyingNamespace else { return }
+            let defaults = UserDefaults.standard
+            if let v = accountEmail, !v.isEmpty {
+                defaults.set(v, forKey: key(Keys.accountEmail))
+            } else {
+                defaults.removeObject(forKey: key(Keys.accountEmail))
+            }
+        }
     }
 
     @Published var selectedTheme: AppTheme {
-        didSet { UserDefaults.standard.set(selectedTheme.rawValue, forKey: Keys.selectedTheme) }
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(selectedTheme.rawValue, forKey: key(Keys.selectedTheme)) } }
     }
 
     @Published var profileTheme: AppTheme {
-        didSet { UserDefaults.standard.set(profileTheme.rawValue, forKey: Keys.profileTheme) }
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(profileTheme.rawValue, forKey: key(Keys.profileTheme)) } }
     }
 
     @Published var soundEnabled: Bool {
-        didSet { UserDefaults.standard.set(soundEnabled, forKey: Keys.soundEnabled) }
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(soundEnabled, forKey: key(Keys.soundEnabled)) } }
     }
 
     @Published var hapticsEnabled: Bool {
-        didSet { UserDefaults.standard.set(hapticsEnabled, forKey: Keys.hapticsEnabled) }
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(hapticsEnabled, forKey: key(Keys.hapticsEnabled)) } }
     }
 
     @Published var dailyReminderEnabled: Bool {
-        didSet { UserDefaults.standard.set(dailyReminderEnabled, forKey: Keys.dailyReminderEnabled) }
+        didSet { if !isApplyingNamespace { UserDefaults.standard.set(dailyReminderEnabled, forKey: key(Keys.dailyReminderEnabled)) } }
     }
 
-    /// Selected looping focus sound (background sound while timer runs)
     @Published var selectedFocusSound: FocusSound? {
         didSet {
-            let raw = selectedFocusSound?.rawValue
-            UserDefaults.standard.set(raw, forKey: Keys.selectedFocusSound)
+            guard !isApplyingNamespace else { return }
+            UserDefaults.standard.set(selectedFocusSound?.rawValue, forKey: key(Keys.selectedFocusSound))
         }
     }
 
     @Published var dailyReminderTime: Date {
         didSet {
+            guard !isApplyingNamespace else { return }
             let comps = Calendar.current.dateComponents([.hour, .minute], from: dailyReminderTime)
-            UserDefaults.standard.set(comps.hour ?? 9, forKey: Keys.reminderHour)
-            UserDefaults.standard.set(comps.minute ?? 0, forKey: Keys.reminderMinute)
+            UserDefaults.standard.set(comps.hour ?? 9, forKey: key(Keys.reminderHour))
+            UserDefaults.standard.set(comps.minute ?? 0, forKey: key(Keys.reminderMinute))
         }
     }
 
     @Published var profileImageData: Data? {
         didSet {
+            guard !isApplyingNamespace else { return }
             let defaults = UserDefaults.standard
             if let data = profileImageData {
-                defaults.set(data, forKey: Keys.profileImageData)
+                defaults.set(data, forKey: key(Keys.profileImageData))
             } else {
-                defaults.removeObject(forKey: Keys.profileImageData)
+                defaults.removeObject(forKey: key(Keys.profileImageData))
             }
         }
     }
 
-    // MARK: - Spotify focus settings
+    // MARK: - External music app selection (persisted)
 
-    /// Whether focus timer should use Spotify instead of built-in sounds.
-    @Published var spotifyEnabledForFocus: Bool {
+    @Published var selectedExternalMusicApp: ExternalMusicApp? {
         didSet {
-            UserDefaults.standard.set(spotifyEnabledForFocus, forKey: Keys.spotifyEnabledForFocus)
+            guard !isApplyingNamespace else { return }
+            let defaults = UserDefaults.standard
+            if let value = selectedExternalMusicApp?.rawValue {
+                defaults.set(value, forKey: key(Keys.externalMusicApp))
+            } else {
+                defaults.removeObject(forKey: key(Keys.externalMusicApp))
+            }
         }
     }
 
-    /// Selected Spotify track to use for focus (URI + display).
+    // MARK: - Spotify focus settings (kept local; still namespaced)
+
+    @Published var spotifyEnabledForFocus: Bool {
+        didSet {
+            guard !isApplyingNamespace else { return }
+            UserDefaults.standard.set(spotifyEnabledForFocus, forKey: key(Keys.spotifyEnabledForFocus))
+        }
+    }
+
     @Published var spotifyTrackURI: String? {
         didSet {
+            guard !isApplyingNamespace else { return }
             let defaults = UserDefaults.standard
             if let uri = spotifyTrackURI {
-                defaults.set(uri, forKey: Keys.spotifyTrackURI)
+                defaults.set(uri, forKey: key(Keys.spotifyTrackURI))
             } else {
-                defaults.removeObject(forKey: Keys.spotifyTrackURI)
+                defaults.removeObject(forKey: key(Keys.spotifyTrackURI))
             }
         }
     }
 
     @Published var spotifyTrackName: String? {
         didSet {
+            guard !isApplyingNamespace else { return }
             let defaults = UserDefaults.standard
             if let name = spotifyTrackName {
-                defaults.set(name, forKey: Keys.spotifyTrackName)
+                defaults.set(name, forKey: key(Keys.spotifyTrackName))
             } else {
-                defaults.removeObject(forKey: Keys.spotifyTrackName)
+                defaults.removeObject(forKey: key(Keys.spotifyTrackName))
             }
         }
     }
 
     @Published var spotifyArtistName: String? {
         didSet {
+            guard !isApplyingNamespace else { return }
             let defaults = UserDefaults.standard
             if let artist = spotifyArtistName {
-                defaults.set(artist, forKey: Keys.spotifyArtistName)
+                defaults.set(artist, forKey: key(Keys.spotifyArtistName))
             } else {
-                defaults.removeObject(forKey: Keys.spotifyArtistName)
+                defaults.removeObject(forKey: key(Keys.spotifyArtistName))
             }
         }
     }
 
-    /// Convenience: true when Spotify is selected and we have a URI.
+    @Published var spotifyHistory: [SpotifyHistoryItem] {
+        didSet {
+            guard !isApplyingNamespace else { return }
+            let defaults = UserDefaults.standard
+            if let data = try? JSONEncoder().encode(spotifyHistory) {
+                defaults.set(data, forKey: key(Keys.spotifyHistory))
+            } else {
+                defaults.removeObject(forKey: key(Keys.spotifyHistory))
+            }
+        }
+    }
+
+    /// Session-only (not persisted)
+    @Published var isFocusTimerRunning: Bool = false
+
+    // MARK: - Convenience
+
     var hasSpotifyFocusTrack: Bool {
         spotifyEnabledForFocus && spotifyTrackURI != nil
     }
 
-    /// Convenience: which source should we actually use right now.
     var currentFocusSoundSource: FocusSoundSource {
         hasSpotifyFocusTrack ? .spotify : .builtin
     }
 
-    /// Convenience: nice display text for the chosen Spotify track.
     var spotifyDisplayTitle: String? {
         guard let name = spotifyTrackName else { return nil }
         if let artist = spotifyArtistName, !artist.isEmpty {
@@ -284,74 +492,287 @@ final class AppSettings: ObservableObject {
 
     // MARK: - Init
 
+    private var didStartSyncEngines = false
+
     private init() {
+        // default placeholders (will be replaced by applyNamespace->loadAll)
+        self.displayName = "You"
+        self.tagline = "Staying focused."
+        self.avatarID = "sparkles"
+
+        self.accountFullName = ""
+        self.accountEmail = nil
+
+        self.selectedTheme = .forest
+        self.profileTheme = .forest
+
+        self.soundEnabled = true
+        self.hapticsEnabled = true
+        self.dailyReminderEnabled = false
+        self.dailyReminderTime = Self.makeDate(hour: 9, minute: 0)
+
+        self.profileImageData = nil
+        self.selectedFocusSound = .lightRainAmbient
+
+        self.selectedExternalMusicApp = nil
+
+        self.spotifyEnabledForFocus = false
+        self.spotifyTrackURI = nil
+        self.spotifyTrackName = nil
+        self.spotifyArtistName = nil
+        self.spotifyHistory = []
+
+        observeAuthChanges()
+        applyNamespace(for: AuthManager.shared.state)
+
+        startSyncIfNeeded()
+    }
+
+    // MARK: - Load helpers
+
+    private func loadAll() {
         let defaults = UserDefaults.standard
 
-        self.displayName = defaults.string(forKey: Keys.displayName) ?? "You"
-        self.tagline = defaults.string(forKey: Keys.tagline) ?? "Staying focused."
+        self.displayName = defaults.string(forKey: key(Keys.displayName)) ?? "You"
+        self.tagline = defaults.string(forKey: key(Keys.tagline)) ?? "Staying focused."
+        self.avatarID = defaults.string(forKey: key(Keys.avatarID)) ?? "sparkles"
 
-        let initialTheme: AppTheme
-        if let raw = defaults.string(forKey: Keys.selectedTheme),
-           let savedTheme = AppTheme(rawValue: raw) {
-            initialTheme = savedTheme
-        } else {
-            initialTheme = .forest
-        }
-        self.selectedTheme = initialTheme
+        self.accountFullName = defaults.string(forKey: key(Keys.accountFullName)) ?? ""
+        self.accountEmail = defaults.string(forKey: key(Keys.accountEmail))
 
-        if let rawProfile = defaults.string(forKey: Keys.profileTheme),
-           let savedProfile = AppTheme(rawValue: rawProfile) {
-            self.profileTheme = savedProfile
-        } else {
-            self.profileTheme = initialTheme
-        }
+        let selectedRaw = defaults.string(forKey: key(Keys.selectedTheme)) ?? AppTheme.forest.rawValue
+        self.selectedTheme = AppTheme(rawValue: selectedRaw) ?? .forest
 
-        self.soundEnabled = defaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
-        self.hapticsEnabled = defaults.object(forKey: Keys.hapticsEnabled) as? Bool ?? true
-        self.dailyReminderEnabled = defaults.object(forKey: Keys.dailyReminderEnabled) as? Bool ?? false
+        let profileRaw = defaults.string(forKey: key(Keys.profileTheme)) ?? selectedRaw
+        self.profileTheme = AppTheme(rawValue: profileRaw) ?? self.selectedTheme
 
-        if let rawSound = defaults.string(forKey: Keys.selectedFocusSound),
+        self.soundEnabled = defaults.object(forKey: key(Keys.soundEnabled)) as? Bool ?? true
+        self.hapticsEnabled = defaults.object(forKey: key(Keys.hapticsEnabled)) as? Bool ?? true
+        self.dailyReminderEnabled = defaults.object(forKey: key(Keys.dailyReminderEnabled)) as? Bool ?? false
+
+        let hour = defaults.object(forKey: key(Keys.reminderHour)) as? Int ?? 9
+        let minute = defaults.object(forKey: key(Keys.reminderMinute)) as? Int ?? 0
+        self.dailyReminderTime = Self.makeDate(hour: hour, minute: minute)
+
+        self.profileImageData = defaults.data(forKey: key(Keys.profileImageData))
+
+        if let rawSound = defaults.string(forKey: key(Keys.selectedFocusSound)),
            let sound = FocusSound(rawValue: rawSound) {
             self.selectedFocusSound = sound
         } else {
             self.selectedFocusSound = .lightRainAmbient
         }
 
-        let hour = defaults.object(forKey: Keys.reminderHour) as? Int ?? 9
-        let minute = defaults.object(forKey: Keys.reminderMinute) as? Int ?? 0
-        var comps = DateComponents()
-        comps.hour = hour
-        comps.minute = minute
-        self.dailyReminderTime = Calendar.current.date(from: comps) ?? Date()
+        if let rawExternal = defaults.string(forKey: key(Keys.externalMusicApp)),
+           let savedExternal = ExternalMusicApp(rawValue: rawExternal) {
+            self.selectedExternalMusicApp = savedExternal
+        } else {
+            self.selectedExternalMusicApp = nil
+        }
 
-        self.profileImageData = defaults.data(forKey: Keys.profileImageData)
+        self.spotifyEnabledForFocus = defaults.object(forKey: key(Keys.spotifyEnabledForFocus)) as? Bool ?? false
+        self.spotifyTrackURI = defaults.string(forKey: key(Keys.spotifyTrackURI))
+        self.spotifyTrackName = defaults.string(forKey: key(Keys.spotifyTrackName))
+        self.spotifyArtistName = defaults.string(forKey: key(Keys.spotifyArtistName))
 
-        // Spotify (defaults to off so existing users keep built-in sounds)
-        self.spotifyEnabledForFocus = defaults.object(forKey: Keys.spotifyEnabledForFocus) as? Bool ?? false
-        self.spotifyTrackURI = defaults.string(forKey: Keys.spotifyTrackURI)
-        self.spotifyTrackName = defaults.string(forKey: Keys.spotifyTrackName)
-        self.spotifyArtistName = defaults.string(forKey: Keys.spotifyArtistName)
+        if let data = defaults.data(forKey: key(Keys.spotifyHistory)),
+           let decoded = try? JSONDecoder().decode([SpotifyHistoryItem].self, from: data) {
+            self.spotifyHistory = decoded
+        } else {
+            self.spotifyHistory = []
+        }
     }
 
-    // MARK: - Keys
+    /// ✅ Returns "today at hour:minute" (safe for DatePicker / scheduling)
+    private static func makeDate(hour: Int, minute: Int) -> Date {
+        let cal = Calendar.current
+        let now = Date()
+        var comps = cal.dateComponents([.year, .month, .day], from: now)
+        comps.hour = hour
+        comps.minute = minute
+        comps.second = 0
+        return cal.date(from: comps) ?? now
+    }
+
+    // MARK: - Spotify history helper
+
+    func registerSpotifyFocusSelection(uri: String, name: String, artist: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedArtist = artist.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let item = SpotifyHistoryItem(
+            id: uri,
+            uri: uri,
+            name: trimmedName,
+            artist: trimmedArtist,
+            lastUsedAt: Date()
+        )
+
+        var copy = spotifyHistory.filter { $0.uri != uri }
+        copy.insert(item, at: 0)
+
+        if copy.count > 30 {
+            copy = Array(copy.prefix(30))
+        }
+
+        spotifyHistory = copy
+    }
+
+    // MARK: - ✅ Sync wiring
+
+    private func startSyncIfNeeded() {
+        guard didStartSyncEngines == false else { return }
+        didStartSyncEngines = true
+
+        // ----------------------------
+        // UserPreferencesSyncEngine
+        // ----------------------------
+
+        let p1 = Publishers.CombineLatest3($displayName, $tagline, $avatarID)
+        let p2 = Publishers.CombineLatest4($selectedTheme, $profileTheme, $soundEnabled, $hapticsEnabled)
+        let p3 = Publishers.CombineLatest3($dailyReminderEnabled, $dailyReminderTime, $selectedFocusSound)
+
+        let prefsPublisher: AnyPublisher<UserPreferencesLocal, Never> =
+            Publishers.CombineLatest4(p1, p2, p3, $selectedExternalMusicApp)
+                .map { a, b, c, ext in
+                    let (name, tagline, avatarID) = a
+                    let (selTheme, profTheme, soundOn, hapticsOn) = b
+                    let (remEnabled, remTime, focusSound) = c
+
+                    let comps = Calendar.current.dateComponents([.hour, .minute], from: remTime)
+                    let hour = comps.hour ?? 9
+                    let minute = comps.minute ?? 0
+
+                    return UserPreferencesLocal(
+                        displayName: name,
+                        tagline: tagline,
+                        avatarId: avatarID,
+
+                        selectedThemeRaw: selTheme.rawValue,
+                        profileThemeRaw: profTheme.rawValue,
+
+                        soundEnabled: soundOn,
+                        hapticsEnabled: hapticsOn,
+
+                        dailyReminderEnabled: remEnabled,
+                        reminderHour: hour,
+                        reminderMinute: minute,
+
+                        selectedFocusSoundRaw: focusSound?.rawValue,
+                        externalMusicAppRaw: ext?.rawValue
+                    )
+                }
+                .eraseToAnyPublisher()
+
+        UserPreferencesSyncEngine.shared.start(
+            preferencesPublisher: prefsPublisher,
+            applyRemotePreferences: { [weak self] cloud in
+                guard let self else { return }
+
+                self.displayName = cloud.displayName
+                self.tagline = cloud.tagline
+                if let avatar = cloud.avatarId, !avatar.isEmpty {
+                    self.avatarID = avatar
+                }
+
+                self.selectedTheme = AppTheme(rawValue: cloud.selectedThemeRaw) ?? self.selectedTheme
+                self.profileTheme = AppTheme(rawValue: cloud.profileThemeRaw) ?? self.profileTheme
+
+                self.soundEnabled = cloud.soundEnabled
+                self.hapticsEnabled = cloud.hapticsEnabled
+
+                self.dailyReminderEnabled = cloud.dailyReminderEnabled
+                self.dailyReminderTime = Self.makeDate(hour: cloud.reminderHour, minute: cloud.reminderMinute)
+
+                if let raw = cloud.selectedFocusSoundRaw, let s = FocusSound(rawValue: raw) {
+                    self.selectedFocusSound = s
+                }
+
+                if let raw = cloud.externalMusicAppRaw, let a = ExternalMusicApp(rawValue: raw) {
+                    self.selectedExternalMusicApp = a
+                } else {
+                    self.selectedExternalMusicApp = nil
+                }
+            }
+        )
+
+        print("AppSettings: UserPreferencesSyncEngine started")
+
+        // ----------------------------
+        // UserProfileSyncEngine
+        // (only identity/admin fields)
+        // ----------------------------
+
+        let profilePublisher: AnyPublisher<UserProfileLocal, Never> =
+            Publishers.CombineLatest3($accountFullName, $displayName, $accountEmail)
+                .map { fullName, displayName, email in
+                    UserProfileLocal(
+                        fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : fullName,
+                        displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : displayName,
+                        email: email,
+                        avatarURL: nil,
+                        preferredTheme: nil,
+                        timerSound: nil,
+                        notificationsEnabled: nil
+                    )
+                }
+                .eraseToAnyPublisher()
+
+        UserProfileSyncEngine.shared.start(
+            profilePublisher: profilePublisher,
+            applyRemoteProfile: { [weak self] cloud in
+                guard let self else { return }
+
+                // Only fill identity fields (don’t fight user_preferences)
+                if (self.accountFullName.isEmpty), let fn = cloud.fullName, !fn.isEmpty {
+                    self.accountFullName = fn
+                }
+                if (self.accountEmail == nil || self.accountEmail?.isEmpty == true),
+                   let em = cloud.email, !em.isEmpty {
+                    self.accountEmail = em
+                }
+
+                // Optional: only apply display name if still default
+                if (self.displayName == "You" || self.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty),
+                   let dn = cloud.displayName, !dn.isEmpty {
+                    self.displayName = dn
+                }
+            }
+        )
+
+        print("AppSettings: UserProfileSyncEngine started")
+    }
+
+    // MARK: - Keys (base)
 
     private struct Keys {
         static let displayName = "ff_displayName"
         static let tagline = "ff_tagline"
+        static let avatarID = "ff_avatarID"
+
+        static let accountFullName = "ff_accountFullName"
+        static let accountEmail = "ff_accountEmail"
+
         static let selectedTheme = "ff_selectedTheme"
         static let profileTheme = "ff_profileTheme"
+
         static let soundEnabled = "ff_soundEnabled"
         static let hapticsEnabled = "ff_hapticsEnabled"
+
         static let dailyReminderEnabled = "ff_dailyReminderEnabled"
         static let reminderHour = "ff_reminderHour"
         static let reminderMinute = "ff_reminderMinute"
+
         static let profileImageData = "ff_profileImageData"
         static let selectedFocusSound = "ff_selectedFocusSound"
 
-        // Spotify integration
+        static let externalMusicApp = "ff_externalMusicApp"
+
+        // Spotify integration (kept local)
         static let spotifyEnabledForFocus = "ff_spotifyEnabledForFocus"
         static let spotifyTrackURI = "ff_spotifyTrackURI"
         static let spotifyTrackName = "ff_spotifyTrackName"
         static let spotifyArtistName = "ff_spotifyArtistName"
+        static let spotifyHistory = "ff_spotifyHistory"
     }
 }

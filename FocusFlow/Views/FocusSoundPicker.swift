@@ -1,5 +1,32 @@
 import SwiftUI
 
+// MARK: - External music helper for UI
+
+extension AppSettings.ExternalMusicApp {
+    var iconName: String {
+        switch self {
+        case .spotify:      return "music.quarternote.3"
+        case .appleMusic:   return "applelogo"
+        case .youtubeMusic: return "play.rectangle.fill"
+        }
+    }
+
+    var tintColor: Color {
+        switch self {
+        case .spotify:
+            return Color.green
+        case .appleMusic:
+            return Color.red
+        case .youtubeMusic:
+            return Color(red: 0.90, green: 0.16, blue: 0.22)
+        }
+    }
+}
+
+// ============================================================
+// MARK: - MAIN SHEET
+// ============================================================
+
 struct FocusSoundPicker: View {
     @ObservedObject private var appSettings = AppSettings.shared
     @Environment(\.dismiss) private var dismiss
@@ -8,13 +35,21 @@ struct FocusSoundPicker: View {
 
     private enum Tab: String, CaseIterable, Identifiable {
         case builtin
-        case spotify
+        case externalMusic
 
         var id: String { rawValue }
+
         var title: String {
             switch self {
-            case .builtin: return "Focus Sounds"
-            case .spotify: return "Spotify"
+            case .builtin:       return "Focus Sounds"
+            case .externalMusic: return "Music Apps"
+            }
+        }
+
+        var iconName: String {
+            switch self {
+            case .builtin:       return "waveform"
+            case .externalMusic: return "headphones"
             }
         }
     }
@@ -22,62 +57,62 @@ struct FocusSoundPicker: View {
     @State private var selectedTab: Tab = .builtin
 
     var body: some View {
-        let theme = appSettings.selectedTheme
-        let accentPrimary = theme.accentPrimary
-        let accentSecondary = theme.accentSecondary
+        GeometryReader { proxy in
+            let size = proxy.size
+            let theme = appSettings.selectedTheme
+            let accentPrimary = theme.accentPrimary
+            let accentSecondary = theme.accentSecondary
 
-        ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: theme.backgroundColors),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            ZStack {
+                // Background – match Notifications / FocusView
+                LinearGradient(
+                    gradient: Gradient(colors: theme.backgroundColors),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
 
-            VStack(spacing: 18) {
-                // Sheet handle
-                Capsule()
-                    .fill(Color.white.opacity(0.25))
-                    .frame(width: 40, height: 4)
-                    .padding(.top, 8)
+                Circle()
+                    .fill(accentPrimary.opacity(0.5))
+                    .blur(radius: 90)
+                    .frame(width: size.width * 0.9, height: size.width * 0.9)
+                    .offset(x: -size.width * 0.45, y: -size.height * 0.55)
 
-                // Header
-                header
+                Circle()
+                    .fill(accentSecondary.opacity(0.35))
+                    .blur(radius: 100)
+                    .frame(width: size.width * 0.9, height: size.width * 0.9)
+                    .offset(x: size.width * 0.45, y: size.height * 0.5)
 
-                // Segmented tabs
-                Picker("", selection: $selectedTab) {
-                    ForEach(Tab.allCases) { tab in
-                        Text(tab.title).tag(tab)
+                VStack(spacing: 18) {
+                    // Header
+                    header
+                        .padding(.horizontal, 22)
+                        .padding(.top, 18)
+
+                    // Tabs
+                    tabSelector(
+                        accentPrimary: accentPrimary,
+                        accentSecondary: accentSecondary
+                    )
+                    .padding(.horizontal, 22)
+
+                    // Content
+                    Group {
+                        switch selectedTab {
+                        case .builtin:
+                            BuiltInSoundsTab(
+                                accentPrimary: accentPrimary,
+                                accentSecondary: accentSecondary
+                            )
+                        case .externalMusic:
+                            ExternalMusicTab()
+                        }
                     }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 4)
+
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 20)
-
-                // Tab content
-                VStack {
-                    switch selectedTab {
-                    case .builtin:
-                        BuiltInSoundsTab(
-                            accentPrimary: accentPrimary,
-                            accentSecondary: accentSecondary
-                        )
-                    case .spotify:
-                        SpotifySoundsTab()
-                    }
-                }
-                .padding(.horizontal, 20)
-
-                Spacer(minLength: 8)
-            }
-            .padding(.bottom, 8)
-        }
-        .onDisappear {
-            let manager = SpotifyManager.shared
-
-            // If NO focus track is playing, any Spotify audio is just a preview → stop it.
-            // If a Spotify focus track is playing, do NOT touch it; just let it keep going.
-            if !manager.isPlayingFocusTrack {
-                manager.stopPreview()
             }
         }
     }
@@ -85,35 +120,93 @@ struct FocusSoundPicker: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Focus Sound")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundColor(.white)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Image(systemName: "music.note.list")
+                        .imageScale(.medium)
+                        .foregroundColor(.white.opacity(0.9))
 
-                Spacer()
+                    Text("Focus sound")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+
+                Text("Pick how your focus should feel.")
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.72))
+            }
+
+            Spacer()
+
+            Button {
+                Haptics.impact(.light)
+                dismiss()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .imageScale(.small)
+                    Text("Done")
+                        .fontWeight(.semibold)
+                }
+                .font(.system(size: 14))
+                .foregroundColor(.black)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.white)
+                .clipShape(Capsule())
+                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Tab selector
+
+    private func tabSelector(
+        accentPrimary: Color,
+        accentSecondary: Color
+    ) -> some View {
+        HStack(spacing: 8) {
+            ForEach(Tab.allCases) { tab in
+                let isSelected = (tab == selectedTab)
 
                 Button {
                     Haptics.impact(.light)
-                    dismiss()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                        selectedTab = tab
+                    }
                 } label: {
-                    Text("Done")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.16))
-                        .clipShape(Capsule())
+                    HStack(spacing: 6) {
+                        Image(systemName: tab.iconName)
+                            .imageScale(.small)
+
+                        Text(tab.title)
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundColor(isSelected ? .black : .white.opacity(0.8))
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 14)
+                    .background(
+                        Group {
+                            if isSelected {
+                                LinearGradient(
+                                    gradient: Gradient(colors: [accentPrimary, accentSecondary]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            } else {
+                                Color.white.opacity(0.18)
+                            }
+                        }
+                    )
+                    .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }
 
-            Text("Preview and choose the sound that will loop quietly while your focus timer is running.")
-                .font(.system(size: 13))
-                .foregroundColor(.white.opacity(0.7))
-                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
         }
-        .padding(.horizontal, 20)
     }
 }
 
@@ -128,75 +221,94 @@ private struct BuiltInSoundsTab: View {
     let accentSecondary: Color
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             // Current selection pill
-            HStack(spacing: 8) {
-                Image(systemName: appSettings.selectedFocusSound == nil ? "speaker.slash" : "waveform")
-                    .imageScale(.small)
-                    .foregroundColor(.white.opacity(0.9))
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.18))
+                        .frame(width: 28, height: 28)
 
-                Text(currentSelectionLabel)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.85))
+                    Image(systemName: appSettings.selectedFocusSound == nil ? "speaker.slash" : "waveform")
+                        .imageScale(.small)
+                        .foregroundColor(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Session ambience")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Text(currentSelectionLabel)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white)
+                }
 
                 Spacer()
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(Color.white.opacity(0.12))
-            .clipShape(Capsule())
+            .padding(.vertical, 10)
+            .background(Color.black.opacity(0.28))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
             // List of built-in sounds
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 12) {
+                    noSoundRow()
+
                     ForEach(FocusSound.allCases) { sound in
                         soundRow(sound)
                     }
 
-                    noSoundRow()
-                        .padding(.top, 4)
+                    Text("Tip: tap a sound to preview. Your timer will use whichever sound you last chose.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.6))
+                        .padding(.top, 8)
                 }
-                .padding(.vertical, 4)
+                .padding(.top, 4)   // ← Only a little breathing room at the top
             }
+            .ignoresSafeArea(edges: .bottom)   // ← EXTEND TO THE VERY BOTTOM
         }
     }
 
     private var currentSelectionLabel: String {
-        if appSettings.spotifyEnabledForFocus {
-            return "Using Spotify for focus sound."
-        }
         if let sound = appSettings.selectedFocusSound {
-            return "Currently: \(sound.displayName)"
+            return sound.displayName
         }
-        return "Currently: No sound"
+        return "Silence"
     }
 
     private func soundRow(_ sound: FocusSound) -> some View {
-        let isSelected = appSettings.selectedFocusSound == sound && !appSettings.spotifyEnabledForFocus
+        let isSelected = appSettings.selectedFocusSound == sound
 
         return Button {
             Haptics.impact(.light)
 
-            // Switch back to built-in → fully stop Spotify
-            appSettings.spotifyEnabledForFocus = false
-            appSettings.spotifyTrackURI = nil
-            appSettings.spotifyTrackName = nil
-            appSettings.spotifyArtistName = nil
-            SpotifyManager.shared.stopAll()
-
-            // Select this built-in sound and play a short preview
+            // Built-in sound selected → clear external app
             appSettings.selectedFocusSound = sound
+            appSettings.selectedExternalMusicApp = nil
+
+            FocusSoundManager.shared.stop()
             FocusSoundManager.shared.play(sound: sound)
         } label: {
-            HStack {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.white.opacity(0.12))
+                        .frame(width: 42, height: 42)
+
+                    Image(systemName: "waveform")
+                        .foregroundColor(isSelected ? .black.opacity(0.8) : .white.opacity(0.9))
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(sound.displayName)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(isSelected ? .black : .white)
 
-                    Text("Plays while your focus timer is running.")
+                    Text("Loops quietly while your timer runs.")
                         .font(.system(size: 11))
-                        .foregroundColor(isSelected ? .black.opacity(0.55) : .white.opacity(0.55))
+                        .foregroundColor(isSelected ? .black.opacity(0.6) : .white.opacity(0.6))
                 }
 
                 Spacer()
@@ -204,12 +316,18 @@ private struct BuiltInSoundsTab: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .imageScale(.large)
-                        .foregroundColor(.black.opacity(0.9))
-                        .shadow(radius: 6)
+                        .foregroundColor(.white)
+                        .shadow(color: accentPrimary.opacity(0.7), radius: 6, x: 0, y: 3)
+                        .overlay(
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.black.opacity(0.8))
+                                .imageScale(.medium)
+                                .offset(x: -0.5, y: -0.5)
+                        )
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .background(
                 Group {
                     if isSelected {
@@ -223,525 +341,226 @@ private struct BuiltInSoundsTab: View {
                     }
                 }
             )
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     private func noSoundRow() -> some View {
-        let isSelected = appSettings.selectedFocusSound == nil && !appSettings.spotifyEnabledForFocus
+        let isSelected = appSettings.selectedFocusSound == nil
 
         return Button {
             Haptics.impact(.light)
 
-            // No sound → stop both built-in and Spotify
             appSettings.selectedFocusSound = nil
-            appSettings.spotifyEnabledForFocus = false
-            appSettings.spotifyTrackURI = nil
-            appSettings.spotifyTrackName = nil
-            appSettings.spotifyArtistName = nil
-
             FocusSoundManager.shared.stop()
-            SpotifyManager.shared.stopAll()
+            // External music app (if any) can remain selected.
         } label: {
-            HStack {
-                HStack(spacing: 10) {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.red.opacity(0.18))
+                        .frame(width: 42, height: 42)
+
                     Image(systemName: "speaker.slash.fill")
-                        .imageScale(.medium)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("No Sound")
-                            .font(.system(size: 15, weight: .semibold))
-
-                        Text("Focus in complete silence.")
-                            .font(.system(size: 11))
-                            .foregroundColor(.red.opacity(0.8))
-                    }
+                        .foregroundColor(.red.opacity(0.9))
                 }
-                .foregroundColor(isSelected ? .black : .red.opacity(0.9))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("No sound")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text("Total silence for this session.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.red.opacity(0.8))
+                }
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .imageScale(.large)
-                        .foregroundColor(.black.opacity(0.9))
-                        .shadow(radius: 6)
+                        .foregroundColor(.white)
+                        .shadow(color: .red.opacity(0.7), radius: 6, x: 0, y: 3)
+                        .overlay(
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.black.opacity(0.85))
+                                .imageScale(.medium)
+                                .offset(x: -0.5, y: -0.5)
+                        )
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(
-                Group {
-                    if isSelected {
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.red.opacity(0.95),
-                                Color.red.opacity(0.75)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    } else {
-                        Color.red.opacity(0.12)
-                    }
-                }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.red.opacity(0.16))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 }
 
 // ============================================================
-// MARK: - SPOTIFY TAB
+// MARK: - EXTERNAL MUSIC TAB
 // ============================================================
 
-private struct SpotifySoundsTab: View {
-    @ObservedObject private var spotify = SpotifyManager.shared
+private struct ExternalMusicTab: View {
     @ObservedObject private var appSettings = AppSettings.shared
-    @StateObject private var webService = SpotifyWebService.shared
 
-    @State private var searchText: String = ""
-    @State private var localError: String?
-
-    // Sub-tabs for Spotify: Search / Last played / Library
-    private enum SpotifyMode: String, CaseIterable, Identifiable {
-        case search
-        case recent
-        case library
-
-        var id: String { rawValue }
-
-        var title: String {
-            switch self {
-            case .search:  return "Search"
-            case .recent:  return "Last Played"
-            case .library: return "Library"
-            }
+    private var selectionLabel: String {
+        if let app = appSettings.selectedExternalMusicApp {
+            return app.displayName
+        } else {
+            return "No music app selected"
         }
     }
-
-    @State private var selectedMode: SpotifyMode = .search
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-
-            if !spotify.hasValidToken {
-                // FIRST-TIME CONNECT STATE
-                connectCard
-            } else {
-                // Already authorized → show header + sub-modes
-                connectedHeader
-
-                spotifyModeCapsules
-
-                switch selectedMode {
-                case .search:
-                    searchContent
-                case .recent:
-                    recentContent
-                case .library:
-                    libraryContent
-                }
-            }
-        }
-    }
-
-    // MARK: - Connect card
-
-    private var connectCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(spacing: 14) {
+            // Current selection pill
             HStack(spacing: 10) {
-                Circle()
-                    .fill(Color.orange)
-                    .frame(width: 10, height: 10)
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.18))
+                        .frame(width: 28, height: 28)
 
-                Text("Connect to Spotify")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                    Image(systemName: "headphones")
+                        .imageScale(.small)
+                        .foregroundColor(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Music app for this session")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Text(selectionLabel)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white)
+                }
 
                 Spacer()
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.black.opacity(0.28))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-            Text("Link FocusFlow with your Spotify account once to search Spotify and pick any track as your focus sound.")
-                .font(.system(size: 13))
-                .foregroundColor(.white.opacity(0.75))
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Use any music app")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
 
-            Button {
-                Haptics.impact(.medium)
-                // First-time or repeat: always use full auth bounce.
-                SpotifyManager.shared.authorizeIfNeeded()
-            } label: {
-                HStack {
-                    Image(systemName: "music.note")
-                    Text("Connect to Spotify")
+                    Text("Choose a music app below. When you start a FocusFlow timer, we’ll open that app so you can pick a playlist. We don’t control the music – we just keep time.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.8))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    VStack(spacing: 12) {
+                        musicAppCard(
+                            app: .spotify,
+                            subtitle: "Lo-fi, deep focus, or your own playlists."
+                        )
+
+                        musicAppCard(
+                            app: .appleMusic,
+                            subtitle: "Use your library or Apple Music radio."
+                        )
+
+                        musicAppCard(
+                            app: .youtubeMusic,
+                            subtitle: "Focus playlists mixed with your favorites."
+                        )
+                    }
+                    .padding(.top, 6)
+
+                    Text("Tip: after you start your timer and we open your music app, just swipe back to FocusFlow. Your session will keep running.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.6))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
+
+                    Spacer(minLength: 12)
                 }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.black)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 18)
-                .background(Color.white)
-                .clipShape(Capsule())
+                .padding(.vertical, 8)
             }
-            .buttonStyle(.plain)
         }
-        .padding(16)
-        .background(Color.white.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
-    // Header with status + reconnect button
-    private var connectedHeader: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(spotify.isConnected ? Color.green : Color.orange)
-                .frame(width: 10, height: 10)
+    // MARK: - Card builder
 
-            Text(spotify.isConnected ? "Connected to Spotify" : "Ready to connect")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.white.opacity(0.85))
+    private func musicAppCard(
+        app: AppSettings.ExternalMusicApp,
+        subtitle: String
+    ) -> some View {
+        let isSelected = appSettings.selectedExternalMusicApp == app
 
-            Spacer()
+        return Button {
+            Haptics.impact(.medium)
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                if isSelected {
+                    // Tap again to clear selection
+                    appSettings.selectedExternalMusicApp = nil
+                } else {
+                    // Selecting a music app clears built-in focus sound
+                    appSettings.selectedExternalMusicApp = app
+                    appSettings.selectedFocusSound = nil
+                    FocusSoundManager.shared.stop()
+                }
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(app.tintColor.opacity(0.18))
+                        .frame(width: 44, height: 44)
 
-            if !spotify.isConnected {
-                Button {
-                    Haptics.impact(.light)
-                    // Use the same behaviour as first connect: full auth bounce.
-                    SpotifyManager.shared.authorizeIfNeeded()
-                } label: {
-                    Text("Connect")
-                        .font(.system(size: 12, weight: .semibold))
+                    Image(systemName: app.iconName)
+                        .foregroundColor(app.tintColor)
+                        .imageScale(.medium)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(app.displayName)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.7))
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .imageScale(.small)
+                        Text("Selected")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundColor(.black)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(Color.white)
+                    .clipShape(Capsule())
+                } else {
+                    Text("Use this app")
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.black)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
                         .background(Color.white)
                         .clipShape(Capsule())
                 }
-                .buttonStyle(.plain)
             }
-        }
-    }
-
-    // MARK: - Mode capsules
-
-    private var spotifyModeCapsules: some View {
-        HStack(spacing: 8) {
-            ForEach(SpotifyMode.allCases) { mode in
-                Button {
-                    Haptics.impact(.light)
-                    selectedMode = mode
-                } label: {
-                    Text(mode.title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(selectedMode == mode ? .black : .white.opacity(0.8))
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(
-                            Group {
-                                if selectedMode == mode {
-                                    Color.white
-                                } else {
-                                    Color.white.opacity(0.12)
-                                }
-                            }
-                        )
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-
-            Spacer()
-        }
-    }
-
-    // MARK: - SEARCH CONTENT
-
-    private var searchContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if appSettings.spotifyEnabledForFocus,
-               let name = appSettings.spotifyTrackName {
-                selectedSpotifyRow(
-                    name: name,
-                    subtitle: appSettings.spotifyArtistName ?? "",
-                    uri: appSettings.spotifyTrackURI ?? ""
-                )
-            }
-
-            searchBar
-
-            if let message = localError ?? webService.lastError {
-                Text(message)
-                    .font(.system(size: 11))
-                    .foregroundColor(.red.opacity(0.8))
-            }
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    if webService.isSearching {
-                        Text("Searching Spotify…")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.6))
-                    } else if !webService.tracks.isEmpty {
-                        Text("Tracks")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.75))
-
-                        ForEach(webService.tracks) { track in
-                            spotifyTrackRow(track)
-                        }
-                    } else if !(searchText.trimmingCharacters(in: .whitespaces).isEmpty) {
-                        Text("No results found.")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                }
-                .padding(.bottom, 20)
-            }
-        }
-    }
-
-    // MARK: - RECENT CONTENT
-
-    private var recentContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if appSettings.spotifyEnabledForFocus,
-               let name = appSettings.spotifyTrackName {
-
-                let artistName = appSettings.spotifyArtistName ?? ""
-                let uri = appSettings.spotifyTrackURI ?? ""
-
-                Text("Last used in FocusFlow")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-
-                recentSpotifyRow(name: name, subtitle: artistName, uri: uri)
-
-            } else {
-                Text("Once you use a Spotify track as your focus sound, it will appear here as your last played.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.7))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer()
-        }
-    }
-
-    // MARK: - LIBRARY CONTENT
-
-    private var libraryContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Spotify Library")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white)
-
-            Text("In a future step, this tab can list your Spotify playlists and saved albums so you can pick a whole playlist as your focus sound. For now, you can search any track from the Search tab.")
-                .font(.system(size: 13))
-                .foregroundColor(.white.opacity(0.7))
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer()
-        }
-    }
-
-    // MARK: - UI components
-
-    private var searchBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.white.opacity(0.7))
-
-            TextField("Search Spotify", text: $searchText, onCommit: {
-                performSearch()
-            })
-            .foregroundColor(.white)
-            .disableAutocorrection(true)
-            .textInputAutocapitalization(.never)
-
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                    webService.tracks = []
-                    localError = nil
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.white.opacity(0.6))
-                }
-            }
-        }
-        .padding(12)
-        .background(Color.white.opacity(0.16))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-
-    private func spotifyTrackRow(_ track: SpotifyTrack) -> some View {
-        Button {
-            Haptics.impact(.light)
-
-            let manager = SpotifyManager.shared
-            let wasFocusPlaying = manager.isPlayingFocusTrack
-
-            // Mark Spotify as the focus engine
-            appSettings.spotifyEnabledForFocus = true
-            appSettings.spotifyTrackURI = track.uri
-            appSettings.spotifyTrackName = track.name
-            appSettings.spotifyArtistName = track.artistNames
-
-            // Configure focus track
-            manager.setFocusTrack(uri: track.uri)
-
-            if wasFocusPlaying {
-                // Timer is running & Spotify focus was playing:
-                // Immediately switch focus playback to this track (no "preview-only").
-                manager.startFocusPlayback(using: track.uri)
-            } else {
-                // Timer not running (or not using Spotify):
-                // Just preview; closing the sheet will stop it.
-                manager.playPreview(uri: track.uri)
-            }
-
-        } label: {
-            HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.12))
-                    .frame(width: 44, height: 44)
-                    .overlay(
-                        Image(systemName: "music.note")
-                            .foregroundColor(.white)
-                    )
-
-                VStack(alignment: .leading) {
-                    Text(track.name)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    Text(track.artistNames)
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.65))
-                }
-
-                Spacer()
-
-                if appSettings.spotifyTrackURI == track.uri && appSettings.spotifyEnabledForFocus {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.white)
-                }
-            }
-            .padding(12)
-            .background(Color.white.opacity(0.12))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .padding(14)
+            .background(Color.white.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .buttonStyle(.plain)
-    }
-
-    private func recentSpotifyRow(name: String, subtitle: String, uri: String) -> some View {
-        Button {
-            Haptics.impact(.light)
-
-            let manager = SpotifyManager.shared
-            let wasFocusPlaying = manager.isPlayingFocusTrack
-
-            appSettings.spotifyEnabledForFocus = true
-            appSettings.spotifyTrackURI = uri
-            appSettings.spotifyTrackName = name
-            appSettings.spotifyArtistName = subtitle
-
-            manager.setFocusTrack(uri: uri)
-
-            if wasFocusPlaying {
-                manager.startFocusPlayback(using: uri)
-            } else {
-                manager.playPreview(uri: uri)
-            }
-        } label: {
-            HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.12))
-                    .frame(width: 44, height: 44)
-                    .overlay(
-                        Image(systemName: "clock.arrow.circlepath")
-                            .foregroundColor(.white)
-                    )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(name)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    if !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.65))
-                    }
-                }
-
-                Spacer()
-
-                if appSettings.spotifyTrackURI == uri && appSettings.spotifyEnabledForFocus {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.white)
-                }
-            }
-            .padding(12)
-            .background(Color.white.opacity(0.14))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func selectedSpotifyRow(name: String, subtitle: String, uri: String) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(name)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
-
-                Text(subtitle)
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.65))
-            }
-
-            Spacer()
-
-            Button {
-                Haptics.impact(.light)
-
-                // Turning off Spotify → stop everything in SpotifyManager
-                appSettings.spotifyEnabledForFocus = false
-                appSettings.spotifyTrackURI = nil
-                appSettings.spotifyTrackName = nil
-                appSettings.spotifyArtistName = nil
-
-                SpotifyManager.shared.setFocusTrack(uri: nil)
-                SpotifyManager.shared.stopAll()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.white.opacity(0.6))
-            }
-        }
-        .padding(12)
-        .background(Color.white.opacity(0.18))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-
-    // MARK: - Search hook
-
-    private func performSearch() {
-        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty else {
-            webService.tracks = []
-            localError = nil
-            return
-        }
-
-        guard spotify.hasValidToken, SpotifyManager.shared.apiAccessToken != nil else {
-            localError = "Please connect Spotify first."
-            return
-        }
-
-        localError = nil
-        webService.searchTracks(query: q)
     }
 }
 

@@ -7,8 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EDC8FF462EE3568E00F74D0F /* SpotifyiOS in Frameworks */ = {isa = PBXBuildFile; productRef = EDC8FF452EE3568E00F74D0F /* SpotifyiOS */; };
+		ED1B0F072EE76EF7003D55B1 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED1B0F062EE76EF7003D55B1 /* WidgetKit.framework */; };
+		ED1B0F092EE76EF7003D55B1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED1B0F082EE76EF7003D55B1 /* SwiftUI.framework */; };
+		ED1B0F1A2EE76EF9003D55B1 /* FocusFlowWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		EDA85C0C2EEB807900D0B709 /* Focusflow_Logo.jpg in Resources */ = {isa = PBXBuildFile; fileRef = EDA85C0B2EEB807900D0B709 /* Focusflow_Logo.jpg */; };
+		EDEC8A6F2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg in Resources */ = {isa = PBXBuildFile; fileRef = EDEC8A6E2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		ED1B0F182EE76EF9003D55B1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EDC8FE182EDE12DF00F74D0F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ED1B0F032EE76EF7003D55B1;
+			remoteInfo = FocusFlowWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		EDC8FEED2EDF830500F74D0F /* Embed Foundation Extensions */ = {
@@ -17,6 +31,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				ED1B0F1A2EE76EF9003D55B1 /* FocusFlowWidgetsExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -24,10 +39,34 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FocusFlowWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		ED1B0F062EE76EF7003D55B1 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		ED1B0F082EE76EF7003D55B1 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		ED1B0F242EE77753003D55B1 /* FocusFlowWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusFlowWidgetsExtension.entitlements; sourceTree = "<group>"; };
+		EDA85C0B2EEB807900D0B709 /* Focusflow_Logo.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = Focusflow_Logo.jpg; sourceTree = "<group>"; };
 		EDC8FE202EDE12DF00F74D0F /* FocusFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FocusFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDEC8A6E2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg */ = {isa = PBXFileReference; lastKnownFileType = text; path = Focusflow_SVG_Logo.svg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		ED1B0F1E2EE76EF9003D55B1 /* Exceptions for "FocusFlowWidgets" folder in "FocusFlowWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = ED1B0F032EE76EF7003D55B1 /* FocusFlowWidgetsExtension */;
+		};
+		ED1B0F222EE77058003D55B1 /* Exceptions for "FocusFlow" folder in "FocusFlowWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/FocusSessionAttributes.swift,
+				Shared/FocusSessionBridge.swift,
+				Shared/FocusSessionStore.swift,
+				"Shared/Notifications+Names.swift",
+				Shared/ToggleFocusPauseIntent.swift,
+			);
+			target = ED1B0F032EE76EF7003D55B1 /* FocusFlowWidgetsExtension */;
+		};
 		EDC8FF332EE32B0000F74D0F /* Exceptions for "FocusFlow" folder in "FocusFlow" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -38,10 +77,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		ED1B0F0A2EE76EF7003D55B1 /* FocusFlowWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				ED1B0F1E2EE76EF9003D55B1 /* Exceptions for "FocusFlowWidgets" folder in "FocusFlowWidgetsExtension" target */,
+			);
+			path = FocusFlowWidgets;
+			sourceTree = "<group>";
+		};
 		EDC8FE222EDE12DF00F74D0F /* FocusFlow */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				EDC8FF332EE32B0000F74D0F /* Exceptions for "FocusFlow" folder in "FocusFlow" target */,
+				ED1B0F222EE77058003D55B1 /* Exceptions for "FocusFlow" folder in "FocusFlowWidgetsExtension" target */,
 			);
 			path = FocusFlow;
 			sourceTree = "<group>";
@@ -49,21 +97,43 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		ED1B0F012EE76EF7003D55B1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ED1B0F092EE76EF7003D55B1 /* SwiftUI.framework in Frameworks */,
+				ED1B0F072EE76EF7003D55B1 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDC8FE1D2EDE12DF00F74D0F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EDC8FF462EE3568E00F74D0F /* SpotifyiOS in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		ED1B0F052EE76EF7003D55B1 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				ED1B0F062EE76EF7003D55B1 /* WidgetKit.framework */,
+				ED1B0F082EE76EF7003D55B1 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		EDC8FE172EDE12DF00F74D0F = {
 			isa = PBXGroup;
 			children = (
+				EDA85C0B2EEB807900D0B709 /* Focusflow_Logo.jpg */,
+				EDEC8A6E2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg */,
+				ED1B0F242EE77753003D55B1 /* FocusFlowWidgetsExtension.entitlements */,
 				EDC8FE222EDE12DF00F74D0F /* FocusFlow */,
+				ED1B0F0A2EE76EF7003D55B1 /* FocusFlowWidgets */,
+				ED1B0F052EE76EF7003D55B1 /* Frameworks */,
 				EDC8FE212EDE12DF00F74D0F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -72,6 +142,7 @@
 			isa = PBXGroup;
 			children = (
 				EDC8FE202EDE12DF00F74D0F /* FocusFlow.app */,
+				ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,6 +150,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		ED1B0F032EE76EF7003D55B1 /* FocusFlowWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ED1B0F1B2EE76EF9003D55B1 /* Build configuration list for PBXNativeTarget "FocusFlowWidgetsExtension" */;
+			buildPhases = (
+				ED1B0F002EE76EF7003D55B1 /* Sources */,
+				ED1B0F012EE76EF7003D55B1 /* Frameworks */,
+				ED1B0F022EE76EF7003D55B1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				ED1B0F0A2EE76EF7003D55B1 /* FocusFlowWidgets */,
+			);
+			name = FocusFlowWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = FocusFlowWidgetsExtension;
+			productReference = ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		EDC8FE1F2EDE12DF00F74D0F /* FocusFlow */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EDC8FE2B2EDE12E100F74D0F /* Build configuration list for PBXNativeTarget "FocusFlow" */;
@@ -91,13 +184,13 @@
 			buildRules = (
 			);
 			dependencies = (
+				ED1B0F192EE76EF9003D55B1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				EDC8FE222EDE12DF00F74D0F /* FocusFlow */,
 			);
 			name = FocusFlow;
 			packageProductDependencies = (
-				EDC8FF452EE3568E00F74D0F /* SpotifyiOS */,
 			);
 			productName = FocusFlow;
 			productReference = EDC8FE202EDE12DF00F74D0F /* FocusFlow.app */;
@@ -113,6 +206,9 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					ED1B0F032EE76EF7003D55B1 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
 					EDC8FE1F2EDE12DF00F74D0F = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
@@ -128,7 +224,6 @@
 			mainGroup = EDC8FE172EDE12DF00F74D0F;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				EDC8FF442EE3568E00F74D0F /* XCRemoteSwiftPackageReference "ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EDC8FE212EDE12DF00F74D0F /* Products */;
@@ -136,21 +231,38 @@
 			projectRoot = "";
 			targets = (
 				EDC8FE1F2EDE12DF00F74D0F /* FocusFlow */,
+				ED1B0F032EE76EF7003D55B1 /* FocusFlowWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		EDC8FE1E2EDE12DF00F74D0F /* Resources */ = {
+		ED1B0F022EE76EF7003D55B1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EDC8FE1E2EDE12DF00F74D0F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDA85C0C2EEB807900D0B709 /* Focusflow_Logo.jpg in Resources */,
+				EDEC8A6F2EE8FD7B0099F4ED /* Focusflow_SVG_Logo.svg in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		ED1B0F002EE76EF7003D55B1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDC8FE1C2EDE12DF00F74D0F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -160,7 +272,79 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		ED1B0F192EE76EF9003D55B1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ED1B0F032EE76EF7003D55B1 /* FocusFlowWidgetsExtension */;
+			targetProxy = ED1B0F182EE76EF9003D55B1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		ED1B0F1C2EE76EF9003D55B1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FocusFlowWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 77BJCE9J3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FocusFlowWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusFlowWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.softcomputers.FocusFlow.FocusFlowWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		ED1B0F1D2EE76EF9003D55B1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FocusFlowWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 77BJCE9J3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FocusFlowWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusFlowWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.softcomputers.FocusFlow.FocusFlowWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		EDC8FE292EDE12E100F74D0F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -288,14 +472,16 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = FocusFlow/FocusFlow.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 77BJCE9J3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FocusFlow/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FocusFlow;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -306,16 +492,20 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.softcomputers.FocusFlow;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -325,14 +515,16 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = FocusFlow/FocusFlow.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 77BJCE9J3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FocusFlow/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FocusFlow;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -343,22 +535,35 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.softcomputers.FocusFlow;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		ED1B0F1B2EE76EF9003D55B1 /* Build configuration list for PBXNativeTarget "FocusFlowWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED1B0F1C2EE76EF9003D55B1 /* Debug */,
+				ED1B0F1D2EE76EF9003D55B1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		EDC8FE1B2EDE12DF00F74D0F /* Build configuration list for PBXProject "FocusFlow" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -378,25 +583,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		EDC8FF442EE3568E00F74D0F /* XCRemoteSwiftPackageReference "ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/spotify/ios-sdk.git";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		EDC8FF452EE3568E00F74D0F /* SpotifyiOS */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = EDC8FF442EE3568E00F74D0F /* XCRemoteSwiftPackageReference "ios-sdk" */;
-			productName = SpotifyiOS;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EDC8FE182EDE12DF00F74D0F /* Project object */;
 }

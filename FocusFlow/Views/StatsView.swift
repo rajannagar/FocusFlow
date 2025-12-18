@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Glass card container
 
@@ -9,89 +10,58 @@ private struct GlassCard<Content: View>: View {
         content()
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color.white.opacity(0.18),
-                                Color.white.opacity(0.06)
+                                Color.white.opacity(0.20),
+                                Color.white.opacity(0.08)
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .stroke(Color.white.opacity(0.14), lineWidth: 1)
                     )
             )
     }
 }
 
-// MARK: - Session grouping model
-
-private struct SessionGroup: Identifiable {
-    let id = UUID()
-    let title: String
-    let sessions: [FocusSession]
-}
-
-// MARK: - Alerts
-
-private enum StatsAlertKind {
-    case clearDay
-    case clearHistory
-}
-
-private struct StatsAlert: Identifiable {
-    let id = UUID()
-    let kind: StatsAlertKind
-}
-
-// MARK: - Main Stats View
+// MARK: - Main Stats View (iOS 18+)
 
 struct StatsView: View {
     @ObservedObject private var stats = StatsManager.shared
     @ObservedObject private var appSettings = AppSettings.shared
+
+    // UI State
     @State private var showingGoalSheet = false
 
-    /// 0 = this week, 1 = last week, etc.
-    @State private var weekOffset: Int = 0
+    // Month navigation (arrows)
+    @State private var monthOffset: Int = 0
 
-    // header icon animation
-    @State private var iconPulse = false
-
-    // hero ring animation
-    @State private var todayProgressAnimated: Double = 0
-    @State private var todayValuePulse: Bool = false
-
-    // selected day for drill-down (nil = today)
+    // Selected day (nil = default)
     @State private var selectedDay: Date? = nil
 
-    // alerts
-    @State private var activeAlert: StatsAlert?
+    // Trigger to force the chart to scroll back to "Today"
+    @State private var resetChartTrigger = UUID()
+
+    // Header icon animation
+    @State private var iconPulse = false
 
     private let calendar = Calendar.current
 
+    // ✅ Force Sunday → Saturday everywhere (stable regardless of locale)
+    private var sundayCalendar: Calendar {
+        var c = calendar
+        c.firstWeekday = 1 // Sunday
+        return c
+    }
+
+    private var theme: AppTheme { appSettings.selectedTheme }
+
     // MARK: - Formatters
-
-    private static let dayLabelFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return f
-    }()
-
-    private static let weekLabelFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return f
-    }()
-
-    private static let weekdayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "E"
-        return f
-    }()
 
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
@@ -99,141 +69,169 @@ struct StatsView: View {
         return f
     }
 
-    // MARK: - Weekly helpers
+    // MARK: - Date helpers
 
-    private func weekInterval(for offset: Int) -> DateInterval? {
-        let baseDate = calendar.date(
-            byAdding: .weekOfYear,
-            value: -offset,
-            to: Date()
-        ) ?? Date()
+    private func startOfDay(_ d: Date) -> Date { sundayCalendar.startOfDay(for: d) }
 
-        return calendar.dateInterval(of: .weekOfYear, for: baseDate)
+    private func dayInterval(for day: Date) -> DateInterval {
+        let start = startOfDay(day)
+        let end = sundayCalendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86400)
+        return DateInterval(start: start, end: end)
     }
 
-    private func statsForWeek(offset: Int) -> [DailyFocusStat] {
-        guard let interval = weekInterval(for: offset) else { return [] }
-
-        var result: [DailyFocusStat] = []
-        for dayIndex in 0..<7 {
-            guard let dayStart = calendar.date(byAdding: .day, value: dayIndex, to: interval.start),
-                  let nextDay = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
-                continue
-            }
-
-            let total = stats.sessions
-                .filter { $0.date >= dayStart && $0.date < nextDay }
-                .reduce(0) { $0 + $1.duration }
-
-            result.append(DailyFocusStat(date: dayStart, totalDuration: total))
-        }
-
-        return result
+    // Returns the full Month interval (e.g., Dec 1 - Jan 1)
+    private func monthInterval(offset: Int) -> DateInterval? {
+        let base = sundayCalendar.date(byAdding: .month, value: -offset, to: Date()) ?? Date()
+        let comps = sundayCalendar.dateComponents([.year, .month], from: base)
+        guard let start = sundayCalendar.date(from: comps) else { return nil }
+        let end = sundayCalendar.date(byAdding: .month, value: 1, to: start) ?? start.addingTimeInterval(30 * 86400)
+        return DateInterval(start: start, end: end)
     }
 
-    private var currentWeekStats: [DailyFocusStat] {
-        statsForWeek(offset: weekOffset)
+    // The currently visible Month
+    private var activeMonthInterval: DateInterval {
+        return monthInterval(offset: monthOffset) ?? DateInterval(start: Date(), duration: 30 * 86400)
     }
 
-    private var currentWeekLabel: String {
-        guard let interval = weekInterval(for: weekOffset) else { return "This week" }
+    private var isCurrentMonth: Bool {
+        return sundayCalendar.isDate(Date(), equalTo: activeMonthInterval.start, toGranularity: .month)
+    }
 
-        let start = Self.weekLabelFormatter.string(from: interval.start)
-        let endDate = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
-        let end = Self.weekLabelFormatter.string(from: endDate)
+    // MARK: - Sessions (source of truth)
 
-        if weekOffset == 0 {
-            return "This week • \(start) – \(end)"
-        } else {
-            return "\(start) – \(end)"
+    private var allSessions: [FocusSession] {
+        stats.sessions.sorted { $0.date > $1.date }
+    }
+
+    private func sessions(in interval: DateInterval) -> [FocusSession] {
+        allSessions.filter { $0.date >= interval.start && $0.date < interval.end }
+    }
+
+    private func total(in interval: DateInterval) -> TimeInterval {
+        sessions(in: interval).reduce(0) { $0 + $1.duration }
+    }
+
+    // MARK: - Selected day (default behavior)
+
+    private var selectedDayResolved: Date {
+        // ✅ If user explicitly selected a day, always respect it
+        if let sd = selectedDay { return startOfDay(sd) }
+
+        // ✅ Default: If Today is in the visible month, select Today.
+        // Otherwise, select the first day of that month.
+        let today = startOfDay(Date())
+        if today >= activeMonthInterval.start && today < activeMonthInterval.end {
+            return today
+        }
+        return startOfDay(activeMonthInterval.start)
+    }
+
+    // ✅ Newest → Oldest
+    private var selectedDaySessionsAll: [FocusSession] {
+        let di = dayInterval(for: selectedDayResolved)
+        return allSessions
+            .filter { $0.date >= di.start && $0.date < di.end }
+            .sorted { $0.date > $1.date }
+    }
+
+    private var selectedDayTotalAll: TimeInterval {
+        selectedDaySessionsAll.reduce(0) { $0 + $1.duration }
+    }
+
+    private var selectedDayAvgMinutes: Int {
+        guard !selectedDaySessionsAll.isEmpty else { return 0 }
+        return Int(round((selectedDayTotalAll / Double(selectedDaySessionsAll.count)) / 60.0))
+    }
+
+    private var goalSeconds: TimeInterval { TimeInterval(stats.dailyGoalMinutes * 60) }
+
+    // ✅ Top summary follows selected day
+    private var topSummaryTitle: String {
+        if sundayCalendar.isDateInToday(selectedDayResolved) { return "Today" }
+        if sundayCalendar.isDateInYesterday(selectedDayResolved) { return "Yesterday" }
+        return selectedDayResolved.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private var topSummaryPercent: Int {
+        let denom = max(1.0, Double(stats.dailyGoalMinutes) * 60.0)
+        return Int((selectedDayTotalAll / denom) * 100.0)
+    }
+
+    private var currentStreak: Int {
+        let daysWithFocus = Set(allSessions.filter({ $0.duration > 0 }).map({ startOfDay($0.date) }))
+        guard !daysWithFocus.isEmpty else { return 0 }
+        var current = 0
+        var cursor = startOfDay(Date())
+        while daysWithFocus.contains(cursor) {
+            current += 1
+            guard let prev = sundayCalendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = prev
+        }
+        return current
+    }
+
+    // MARK: - Point Generation (For the Chart)
+
+    struct TrendPoint: Identifiable {
+        let id = UUID()
+        let date: Date
+        let total: TimeInterval
+        let prevTotal: TimeInterval
+    }
+
+    private func generateTrendPoints(for interval: DateInterval) -> [TrendPoint] {
+        let prevIntervalStart = sundayCalendar.date(byAdding: .weekOfYear, value: -1, to: interval.start) ?? interval.start
+
+        return (0..<7).compactMap { i in
+            guard let d = sundayCalendar.date(byAdding: .day, value: i, to: interval.start),
+                  let p = sundayCalendar.date(byAdding: .day, value: i, to: prevIntervalStart) else { return nil }
+
+            let t = total(in: dayInterval(for: d))
+            let pr = total(in: dayInterval(for: p))
+            return TrendPoint(date: startOfDay(d), total: t, prevTotal: pr)
         }
     }
 
-    /// Weekly insight
-    private var weeklyInsightText: String {
-        let totals = currentWeekStats.map { $0.totalDuration }
-        let weekTotal = totals.reduce(0, +)
+    // MARK: - Distribution (✅ now based on TIME, not count)
 
-        guard weekTotal > 0 else {
-            return "No focused time logged this week yet."
-        }
-
-        // best day this week
-        let bestStat = currentWeekStats.max { $0.totalDuration < $1.totalDuration }
-        let bestDay = bestStat.map { shortWeekday(for: $0.date) } ?? "—"
-
-        // compare vs previous week
-        let previousTotals = statsForWeek(offset: weekOffset + 1).map { $0.totalDuration }
-        let previousTotal = previousTotals.reduce(0, +)
-
-        var comparison = ""
-        if previousTotal > 0 {
-            let diff = (weekTotal - previousTotal) / previousTotal
-            let percent = Int(abs(diff) * 100)
-
-            if percent >= 10 {
-                if diff > 0 {
-                    comparison = "up \(percent)% vs last week."
-                } else {
-                    comparison = "down \(percent)% vs last week."
-                }
-            } else {
-                comparison = "about the same as last week."
+    enum Bucket: String, CaseIterable, Identifiable {
+        case morning, afternoon, evening
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .morning: return "Morning"
+            case .afternoon: return "Afternoon"
+            case .evening: return "Evening"
             }
         }
-
-        return "You’ve focused for \(weekTotal.asReadableDuration) so far, mostly on \(bestDay), \(comparison)"
-            .trimmingCharacters(in: .whitespaces)
     }
 
-    // MARK: - Grouped sessions helper (for Recent sessions list)
+    private func bucket(for hour: Int) -> Bucket {
+        if hour < 12 { return .morning }
+        if hour < 17 { return .afternoon }
+        return .evening
+    }
 
-    private var groupedSessions: [SessionGroup] {
-        let sorted = stats.sessions.sorted { $0.date > $1.date }
-        guard !sorted.isEmpty else { return [] }
+    private var distribution: [(Bucket, TimeInterval)] {
+        let intervalSessions = sessions(in: activeMonthInterval)
+        var dict: [Bucket: TimeInterval] = [.morning: 0, .afternoon: 0, .evening: 0]
 
-        var groups: [String: [FocusSession]] = [:]
-
-        for session in sorted {
-            let dayStart = calendar.startOfDay(for: session.date)
-
-            let title: String
-            if calendar.isDateInToday(dayStart) {
-                title = "Today"
-            } else if calendar.isDateInYesterday(dayStart) {
-                title = "Yesterday"
-            } else {
-                title = Self.dayLabelFormatter.string(from: dayStart)
-            }
-
-            groups[title, default: []].append(session)
+        for s in intervalSessions {
+            let hour = sundayCalendar.component(.hour, from: s.date)
+            let b = bucket(for: hour)
+            dict[b, default: 0] += s.duration
         }
 
-        // Order: Today, Yesterday, then dates descending
-        var result: [SessionGroup] = []
+        return Bucket.allCases.map { ($0, dict[$0, default: 0]) }
+    }
 
-        if let today = groups["Today"] {
-            result.append(SessionGroup(title: "Today", sessions: today))
-        }
-        if let yesterday = groups["Yesterday"] {
-            result.append(SessionGroup(title: "Yesterday", sessions: yesterday))
-        }
+    // MARK: - Header labels
 
-        let otherKeys = groups.keys
-            .filter { $0 != "Today" && $0 != "Yesterday" }
-            .sorted { lhs, rhs in
-                guard let leftDate = Self.dayLabelFormatter.date(from: lhs),
-                      let rightDate = Self.dayLabelFormatter.date(from: rhs) else { return lhs > rhs }
-                return leftDate > rightDate
-            }
-
-        for key in otherKeys {
-            if let sessions = groups[key] {
-                result.append(SessionGroup(title: key, sessions: sessions))
-            }
-        }
-
-        return result
+    private var subtitleText: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        let label = f.string(from: activeMonthInterval.start)
+        return monthOffset == 0 ? "This Month • \(label)" : label
     }
 
     // MARK: - Body
@@ -241,12 +239,10 @@ struct StatsView: View {
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
-            let theme = appSettings.selectedTheme
             let accentPrimary = theme.accentPrimary
             let accentSecondary = theme.accentSecondary
 
             ZStack {
-                // Background gradient
                 LinearGradient(
                     gradient: Gradient(colors: theme.backgroundColors),
                     startPoint: .topLeading,
@@ -254,7 +250,6 @@ struct StatsView: View {
                 )
                 .ignoresSafeArea()
 
-                // Soft halo blobs – match Focus & Habits
                 Circle()
                     .fill(accentPrimary.opacity(0.5))
                     .blur(radius: 90)
@@ -269,832 +264,660 @@ struct StatsView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 18) {
-                        // Header
                         header
                             .padding(.horizontal, 22)
                             .padding(.top, 18)
 
-                        if stats.sessions.isEmpty {
-                            emptyState
-                                .padding(.horizontal, 22)
-                                .padding(.top, 4)
-                        } else {
-                            dayHeroCard
-                                .padding(.horizontal, 22)
+                        summaryRow
+                            .padding(.horizontal, 22)
 
-                            weeklyCard
-                                .padding(.horizontal, 22)
+                        thisWeekCard
+                            .padding(.horizontal, 22)
 
-                            dayBreakdownCard
-                                .padding(.horizontal, 22)
+                        timeDistributionCard
+                            .padding(.horizontal, 22)
 
-                            streaksCard
-                                .padding(.horizontal, 22)
-
-                            sessionsCardGrouped
-                                .padding(.horizontal, 22)
-                        }
-
-                        Spacer(minLength: 24)
+                        selectedDayCard
+                            .padding(.horizontal, 22)
+                            .padding(.bottom, 120)
                     }
-                    .padding(.bottom, 24)
                 }
-                .scrollBounceBehavior(.basedOnSize)
             }
         }
-        .alert(item: $activeAlert) { alert in
-            switch alert.kind {
-            case .clearDay:
-                return Alert(
-                    title: Text("Clear this day?"),
-                    message: Text("This removes all focus sessions for the selected day from your stats. This can’t be undone."),
-                    primaryButton: .destructive(Text("Clear day")) {
-                        simpleTap()
-                        let day = selectedDay ?? calendar.startOfDay(for: Date())
-                        let toDelete = sessions(on: day)
-                        toDelete.forEach { stats.deleteSession($0) }
-                        if sessions(on: day).isEmpty {
-                            selectedDay = nil
-                        }
-                    },
-                    secondaryButton: .cancel()
-                )
-
-            case .clearHistory:
-                return Alert(
-                    title: Text("Delete all recent sessions?"),
-                    message: Text("This removes all recorded sessions from your stats and streaks. This can’t be undone."),
-                    primaryButton: .destructive(Text("Delete all")) {
-                        simpleTap()
-                        stats.clearAll()
-                        selectedDay = nil
-                    },
-                    secondaryButton: .cancel()
-                )
-            }
+        .onAppear {
+            iconPulse = true
+            selectedDay = nil
+        }
+        .onChange(of: monthOffset) { _, _ in
+            selectedDay = nil
         }
         .sheet(isPresented: $showingGoalSheet) {
             GoalSheet(goalMinutes: $stats.dailyGoalMinutes)
         }
-        .onAppear {
-            iconPulse = true
-        }
     }
 
-    // MARK: - Header
+    // MARK: - Header (✅ removed delete/trash)
 
     private var header: some View {
         HStack(spacing: 12) {
-            // LEFT: Title + subtitle (match Focus / Habits)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .imageScale(.small)
-                        .foregroundColor(.white.opacity(0.9))
+                    Image("Focusflow_Logo")
+                        .resizable()
+                        .renderingMode(.original)
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
+                        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
                         .scaleEffect(iconPulse ? 1.06 : 0.94)
-                        .animation(
-                            .easeInOut(duration: 2.4)
-                                .repeatForever(autoreverses: true),
-                            value: iconPulse
-                        )
+                        .animation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true), value: iconPulse)
 
                     Text("Stats")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.system(size: 22, weight: .semibold))
                         .foregroundColor(.white)
                 }
 
-                Text("Your focus story, in motion.")
+                Text(subtitleText)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white.opacity(0.85))
             }
 
             Spacer()
 
-            // RIGHT: Goal + Clear-day – icon squares like other tabs
-            HStack(spacing: 10) {
-                Button {
-                    simpleTap()
-                    showingGoalSheet = true
-                } label: {
-                    Image(systemName: "target")
-                        .imageScale(.medium)
+            // Keep goal only
+            Button {
+                Haptics.impact(.light)
+                showingGoalSheet = true
+            } label: {
+                Image(systemName: "target")
+                    .imageScale(.medium)
+                    .foregroundColor(.white)
+                    .frame(width: 34, height: 34)
+                    .background(Color.white.opacity(0.20))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Summary
+
+    private var summaryRow: some View {
+        GlassCard {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(topSummaryTitle)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.9))
+
+                    Text(selectedDayTotalAll > 0 ? selectedDayTotalAll.asReadableDuration : "No focus logged")
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
-                        .frame(width: 30, height: 30)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .buttonStyle(.plain)
 
-                if !stats.sessions.isEmpty {
-                    Button {
-                        simpleTap()
-                        activeAlert = StatsAlert(kind: .clearDay)
-                    } label: {
-                        Image(systemName: "trash")
-                            .imageScale(.medium)
-                            .foregroundColor(.white)
-                            .frame(width: 30, height: 30)
-                            .background(Color.white.opacity(0.18))
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    HStack(spacing: 8) {
+                        StatPill(icon: "checkmark.circle.fill", text: "\(selectedDaySessionsAll.count) sessions", tint: .white.opacity(0.8))
+                        StatPill(icon: "flame.fill", text: "\(currentStreak) streak", tint: .white.opacity(0.8))
                     }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        GlassCard {
-            VStack(spacing: 12) {
-                Image(systemName: "chart.bar.doc.horizontal")
-                    .font(.system(size: 36))
-                    .foregroundColor(.white.opacity(0.9))
-
-                Text("No focus sessions yet")
-                    .font(.headline)
-                    .foregroundColor(.white)
-
-                Text("Start a focus timer to see your stats here.")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    // MARK: - Day hero card (animated, dynamic, driven by selectedDay)
-
-    private var dayHeroCard: some View {
-        let day = selectedDay ?? calendar.startOfDay(for: Date())
-        let daySessions = sessions(on: day)
-        let totalDuration = daySessions.reduce(0) { $0 + $1.duration }
-
-        let goalMinutes = stats.dailyGoalMinutes
-        let goalSeconds = TimeInterval(goalMinutes * 60)
-        let targetProgress = goalSeconds > 0 ? min(totalDuration / goalSeconds, 1.0) : 0.0
-
-        // minutes as whole number for display
-        let totalMinutesInt = Int(round(totalDuration / 60))
-        let digits = String(max(totalMinutesInt, 0)).count
-
-        let numberFontSize: CGFloat
-        switch digits {
-        case 0...2:
-            numberFontSize = 36
-        case 3:
-            numberFontSize = 30
-        default:
-            numberFontSize = 26
-        }
-
-        let isToday = calendar.isDateInToday(day)
-        let titleText = isToday ? "Today" : shortWeekday(for: day)
-
-        return GlassCard {
-            HStack(spacing: 20) {
-                ZStack {
-                    // soft glow behind
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    appSettings.selectedTheme.accentPrimary.opacity(0.8),
-                                    appSettings.selectedTheme.accentSecondary.opacity(0.0)
-                                ]),
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 80
-                            )
-                        )
-                        .blur(radius: 18)
-                        .opacity(0.9)
-
-                    // background ring
-                    Circle()
-                        .stroke(Color.white.opacity(0.15), lineWidth: 16)
-
-                    // animated progress ring
-                    Circle()
-                        .trim(from: 0, to: todayProgressAnimated)
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [
-                                    appSettings.selectedTheme.accentPrimary,
-                                    appSettings.selectedTheme.accentSecondary,
-                                    appSettings.selectedTheme.accentPrimary
-                                ]),
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 16, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-
-                    // inner numbers – number + unit so it never truncates
-                    VStack(spacing: 6) {
-                        HStack(alignment: .firstTextBaseline, spacing: 2) {
-                            Text("\(totalMinutesInt)")
-                                .font(.system(size: numberFontSize, weight: .semibold))
-                                .foregroundColor(.white)
-                                .scaleEffect(todayValuePulse ? 1.05 : 1.0)
-                                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: todayValuePulse)
-
-                            Text("min")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.85))
-                        }
-
-                        Text(goalMinutes > 0 ? "of \(goalMinutes) min goal" : "No daily goal set")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.75))
-
-                        if goalMinutes > 0 {
-                            Text("\(Int(targetProgress * 100))% of goal")
-                                .font(.caption2.weight(.medium))
-                                .foregroundColor(.white.opacity(0.7))
-                        } else {
-                            Text(daySessions.isEmpty
-                                 ? "No focus logged this day."
-                                 : "\(daySessions.count) session\(daySessions.count == 1 ? "" : "s")")
-                                .font(.caption2.weight(.medium))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                    }
-                }
-                .frame(width: 130, height: 130)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 6) {
-                        Image(systemName: isToday ? "sun.max.fill" : "calendar")
-                            .imageScale(.medium)
-                        Text(titleText)
-                            .font(.headline)
-                    }
-                    .foregroundColor(.white.opacity(0.9))
-
-                    if totalDuration == 0 {
-                        Text(isToday
-                             ? "No focus yet — start a session to light up your day."
-                             : "No focused time logged on this day.")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                            .fixedSize(horizontal: false, vertical: true)
-                    } else {
-                        Text(isToday
-                             ? "Nice. You’ve already logged \(totalDuration.asReadableDuration) of focused time."
-                             : "You focused for \(totalDuration.asReadableDuration) on this day.")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                Spacer(minLength: 0)
-            }
-        }
-        .onAppear {
-            todayProgressAnimated = 0
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.9)) {
-                todayProgressAnimated = targetProgress
-            }
-        }
-        .onChange(of: targetProgress) { _, newValue in
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.9)) {
-                todayProgressAnimated = newValue
-            }
-            todayValuePulse.toggle()
-        }
-        .onChange(of: selectedDay) { _, _ in
-            let goalSeconds = TimeInterval(stats.dailyGoalMinutes * 60)
-            let newTarget = goalSeconds > 0 ? min(totalDuration / goalSeconds, 1.0) : 0.0
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.9)) {
-                todayProgressAnimated = newTarget
-            }
-            todayValuePulse.toggle()
-        }
-    }
-
-    // MARK: - Weekly card (tappable bars)
-
-    private var weeklyCard: some View {
-        let goalSeconds = TimeInterval(stats.dailyGoalMinutes * 60)
-        let totals = currentWeekStats.map { $0.totalDuration }
-        let weekTotal = totals.reduce(0, +)
-        let goalDays = goalSeconds > 0 ? totals.filter { $0 >= goalSeconds }.count : 0
-        let maxBase = max(goalSeconds, totals.max() ?? 0, 60) // at least 1 min
-        let barHeight: CGFloat = 90
-
-        return GlassCard {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header + week navigation
-                HStack {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar")
-                            .imageScale(.medium)
-                            .foregroundColor(appSettings.selectedTheme.accentPrimary)
-                        Text("Week overview")
-                            .font(.headline)
-                            .foregroundColor(.white.opacity(0.9))
-                    }
-
-                    Spacer()
-
-                    HStack(spacing: 4) {
-                        Button {
-                            weekOffset += 1
-                            simpleTap()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 13, weight: .semibold))
-                                .padding(6)
-                                .background(Color.white.opacity(0.10))
-                                .clipShape(Circle())
-                        }
-
-                        Button {
-                            weekOffset = max(weekOffset - 1, 0)
-                            simpleTap()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 13, weight: .semibold))
-                                .padding(6)
-                                .background(Color.white.opacity(weekOffset == 0 ? 0.04 : 0.10))
-                                .clipShape(Circle())
-                        }
-                        .disabled(weekOffset == 0)
-                    }
-                }
-
-                Text(currentWeekLabel)
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.6))
-
-                // Insight line
-                Text(weeklyInsightText)
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.75))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                // Summary chips
-                HStack(spacing: 8) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "target")
-                            .imageScale(.small)
-                        Text("Goal days \(goalDays)/7")
-                    }
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.09))
-                    .clipShape(Capsule())
-
-                    HStack(spacing: 6) {
-                        Image(systemName: "clock")
-                            .imageScale(.small)
-                        Text(weekTotal.asReadableDuration)
-                    }
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.09))
-                    .clipShape(Capsule())
-                }
-
-                // Bars (tappable)
-                HStack(alignment: .bottom, spacing: 12) {
-                    ForEach(currentWeekStats) { stat in
-                        let dayDate = calendar.startOfDay(for: stat.date)
-
-                        let isSelected: Bool = {
-                            if let selectedDay {
-                                return calendar.isDate(selectedDay, inSameDayAs: dayDate)
-                            } else {
-                                return weekOffset == 0 && calendar.isDateInToday(dayDate)
-                            }
-                        }()
-
-                        Button {
-                            simpleTap()
-                            selectedDay = dayDate
-                        } label: {
-                            VStack(spacing: 6) {
-                                ZStack(alignment: .bottom) {
-                                    // Track
-                                    RoundedRectangle(cornerRadius: 999, style: .continuous)
-                                        .fill(Color.white.opacity(0.10))
-                                        .frame(width: 18, height: barHeight)
-
-                                    // Fill
-                                    RoundedRectangle(cornerRadius: 999, style: .continuous)
-                                        .fill(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    appSettings.selectedTheme.accentPrimary,
-                                                    appSettings.selectedTheme.accentSecondary
-                                                ]),
-                                                startPoint: .bottom,
-                                                endPoint: .top
-                                            )
-                                        )
-                                        .frame(
-                                            width: 18,
-                                            height: heightForBar(
-                                                duration: stat.totalDuration,
-                                                maxBase: maxBase,
-                                                barHeight: barHeight
-                                            )
-                                        )
-                                        .opacity(stat.totalDuration > 0 ? 1.0 : 0.0)
-                                        .animation(
-                                            .spring(response: 0.5, dampingFraction: 0.85),
-                                            value: stat.totalDuration
-                                        )
-
-                                    // Goal badge at top if goal reached
-                                    if goalSeconds > 0 && stat.totalDuration >= goalSeconds {
-                                        VStack {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .font(.system(size: 12, weight: .semibold))
-                                                .foregroundColor(Color.green.opacity(0.95))
-                                                .offset(y: -4)
-                                            Spacer()
-                                        }
-                                    }
-                                }
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 999, style: .continuous)
-                                        .stroke(
-                                            Color.white.opacity(isSelected ? 0.9 : 0.0),
-                                            lineWidth: isSelected ? 1.5 : 0
-                                        )
-                                )
-
-                                // Day label
-                                Text(shortWeekday(for: stat.date))
-                                    .font(.caption2)
-                                    .foregroundColor(
-                                        isSelected
-                                        ? appSettings.selectedTheme.accentPrimary
-                                        : .white.opacity(0.7)
-                                    )
-
-                                // Minutes for that day
-                                Text(stat.totalDuration.asReadableDuration)
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.6))
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.plain)
-                        .contentShape(Rectangle())
-                    }
-                }
-            }
-            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: weekOffset)
-        }
-    }
-
-    private func heightForBar(duration: TimeInterval,
-                              maxBase: TimeInterval,
-                              barHeight: CGFloat) -> CGFloat {
-        guard maxBase > 0 else { return 0 }
-        guard duration > 0 else { return 0 }
-        let ratio = duration / maxBase
-        return max(CGFloat(ratio) * barHeight, 4)
-    }
-
-    private func shortWeekday(for date: Date) -> String {
-        Self.weekdayFormatter.string(from: date)
-    }
-
-    // MARK: - Day breakdown (sessions + avg)
-
-    private var dayBreakdownCard: some View {
-        let day = selectedDay ?? calendar.startOfDay(for: Date())
-        let daySessions = sessions(on: day)
-        let totalDuration = daySessions.reduce(0) { $0 + $1.duration }
-        let avgSeconds = daySessions.isEmpty ? 0 : totalDuration / Double(daySessions.count)
-        let avgMinutesInt = Int(round(avgSeconds / 60))
-
-        let label = dayDisplayLabel(for: day)
-
-        return GlassCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Day breakdown")
-                            .font(.headline)
-                            .foregroundColor(.white.opacity(0.9))
-
-                        Text(label)
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.65))
-                    }
-
-                    Spacer()
-                }
-
-                HStack(spacing: 24) {
-                    HStack(spacing: 10) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white.opacity(0.14))
-                                .frame(width: 30, height: 30)
-                            Image(systemName: "clock.badge.checkmark")
-                                .imageScale(.medium)
-                                .foregroundColor(.white.opacity(0.9))
-                        }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(daySessions.count)")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.white)
-                            Text(daySessions.count == 1 ? "session" : "sessions")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                    }
-
-                    Spacer()
-
-                    HStack(spacing: 10) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white.opacity(0.14))
-                                .frame(width: 30, height: 30)
-                            Image(systemName: "gauge")
-                                .imageScale(.medium)
-                                .foregroundColor(.white.opacity(0.9))
-                        }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(avgMinutesInt == 0 ? "—" : "\(avgMinutesInt)")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.white)
-                            Text("min avg")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func dayDisplayLabel(for date: Date) -> String {
-        if calendar.isDateInToday(date) {
-            return "Today"
-        } else if calendar.isDateInYesterday(date) {
-            return "Yesterday"
-        } else {
-            return Self.dayLabelFormatter.string(from: date)
-        }
-    }
-
-    // MARK: - Streaks card
-
-    private var streaksCard: some View {
-        GlassCard {
-            HStack(spacing: 24) {
-                HStack(spacing: 8) {
-                    Image(systemName: "flame.fill")
-                        .foregroundColor(Color(red: 1.0, green: 0.55, blue: 0.40))
-                        .imageScale(.medium)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Current streak")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.65))
-                        Text("\(streaks.current) \(streaks.current == 1 ? "day" : "days")")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
+                    .padding(.top, 4)
                 }
 
                 Spacer()
 
-                HStack(spacing: 8) {
-                    Image(systemName: "trophy.fill")
-                        .foregroundColor(Color(red: 1.0, green: 0.85, blue: 0.45))
-                        .imageScale(.medium)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Best streak")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.65))
-                        Text("\(streaks.best) \(streaks.best == 1 ? "day" : "days")")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                }
+                StatsDonutRing(
+                    progress: stats.dailyGoalMinutes > 0 ? min(selectedDayTotalAll / max(1, goalSeconds), 1.0) : 0,
+                    accentA: theme.accentPrimary,
+                    accentB: theme.accentSecondary,
+                    centerTop: stats.dailyGoalMinutes > 0 ? "\(max(0, topSummaryPercent))%" : "--",
+                    centerBottom: "Goal"
+                )
             }
         }
     }
 
-    private var streaks: (current: Int, best: Int) {
-        let daysWithFocus: Set<Date> = Set(
-            stats.sessions
-                .filter { $0.duration > 0 }
-                .map { calendar.startOfDay(for: $0.date) }
-        )
+    // MARK: - This Week Card
 
-        if daysWithFocus.isEmpty {
-            return (0, 0)
-        }
-
-        // current streak
-        var current = 0
-        var cursor = calendar.startOfDay(for: Date())
-        while daysWithFocus.contains(cursor) {
-            current += 1
-            guard let prev = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
-            cursor = prev
-        }
-
-        // best streak
-        let sorted = daysWithFocus.sorted()
-        var best = 1
-        var temp = 1
-
-        for i in 1..<sorted.count {
-            if let prev = calendar.date(byAdding: .day, value: -1, to: sorted[i]),
-               calendar.isDate(prev, inSameDayAs: sorted[i - 1]) {
-                temp += 1
-            } else {
-                best = max(best, temp)
-                temp = 1
-            }
-        }
-        best = max(best, temp)
-
-        return (current, best)
-    }
-
-    // MARK: - Recent sessions card (List + swipe, tight group spacing)
-
-    private var sessionsCardGrouped: some View {
-        let groups = groupedSessions
-
-        // Estimate height so the List gets real space instead of collapsing to 0
-        let rowCount = groups.reduce(0) { $0 + $1.sessions.count }
-        let estimatedHeight = max(CGFloat(rowCount) * 68 + CGFloat(groups.count) * 16, 120)
-
-        return GlassCard {
+    private var thisWeekCard: some View {
+        GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                // Header row
                 HStack {
-                    Label {
-                        Text("Recent sessions")
-                            .font(.headline)
-                    } icon: {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .imageScale(.medium)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("This Week")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.95))
+
+                        Text("Swipe to view weeks. Tap a day.")
+                            .font(.system(size: 11))
+                            .foregroundColor(.white.opacity(0.6))
                     }
-                    .foregroundColor(.white.opacity(0.9))
 
                     Spacer()
 
-                    if !groups.isEmpty {
+                    HStack(spacing: 12) {
                         Button {
-                            simpleTap()
-                            activeAlert = StatsAlert(kind: .clearHistory)
+                            Haptics.impact(.light)
+                            withAnimation {
+                                monthOffset = 0
+                                selectedDay = nil
+                                resetChartTrigger = UUID()
+                            }
                         } label: {
-                            Image(systemName: "trash")
-                                .imageScale(.small)
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(.white)
-                                .padding(6)
-                                .background(Color.white.opacity(0.18))
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .padding(8)
+                                .background(Color.white.opacity(0.16))
+                                .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
+
+                        HStack(spacing: 6) {
+                            Button {
+                                Haptics.impact(.light)
+                                monthOffset += 1
+                                selectedDay = nil
+                            } label: {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .padding(8)
+                                    .background(Color.white.opacity(0.16))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                Haptics.impact(.light)
+                                monthOffset = max(monthOffset - 1, 0)
+                                selectedDay = nil
+                            } label: {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .padding(8)
+                                    .background(Color.white.opacity(monthOffset == 0 ? 0.08 : 0.16))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(monthOffset == 0)
+                        }
                     }
                 }
 
-                if groups.isEmpty {
-                    Text("No recent sessions to show.")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.6))
-                } else {
-                    List {
-                        ForEach(groups) { group in
-                            // Compact header row instead of a Section header
-                            Text(group.title)
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white.opacity(0.7))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                                .listRowInsets(
-                                    EdgeInsets(top: 10, leading: 0, bottom: 2, trailing: 0)
-                                )
+                Text(selectedDayResolved.formatted(date: .abbreviated, time: .omitted))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.85))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.14))
+                    .clipShape(Capsule())
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                            ForEach(group.sessions) { session in
-                                let quality = qualityTag(for: session.duration)
-
-                                HStack(spacing: 12) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(session.sessionName ?? "Focus Session")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.white)
-
-                                        Text(timeFormatter.string(from: session.date))
-                                            .font(.caption)
-                                            .foregroundColor(.white.opacity(0.6))
-                                    }
-
-                                    Spacer()
-
-                                    Text(session.duration.asReadableDuration)
-                                        .font(.subheadline)
-                                        .foregroundColor(appSettings.selectedTheme.accentPrimary)
-
-                                    if let quality {
-                                        Text(quality.label)
-                                            .font(.caption2.weight(.semibold))
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(quality.color.opacity(0.16))
-                                            .foregroundColor(quality.color.opacity(0.95))
-                                            .clipShape(Capsule())
-                                    }
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .fill(Color.white.opacity(0.06))
-                                )
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                                .listRowInsets(
-                                    EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0)
-                                )
-                                .contentShape(Rectangle())
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        simpleTap()
-                                        // Hard delete so stats & streaks stay in sync
-                                        stats.deleteSession(session)
-                                    } label: {
-                                        Image(systemName: "trash")
-                                    }
-                                }
-                            }
-                        }
+                MonthlyPagedWeekChart(
+                    accentA: theme.accentPrimary,
+                    accentB: theme.accentSecondary,
+                    monthStart: activeMonthInterval.start,
+                    monthEnd: activeMonthInterval.end,
+                    selectedDay: selectedDayResolved,
+                    isCurrentMonth: isCurrentMonth,
+                    goalMinutes: stats.dailyGoalMinutes,
+                    resetTrigger: resetChartTrigger,
+                    calendar: sundayCalendar,
+                    generatePoints: generateTrendPoints(for:),
+                    onSelectDay: { d in
+                        Haptics.impact(.light)
+                        selectedDay = d
                     }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                    .scrollDisabled(true)              // outer ScrollView scrolls
-                    .frame(height: estimatedHeight)     // shows all rows, no big empty gaps
+                )
+                .frame(height: 200)
+            }
+        }
+    }
+
+    // MARK: - Time distribution
+
+    private var timeDistributionCard: some View {
+        TimeDistributionCard(
+            accentA: theme.accentPrimary,
+            accentB: theme.accentSecondary,
+            distribution: distribution,
+            monthLabel: subtitleText
+        )
+    }
+
+    // MARK: - Selected day detail
+
+    private var selectedDayCard: some View {
+        GlassCard {
+            SelectedDayDetail(
+                accentA: theme.accentPrimary,
+                accentB: theme.accentSecondary,
+                day: selectedDayResolved,
+                total: selectedDayTotalAll,
+                sessionCount: selectedDaySessionsAll.count,
+                avgMinutes: selectedDayAvgMinutes,
+                sessions: selectedDaySessionsAll,
+                timeFormatter: timeFormatter
+            )
+        }
+    }
+}
+
+// MARK: - Unified Stats Pill
+
+private struct StatsGraphPill: View {
+    let width: CGFloat
+    let height: CGFloat
+
+    let fillFraction: CGFloat
+    let prevFraction: CGFloat
+
+    let fillGradient: LinearGradient
+    let isSelected: Bool
+    let isFuture: Bool
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Capsule(style: .continuous)
+                .fill(Color.white.opacity(isFuture ? 0.03 : 0.06))
+                .frame(width: width, height: height)
+
+            if !isFuture {
+                Capsule(style: .continuous)
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: width, height: max(0, height * min(1.0, prevFraction)))
+            }
+
+            if !isFuture {
+                Capsule(style: .continuous)
+                    .fill(fillGradient)
+                    .frame(width: width, height: max(0, height * min(1.0, fillFraction)))
+                    .opacity(fillFraction > 0.02 ? 1.0 : 0.35)
+            }
+        }
+        .frame(width: width, height: height, alignment: .bottom)
+        .overlay(
+            Capsule(style: .continuous)
+                .stroke(Color.white.opacity(isSelected ? 0.9 : 0.0), lineWidth: 1.5)
+        )
+        .shadow(color: (fillFraction >= 1.0 && !isFuture) ? Color.white.opacity(0.25) : .clear, radius: 6, x: 0, y: 0)
+    }
+}
+
+// MARK: - Weekly Fixed Chart (Used inside Monthly Pager)
+
+private struct WeeklyFixedPillChart: View {
+    let accentA: Color
+    let accentB: Color
+    let points: [StatsView.TrendPoint]
+    let selectedDay: Date
+    let goalMinutes: Int
+    let calendar: Calendar
+    let onSelectDay: (Date) -> Void
+
+    private let barHeight: CGFloat = 140
+    private let fixedPillWidth: CGFloat = 32
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 0) {
+            ForEach(points) { point in
+                let isSel = calendar.isDate(point.date, inSameDayAs: selectedDay)
+                let isFuture = calendar.startOfDay(for: point.date) > calendar.startOfDay(for: Date())
+
+                let minutes = Int(point.total / 60)
+                let prevMinutes = Int(point.prevTotal / 60)
+
+                let safeGoal = max(1, CGFloat(goalMinutes))
+                let fill = CGFloat(minutes) / safeGoal
+                let prevFill = CGFloat(prevMinutes) / safeGoal
+
+                Button {
+                    onSelectDay(point.date)
+                } label: {
+                    VStack(spacing: 12) {
+                        StatsGraphPill(
+                            width: fixedPillWidth,
+                            height: barHeight,
+                            fillFraction: fill,
+                            prevFraction: prevFill,
+                            fillGradient: LinearGradient(colors: [accentA, accentB], startPoint: .bottom, endPoint: .top),
+                            isSelected: isSel,
+                            isFuture: isFuture
+                        )
+
+                        Text(dateLabel(for: point.date))
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundColor(isSel ? .white : .white.opacity(isFuture ? 0.2 : 0.6))
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(isSel ? Color.white.opacity(0.15) : Color.clear)
+                            .clipShape(Capsule())
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func dateLabel(for date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "E"
+        return String(f.string(from: date).prefix(1)).uppercased()
+    }
+}
+
+// MARK: - Monthly Paged Week Chart (Paging)
+
+private struct MonthlyPagedWeekChart: View {
+    let accentA: Color
+    let accentB: Color
+
+    let monthStart: Date
+    let monthEnd: Date
+
+    let selectedDay: Date
+    let isCurrentMonth: Bool
+    let goalMinutes: Int
+    let resetTrigger: UUID
+    let calendar: Calendar
+    let generatePoints: (DateInterval) -> [StatsView.TrendPoint]
+    let onSelectDay: (Date) -> Void
+
+    @State private var selectedPageIndex: Int = 0
+
+    private var monthWeeks: [DateInterval] {
+        var weeks: [DateInterval] = []
+
+        let mStart = calendar.startOfDay(for: monthStart)
+        let mEnd = calendar.startOfDay(for: monthEnd)
+
+        guard let firstWeekStart = calendar.dateInterval(of: .weekOfYear, for: mStart)?.start else {
+            return [DateInterval(start: mStart, end: calendar.date(byAdding: .day, value: 7, to: mStart) ?? mStart)]
+        }
+
+        var currentStart = firstWeekStart
+        while currentStart < mEnd {
+            let end = calendar.date(byAdding: .day, value: 7, to: currentStart) ?? currentStart.addingTimeInterval(7 * 86400)
+            weeks.append(DateInterval(start: currentStart, end: end))
+            currentStart = end
+        }
+
+        return weeks
+    }
+
+    var body: some View {
+        TabView(selection: $selectedPageIndex) {
+            ForEach(Array(monthWeeks.enumerated()), id: \.offset) { index, weekInterval in
+                WeeklyFixedPillChart(
+                    accentA: accentA,
+                    accentB: accentB,
+                    points: generatePoints(weekInterval),
+                    selectedDay: selectedDay,
+                    goalMinutes: goalMinutes,
+                    calendar: calendar,
+                    onSelectDay: onSelectDay
+                )
+                .tag(index)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .onAppear { goToInitialWeek() }
+        .onChange(of: monthStart) { _, _ in goToInitialWeek() }
+        .onChange(of: resetTrigger) { _, _ in goToInitialWeek() }
+    }
+
+    private func goToInitialWeek() {
+        if isCurrentMonth {
+            let today = calendar.startOfDay(for: Date())
+            if let index = monthWeeks.firstIndex(where: { $0.start <= today && today < $0.end }) {
+                selectedPageIndex = index
+            } else {
+                selectedPageIndex = 0
+            }
+        } else {
+            selectedPageIndex = 0
+        }
+    }
+}
+
+// MARK: - Time Distribution (✅ duration-based)
+
+private struct TimeDistributionCard: View {
+    let accentA: Color
+    let accentB: Color
+    let distribution: [(StatsView.Bucket, TimeInterval)]
+    let monthLabel: String
+
+    private struct Item: Identifiable {
+        let id = UUID()
+        let bucket: StatsView.Bucket
+        let percent: Int
+        let duration: TimeInterval
+    }
+
+    private var items: [Item] {
+        let total = max(1.0, distribution.reduce(0.0) { $0 + $1.1 })
+        return distribution.map { pair in
+            let pct = Int((pair.1 / total) * 100.0)
+            return Item(bucket: pair.0, percent: pct, duration: pair.1)
+        }
+    }
+
+    var body: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("When you focus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.95))
+                    Text("Based on focused time • \(monthLabel)")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                HStack(spacing: 10) {
+                    ForEach(items) { item in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(item.bucket.label)
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.white.opacity(0.75))
+
+                            Text("\(item.percent)%")
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white)
+
+                            Text(item.duration > 0 ? item.duration.asReadableDuration : "—")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.white.opacity(0.55))
+
+                            RoundedRectangle(cornerRadius: 999, style: .continuous)
+                                .fill(segmentGradient(for: item.bucket))
+                                .frame(height: 4)
+                                .opacity(0.85)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
         }
     }
 
-    // MARK: - Quality tag helper
-
-    private func qualityTag(for duration: TimeInterval) -> (label: String, color: Color)? {
-        let minutes = duration / 60.0
-
-        switch minutes {
-        case 0..<10:
-            return nil                    // too short, no badge
-        case 10..<20:
-            return ("Quick focus", Color(red: 0.60, green: 0.85, blue: 1.0))
-        case 20..<35:
-            return ("Good session", Color(red: 0.40, green: 0.90, blue: 0.70))
-        default:
-            return ("Deep focus", Color(red: 0.95, green: 0.75, blue: 0.30))
+    private func segmentGradient(for bucket: StatsView.Bucket) -> LinearGradient {
+        switch bucket {
+        case .morning:
+            return LinearGradient(colors: [.orange.opacity(0.95), .orange.opacity(0.45)], startPoint: .leading, endPoint: .trailing)
+        case .afternoon:
+            return LinearGradient(colors: [accentA, accentB], startPoint: .leading, endPoint: .trailing)
+        case .evening:
+            return LinearGradient(colors: [Color.white.opacity(0.55), Color.white.opacity(0.18)], startPoint: .leading, endPoint: .trailing)
         }
-    }
-
-    // MARK: - Helpers
-
-    private func sessions(on date: Date) -> [FocusSession] {
-        stats.sessions
-            .filter { calendar.isDate($0.date, inSameDayAs: date) }
-            .sorted { $0.date < $1.date }
-    }
-
-    // MARK: - Haptics (now respect global setting)
-
-    private func simpleTap() {
-        Haptics.impact(.light)
     }
 }
 
-// MARK: - Goal editing sheet
+// MARK: - Selected Day Detail
+
+private struct SelectedDayDetail: View {
+    let accentA: Color
+    let accentB: Color
+
+    let day: Date
+    let total: TimeInterval
+    let sessionCount: Int
+    let avgMinutes: Int
+    let sessions: [FocusSession]
+    let timeFormatter: DateFormatter
+
+    private let calendar = Calendar.current
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(dayTitle(day))
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                Text(total > 0 ? total.asReadableDuration : "No focus logged")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            HStack(spacing: 10) {
+                miniPill(icon: "clock", text: "\(sessionCount) session\(sessionCount == 1 ? "" : "s")")
+                miniPill(icon: "gauge", text: avgMinutes == 0 ? "— min avg" : "\(avgMinutes) min avg")
+                Spacer()
+            }
+
+            if sessions.isEmpty {
+                Text("Start a session to light up this day.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.65))
+                    .padding(.top, 2)
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(sessions.sorted(by: { $0.date > $1.date })) { s in
+                        HStack(spacing: 10) {
+                            Text(timeFormatter.string(from: s.date))
+                                .font(.caption2.monospaced().weight(.semibold))
+                                .foregroundColor(.white.opacity(0.65))
+                                .frame(width: 62, alignment: .leading)
+
+                            Text(s.sessionName ?? "Focus")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.92))
+                                .lineLimit(1)
+
+                            Spacer()
+
+                            Text(s.duration.asReadableDuration)
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [accentA, accentB]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .clipShape(Capsule())
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(Color.white.opacity(0.10))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                )
+                        )
+                    }
+                }
+                .padding(.top, 2)
+            }
+        }
+    }
+
+    private func dayTitle(_ date: Date) -> String {
+        if calendar.isDateInToday(date) { return "Today" }
+        if calendar.isDateInYesterday(date) { return "Yesterday" }
+        return date.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private func miniPill(icon: String, text: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).imageScale(.small)
+            Text(text)
+        }
+        .font(.system(size: 11, weight: .medium))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.18))
+        .clipShape(Capsule())
+        .foregroundColor(.white.opacity(0.9))
+    }
+}
+
+// MARK: - Donut ring
+
+private struct StatsDonutRing: View {
+    let progress: Double
+    let accentA: Color
+    let accentB: Color
+    let centerTop: String
+    let centerBottom: String
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(Color.white.opacity(0.18), lineWidth: 8)
+
+            Circle()
+                .trim(from: 0, to: CGFloat(progress))
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [accentA, accentB, accentA]),
+                        center: .center
+                    ),
+                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(.easeInOut(duration: 0.35), value: progress)
+
+            VStack(spacing: 2) {
+                Text(centerTop)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                Text(centerBottom)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+        }
+        .frame(width: 70, height: 70)
+        .padding(.leading, 4)
+    }
+}
+
+private struct StatPill: View {
+    let icon: String
+    let text: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).imageScale(.small)
+            Text(text)
+        }
+        .font(.system(size: 11, weight: .medium))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.18))
+        .clipShape(Capsule())
+        .foregroundColor(tint)
+    }
+}
+
+// MARK: - Goal sheet (Polished)
 
 private struct GoalSheet: View {
     @Binding var goalMinutes: Int
+    @Environment(\.dismiss) var dismiss
     @ObservedObject private var appSettings = AppSettings.shared
 
     var body: some View {
@@ -1106,40 +929,88 @@ private struct GoalSheet: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 20) {
-                Spacer()
-                    .frame(height: 24)
-
-                Text("Daily Focus Goal")
-                    .font(.title3.bold())
-                    .foregroundColor(.white)
-
-                Text("How many minutes do you want to focus each day?")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-
-                VStack(spacing: 8) {
-                    Text("\(goalMinutes) min")
-                        .font(.system(size: 28, weight: .semibold))
+            VStack(spacing: 24) {
+                HStack {
+                    Text("Daily Goal")
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                .padding(.top, 16)
+
+                VStack(spacing: 4) {
+                    Text("\(goalMinutes)")
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .contentTransition(.numericText())
+
+                    Text("minutes per day")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                .padding(.vertical, 10)
+
+                HStack(spacing: 16) {
+                    Button {
+                        Haptics.impact(.light)
+                        if goalMinutes > 5 { goalMinutes -= 5 }
+                    } label: {
+                        Image(systemName: "minus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white.opacity(0.15))
+                            .clipShape(Circle())
+                    }
 
                     Slider(
-                        value: Binding(
-                            get: { Double(goalMinutes) },
-                            set: { goalMinutes = Int($0) }
-                        ),
-                        in: 15...240,
+                        value: Binding(get: { Double(goalMinutes) }, set: { goalMinutes = Int($0) }),
+                        in: 5...240,
                         step: 5
                     )
-                }
-                .padding(.horizontal)
+                    .tint(.white)
 
-                Spacer(minLength: 16)
+                    Button {
+                        Haptics.impact(.light)
+                        if goalMinutes < 240 { goalMinutes += 5 }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white.opacity(0.15))
+                            .clipShape(Circle())
+                    }
+                }
+
+                Text("Approx. \(max(1, goalMinutes / 25)) focus session\(goalMinutes/25 > 1 ? "s" : "")")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
+                    .padding(.top, -8)
+
+                Spacer()
+
+                Button {
+                    Haptics.impact(.medium)
+                    dismiss()
+                } label: {
+                    Text("Update Goal")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
             }
-            .padding()
+            .padding(24)
         }
-        .presentationDetents([.fraction(0.35)])
+        .presentationDetents([.fraction(0.55)])
         .presentationDragIndicator(.visible)
     }
 }

@@ -103,18 +103,18 @@ struct FocusPresetManagerView: View {
             let newPreset = FocusPreset(
                 name: "New Preset",
                 durationSeconds: FocusPreset.minutes(defaultMinutes),
-                soundID: "angelsbymyside",
+                soundID: "",
                 emoji: nil,
                 isSystemDefault: false,
-                themeRaw: AppSettings.shared.selectedTheme.rawValue   // 👈 use current app theme as default
+                themeRaw: AppSettings.shared.selectedTheme.rawValue,
+                externalMusicAppRaw: nil
             )
 
             FocusPresetEditorView(
                 preset: newPreset,
                 onSave: { created in
+                    // Save it, but do NOT auto-activate
                     FocusPresetStore.shared.upsert(created)
-                    // optionally make the new one active:
-                    FocusPresetStore.shared.activePreset = created
                 }
             )
         }
@@ -126,9 +126,13 @@ struct FocusPresetManagerView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .imageScale(.small)
-                        .foregroundColor(.white.opacity(0.9))
+                    // 👇 App logo instead of sparkles
+                    Image("Focusflow_Logo")
+                        .resizable()
+                        .renderingMode(.original)
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
+                        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
 
                     Text("Presets")
                         .font(.system(size: 22, weight: .semibold))
@@ -176,9 +180,12 @@ struct FocusPresetManagerView: View {
                         )
                         .frame(width: 40, height: 40)
 
-                    Image(systemName: "slider.horizontal.3")
-                        .foregroundColor(.white)
-                        .imageScale(.medium)
+                    Image("Focusflow_Logo") // your logo
+                        .resizable()
+                        .renderingMode(.original)
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
+                        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -314,7 +321,7 @@ struct FocusPresetManagerView: View {
 
     private func presetRow(_ preset: FocusPreset) -> some View {
         let isActive = store.activePresetID == preset.id
-        let presetTheme = preset.theme         // AppTheme? from your FocusPreset.swift
+        let presetTheme = preset.theme
 
         return HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
@@ -354,7 +361,7 @@ struct FocusPresetManagerView: View {
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white.opacity(0.55))
 
-                    // Sound
+                    // Sound / app
                     Text(preset.soundDisplayName)
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.72))
@@ -428,19 +435,27 @@ private extension FocusPreset {
         return "\(minutes) min"
     }
 
-    /// Nicely formatted sound name for the list (matches FocusView naming).
+    /// Nicely formatted audio / app name for the list.
+    /// Priority:
+    /// 1. External music app (Spotify / Apple Music / YouTube Music)
+    /// 2. Built-in focus sound
+    /// 3. "No sound"
     var soundDisplayName: String {
-        // Empty ID = no sound
+        // 1) External music app
+        if let app = externalMusicApp {
+            return app.displayName
+        }
+
+        // 2) Built-in focus sound
         if soundID.isEmpty {
             return "No sound"
         }
 
-        // Try to map to a FocusSound case so we can use displayName
         if let sound = FocusSound(rawValue: soundID) {
             return sound.displayName
         }
 
-        // Fallback – show the raw ID if it doesn't match the enum
+        // 3) Fallback – show raw ID
         return soundID
     }
 }

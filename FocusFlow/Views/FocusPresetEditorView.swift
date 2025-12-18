@@ -14,6 +14,9 @@ struct FocusPresetEditorView: View {
     @State private var durationMinutes: Int
     @State private var soundID: String
 
+    /// External music app for this preset (if any).
+    @State private var presetExternalApp: AppSettings.ExternalMusicApp?
+
     /// Theme for this preset (only used when `useDefaultTheme == false`)
     @State private var presetTheme: AppTheme
 
@@ -37,6 +40,12 @@ struct FocusPresetEditorView: View {
         _name = State(initialValue: preset.name)
         _durationMinutes = State(initialValue: max(preset.durationSeconds / 60, 1))
         _soundID = State(initialValue: preset.soundID)
+
+        if let app = preset.externalMusicApp {
+            _presetExternalApp = State(initialValue: app)
+        } else {
+            _presetExternalApp = State(initialValue: nil)
+        }
 
         // If preset already has a theme, use it; otherwise default to current app theme
         if let raw = preset.themeRaw, let t = AppTheme(rawValue: raw) {
@@ -89,7 +98,7 @@ struct FocusPresetEditorView: View {
 
                         sessionSettingsCard
 
-                        themeCard        // 👈 theme selector card with "Use app theme"
+                        themeCard
 
                         Spacer(minLength: 24)
                     }
@@ -260,7 +269,7 @@ struct FocusPresetEditorView: View {
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.white)
 
-                        Text("Pick a track from the focus library.")
+                        Text("Pick a track from the focus library or use a music app.")
                             .font(.system(size: 12))
                             .foregroundColor(.white.opacity(0.6))
                             .lineLimit(1)
@@ -511,7 +520,13 @@ struct FocusPresetEditorView: View {
     // MARK: - Helpers
 
     private var soundDisplayName: String {
-        humanReadableSoundName(for: soundID)
+        // If this preset has a music app, show that.
+        if let app = presetExternalApp {
+            return app.displayName
+        }
+
+        // Otherwise, show the built-in sound or "Choose sound" when empty.
+        return humanReadableSoundName(for: soundID)
     }
 
     private func openDurationSheet() {
@@ -523,15 +538,39 @@ struct FocusPresetEditorView: View {
     }
 
     private func openSoundPicker() {
+        // Sync the sheet with this preset's current audio choice.
+
+        if let app = presetExternalApp {
+            // Preset uses an external app → reflect that in global settings
+            appSettings.selectedExternalMusicApp = app
+            appSettings.selectedFocusSound = nil
+        } else if !soundID.isEmpty, let sound = FocusSound(rawValue: soundID) {
+            // Preset uses a built-in sound
+            appSettings.selectedFocusSound = sound
+            appSettings.selectedExternalMusicApp = nil
+        } else {
+            // Nothing set yet
+            appSettings.selectedFocusSound = nil
+            appSettings.selectedExternalMusicApp = nil
+        }
+
         showingSoundSheet = true
     }
 
     /// After the sound sheet closes, capture whatever is currently selected
     private func applySelectedSoundFromSettings() {
         if let sound = appSettings.selectedFocusSound {
+            // Built-in sound selected
             soundID = sound.id
+            presetExternalApp = nil
+        } else if let app = appSettings.selectedExternalMusicApp {
+            // External app selected
+            soundID = ""                  // no built-in sound
+            presetExternalApp = app
         } else {
+            // Neither – full silence
             soundID = ""
+            presetExternalApp = nil
         }
         // Preview is already stopped by FocusSoundPicker.onDisappear()
     }
@@ -542,8 +581,9 @@ struct FocusPresetEditorView: View {
         updated.name = trimmedName.isEmpty ? "New Preset" : trimmedName
         updated.durationSeconds = FocusPreset.minutes(durationMinutes)
         updated.soundID = soundID
+        updated.externalMusicAppRaw = presetExternalApp?.rawValue
 
-        // 🔹 Theme persistence:
+        // Theme persistence:
         // nil = use app theme, non-nil = override with specific theme
         if useDefaultTheme {
             updated.themeRaw = nil
@@ -555,9 +595,10 @@ struct FocusPresetEditorView: View {
         dismiss()
     }
 
-    // MARK: - Sound name mapping (exact names you provided)
+    // MARK: - Sound name mapping
 
     private func humanReadableSoundName(for id: String) -> String {
+        // Empty = no built-in sound → default copy "Choose sound"
         guard !id.isEmpty else { return "Choose sound" }
 
         let map: [String: String] = [
@@ -595,10 +636,11 @@ struct FocusPresetEditorView: View {
         id: UUID(),
         name: "Deep Work",
         durationSeconds: 50 * 60,
-        soundID: "angelsbymyside",
+        soundID: "",
         emoji: nil,
         isSystemDefault: false,
-        themeRaw: nil          // nil = use app theme in this preview
+        themeRaw: nil,
+        externalMusicAppRaw: "spotify"
     )
 
     return FocusPresetEditorView(preset: sample) { _ in }

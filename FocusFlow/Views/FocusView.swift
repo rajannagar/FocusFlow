@@ -2,8 +2,20 @@ import SwiftUI
 import UIKit
 import Combine
 import AVFoundation
+import ActivityKit
 
 struct FocusView: View {
+    @Environment(\.scenePhase) private var scenePhase
+
+    // MARK: - Alert type
+
+    private enum ActiveAlert: Identifiable {
+        case presetSwitch
+        case lengthChange
+
+        var id: Int { hashValue }
+    }
+
     // Timer logic
     @StateObject private var viewModel = FocusTimerViewModel()
     @ObservedObject private var appSettings = AppSettings.shared
@@ -25,7 +37,6 @@ struct FocusView: View {
     // Preset management
     @State private var showingPresetManager = false
     @State private var pendingPresetToApply: FocusPreset?
-    @State private var showingPresetSwitchConfirm = false
 
     // Session name / intention
     @State private var sessionName: String = ""
@@ -39,6 +50,9 @@ struct FocusView: View {
     // Separate UI notion of "running" so everything matches what you see
     @State private var isRunningUI: Bool = false
 
+    // Track that we've cleared any default preset / sound / external app this launch
+    @State private var didClearPresetThisLaunch: Bool = false
+
     // Super-smooth ring progress (time-based)
     @State private var sessionEndDate: Date? = nil
     @State private var sessionTotalDuration: TimeInterval = 0
@@ -48,6 +62,12 @@ struct FocusView: View {
     @State private var activeSessionSound: FocusSound? = nil        // sound tied to the current session
     @State private var soundChangedWhilePaused: Bool = false        // did user pick a new sound while timer was paused?
 
+    // For avoiding 00:00 flash when resyncing
+    @State private var lastKnownRemainingSeconds: Int? = nil
+
+    // Active alert
+    @State private var activeAlert: ActiveAlert? = nil
+
     private let calendar = Calendar.current
 
     // Active preset for convenience
@@ -55,12 +75,7 @@ struct FocusView: View {
         presetStore.activePreset
     }
 
-    // Spotify vs built-in
-    private var useSpotifyForFocus: Bool {
-        appSettings.hasSpotifyFocusTrack
-    }
-
-    // MARK: - Session display helper (for stats + notifications)
+    // MARK: - Session display helper (for notifications + labels)
 
     private var currentSessionDisplayName: String {
         if !sessionName.isEmpty {
@@ -77,18 +92,7 @@ struct FocusView: View {
             return "Choose how you want to focus today."
         }
 
-        switch preset.name.lowercased() {
-        case "deep work":
-            return "Eliminate everything, ship big things."
-        case "study":
-            return "Focused learning, zero scroll."
-        case "writing":
-            return "Get words out of your head."
-        case "reading":
-            return "Sink into a book, not your phone."
-        default:
-            return "Stay present with \(preset.name.lowercased())."
-        }
+        return "Stay present with \(preset.name.lowercased())."
     }
 
     var body: some View {
@@ -160,12 +164,12 @@ struct FocusView: View {
                         let innerAmp: CGFloat = 0.05
 
                         let outerBreath = isRunningUI
-                            ? outerBase + outerAmp * CGFloat((phase + 1) / 2)
-                            : outerBase
+                        ? outerBase + outerAmp * CGFloat((phase + 1) / 2)
+                        : outerBase
 
                         let innerBreath = isRunningUI
-                            ? innerBase + innerAmp * CGFloat((phase + 1) / 2)
-                            : innerBase
+                        ? innerBase + innerAmp * CGFloat((phase + 1) / 2)
+                        : innerBase
 
                         orbSection(
                             size: size,
@@ -200,26 +204,73 @@ struct FocusView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .onAppear {
+                // Only once per app launch: ensure nothing is pre-selected by default
+                if !didClearPresetThisLaunch {
+                    didClearPresetThisLaunch = true
+
+                    // No active preset by default
+                    presetStore.activePresetID = nil
+
+                    // No built-in focus sound by default
+                    appSettings.selectedFocusSound = nil
+
+                    // No external music app by default
+                    appSettings.selectedExternalMusicApp = nil
+                }
+
                 // 🔔 Ask for notification permission when FocusView loads
                 FocusLocalNotificationManager.shared.requestAuthorizationIfNeeded()
 
                 // 🔔 Set up daily nudges (safe to call multiple times)
                 FocusLocalNotificationManager.shared.scheduleDailyNudges()
+
+                // Keep runtime state in sync on first load
+                appSettings.isFocusTimerRunning = isRunningUI
+
+                // Also try to snap to whatever the Live Activity is currently showing
+                syncFromLiveActivityIfPossible()
+
+                // Keep VM sessionName aligned on initial load too
+                viewModel.sessionName = currentSessionDisplayName
             }
         }
-        // MARK: - Completion → stats + success haptic
+
+        // 🔗 Respond when the Dynamic Island / Live Activity toggle updates the session
+        .onReceive(NotificationCenter.default.publisher(for: .focusSessionExternalToggle)) { notification in
+            guard
+                let userInfo = notification.userInfo,
+                let isPaused = userInfo["isPaused"] as? Bool,
+                let remaining = userInfo["remainingSeconds"] as? Int
+            else {
+                return
+            }
+
+            print("FocusView: 🔁 received external toggle isPaused=\(isPaused), remaining=\(remaining), vm.remaining=\(viewModel.remainingSeconds)")
+            applyExternalSessionState(isPaused: isPaused, remaining: remaining)
+        }
+
+        // 👇 When app becomes active, resync from the current Live Activity state
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+
+            // First, consume any bridge message (if there was a pause/resume while app was in background)
+            if #available(iOS 18.0, *) {
+                FocusSessionStore.shared.applyExternalToggleIfNeeded()
+            }
+
+            // Then, force-snap to whatever the Live Activity says *right now*
+            syncFromLiveActivityIfPossible()
+        }
+
+        // MARK: - Completion → haptic + notifications
+        // ✅ Stats logging happens inside FocusTimerViewModel now.
         .onChange(of: viewModel.didCompleteSession) { _, newValue in
             if newValue == true {
                 successHaptic()
                 FocusSoundEngine.shared.playEvent(.completed)
 
-                let duration = TimeInterval(viewModel.totalSeconds)
+                let duration = TimeInterval(viewModel.totalSeconds) // matches what user chose
                 let name = currentSessionDisplayName
-
-                StatsManager.shared.addSession(
-                    duration: duration,
-                    sessionName: name
-                )
 
                 // 🔔 Log into in-app notification center
                 NotificationCenterManager.shared.add(
@@ -238,18 +289,24 @@ struct FocusView: View {
                 sessionEndDate = nil
                 isRunningUI = false
 
-                // Fully stop background sound on completion
-                if useSpotifyForFocus {
-                    SpotifyManager.shared.stopAll()
-                } else {
-                    FocusSoundManager.shared.stop()
-                }
+                // Fully stop built-in sound on completion
+                FocusSoundManager.shared.stop()
                 activeSessionSound = nil
                 soundChangedWhilePaused = false
+
+                // End Live Activity when session completes
+                if #available(iOS 18.0,*) {
+                    FocusLiveActivityManager.shared.endActivity()
+                }
             }
         }
-        // MARK: - Minute tick haptics & glow
+
+        // MARK: - Minute tick haptics, glow, and last-known time
         .onChange(of: viewModel.remainingSeconds) { oldValue, newValue in
+            if newValue > 0 {
+                lastKnownRemainingSeconds = newValue
+            }
+
             guard isRunningUI,
                   newValue < oldValue,
                   newValue > 0,
@@ -264,153 +321,229 @@ struct FocusView: View {
                 orbGlowPulse.toggle()
             }
         }
+
         // MARK: - Background focus sound: respond to running state + settings
         .onChange(of: isRunningUI) { _, running in
+            appSettings.isFocusTimerRunning = running
+
             if running {
                 guard appSettings.soundEnabled else {
-                    // sound globally off
-                    if useSpotifyForFocus {
-                        SpotifyManager.shared.stopAll()
-                    } else {
-                        FocusSoundManager.shared.stop()
-                        activeSessionSound = nil
-                        soundChangedWhilePaused = false
-                    }
-                    return
-                }
-
-                if useSpotifyForFocus {
-                    // Ensure SpotifyManager knows which URI is the focus track
-                    SpotifyManager.shared.setFocusTrack(uri: appSettings.spotifyTrackURI)
-
-                    if viewModel.remainingSeconds == viewModel.totalSeconds {
-                        // Brand new session → start from beginning or stored position
-                        SpotifyManager.shared.startFocusPlayback()
-                    } else {
-                        // Resuming session → resume from remembered position
-                        SpotifyManager.shared.resumeFocusPlayback()
-                    }
-
-                    // Make sure local built-in sounds aren't playing underneath
                     FocusSoundManager.shared.stop()
                     activeSessionSound = nil
                     soundChangedWhilePaused = false
+                    return
+                }
 
+                guard let selected = appSettings.selectedFocusSound else {
+                    FocusSoundManager.shared.stop()
+                    activeSessionSound = nil
+                    soundChangedWhilePaused = false
+                    return
+                }
+
+                if viewModel.remainingSeconds == viewModel.totalSeconds {
+                    activeSessionSound = selected
+                    soundChangedWhilePaused = false
+                    FocusSoundManager.shared.play(sound: selected)
                 } else {
-                    // Built-in sounds path (unchanged)
-                    guard let selected = appSettings.selectedFocusSound else {
-                        FocusSoundManager.shared.stop()
-                        activeSessionSound = nil
-                        soundChangedWhilePaused = false
-                        return
-                    }
-
-                    if viewModel.remainingSeconds == viewModel.totalSeconds {
-                        // Brand new session from the top
+                    if soundChangedWhilePaused || activeSessionSound == nil || activeSessionSound != selected {
                         activeSessionSound = selected
                         soundChangedWhilePaused = false
                         FocusSoundManager.shared.play(sound: selected)
                     } else {
-                        // Resuming an in-progress session
-                        if soundChangedWhilePaused || activeSessionSound == nil || activeSessionSound != selected {
-                            activeSessionSound = selected
-                            soundChangedWhilePaused = false
-                            FocusSoundManager.shared.play(sound: selected)
-                        } else {
-                            FocusSoundManager.shared.resume()
-                        }
+                        FocusSoundManager.shared.resume()
                     }
                 }
             } else {
-                // Timer paused (not reset / completed)
-                if useSpotifyForFocus {
-                    SpotifyManager.shared.pauseFocusPlayback()
-                } else {
-                    FocusSoundManager.shared.pause()
-                }
+                FocusSoundManager.shared.pause()
             }
         }
 
-        // MARK: - Global sound toggle
         .onChange(of: appSettings.soundEnabled) { _, newValue in
             if newValue {
                 if isRunningUI {
-                    if useSpotifyForFocus {
-                        // Resume from paused position, reconnect quietly if needed
-                        SpotifyManager.shared.resumeFocusPlayback()
-                    } else {
-                        startOrSwitchSoundForCurrentState()
-                    }
+                    startOrSwitchSoundForCurrentState()
                 }
             } else {
-                // Sound globally OFF → kill everything
-                if useSpotifyForFocus {
-                    SpotifyManager.shared.stopAll()
-                } else {
-                    FocusSoundManager.shared.stop()
-                    activeSessionSound = nil
-                    soundChangedWhilePaused = false
-                }
+                FocusSoundManager.shared.stop()
+                activeSessionSound = nil
+                soundChangedWhilePaused = false
             }
         }
 
-        // User changes which built-in sound is selected
         .onChange(of: appSettings.selectedFocusSound) { _, _ in
             handleSelectedSoundChanged()
         }
 
-        // Enter / exit sound sheet (to kill preview when leaving if timer is not running)
         .onChange(of: showingSoundSheet) { _, isShowing in
-            if !isShowing && !isRunningUI && !useSpotifyForFocus {
-                // Not running anymore → kill any preview
+            if !isShowing && !isRunningUI {
                 FocusSoundManager.shared.stop()
             }
         }
 
+        // ✅ Keep VM session name aligned while user types (only matters for next start / Live Activity names)
+        .onChange(of: sessionName) { _, _ in
+            if !isRunningUI {
+                viewModel.sessionName = currentSessionDisplayName
+            }
+            if isIntentionFocused {
+                hasEditedIntention = true
+            }
+        }
+
         // MARK: - Sheets
-        .sheet(isPresented: $showingTimePicker) {
-            timePickerSheet
-        }
-        .sheet(isPresented: $showingSoundSheet) {
-            FocusSoundPicker()
-        }
-        .sheet(isPresented: $showingNotificationCenter) {
-            NotificationCenterView()
-        }
-        .sheet(isPresented: $showingPresetManager) {
-            FocusPresetManagerView()
-        }
-        // MARK: - Preset switch confirmation
-        .alert(isPresented: $showingPresetSwitchConfirm) {
-            Alert(
-                title: Text("Switch preset?"),
-                message: Text("This will reset your current session and apply “\(pendingPresetToApply?.name ?? "")”."),
-                primaryButton: .destructive(Text("Switch")) {
-                    if let preset = pendingPresetToApply {
-                        // Reset everything for a clean new session
-                        viewModel.reset()
-                        isRunningUI = false
+        .sheet(isPresented: $showingTimePicker) { timePickerSheet }
+        .sheet(isPresented: $showingSoundSheet) { FocusSoundPicker() }
+        .sheet(isPresented: $showingNotificationCenter) { NotificationCenterView() }
+        .sheet(isPresented: $showingPresetManager) { FocusPresetManagerView() }
 
-                        if useSpotifyForFocus {
-                            SpotifyManager.shared.stopAll()
-                        } else {
+        // MARK: - Unified Apple-style alerts
+        .alert(item: $activeAlert) { alert in
+            switch alert {
+            case .presetSwitch:
+                return Alert(
+                    title: Text("Switch preset?"),
+                    message: Text("This will reset your current session and apply “\(pendingPresetToApply?.name ?? "")”."),
+                    primaryButton: .destructive(Text("Switch")) {
+                        if let preset = pendingPresetToApply {
+                            viewModel.reset()
+                            isRunningUI = false
+
                             FocusSoundManager.shared.stop()
-                        }
+                            activeSessionSound = nil
+                            soundChangedWhilePaused = false
 
+                            sessionEndDate = nil
+                            progressOverride = nil
+
+                            sessionName = ""
+                            hasEditedIntention = false
+
+                            if #available(iOS 18.0, *) {
+                                FocusLiveActivityManager.shared.endActivity()
+                            }
+
+                            applyPreset(preset, overrideRunningState: true)
+                        }
+                        pendingPresetToApply = nil
+                    },
+                    secondaryButton: .cancel {
+                        pendingPresetToApply = nil
+                    }
+                )
+
+            case .lengthChange:
+                return Alert(
+                    title: Text("Change session length?"),
+                    message: Text("This will reset your current focus session and let you pick a new length."),
+                    primaryButton: .destructive(Text("Change length")) {
+                        isRunningUI = false
+                        viewModel.reset()
+                        FocusLocalNotificationManager.shared.cancelSessionCompletionNotification()
+
+                        FocusSoundManager.shared.stop()
                         activeSessionSound = nil
                         soundChangedWhilePaused = false
-                        sessionEndDate = nil
-                        progressOverride = nil
 
-                        applyPreset(preset, overrideRunningState: true)
-                    }
-                    pendingPresetToApply = nil
-                },
-                secondaryButton: .cancel {
-                    pendingPresetToApply = nil
-                }
+                        sessionEndDate = nil
+                        sessionTotalDuration = 0
+                        progressOverride = nil
+                        if #available(iOS 18.0, *) {
+                            FocusLiveActivityManager.shared.endActivity()
+                        }
+
+                        prepareTimePicker()
+                        showingTimePicker = true
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
+        }
+    }
+
+    // MARK: - External state helpers (Live Activity → in-app timer)
+
+    private func parseRemainingString(_ string: String) -> Int {
+        let parts = string.split(separator: ":").map { Int($0) ?? 0 }
+        guard !parts.isEmpty else { return 0 }
+
+        if parts.count == 3 {
+            return parts[0] * 3600 + parts[1] * 60 + parts[2]
+        } else if parts.count == 2 {
+            return parts[0] * 60 + parts[1]
+        } else {
+            return parts[0]
+        }
+    }
+
+    private func applyExternalSessionState(isPaused: Bool, remaining: Int) {
+        let clampedRemaining = max(0, remaining)
+
+        print("FocusView: 🎯 applying external state isPaused=\(isPaused), remaining=\(clampedRemaining)")
+
+        // ✅ prevent 00:00 flash during resync
+        if clampedRemaining > 0 {
+            lastKnownRemainingSeconds = clampedRemaining
+        }
+
+        viewModel.remainingSeconds = clampedRemaining
+
+        if isPaused {
+            isRunningUI = false
+            viewModel.stop()
+
+            FocusLocalNotificationManager.shared.cancelSessionCompletionNotification()
+
+            sessionEndDate = nil
+            progressOverride = nil
+        } else {
+            guard clampedRemaining > 0 else { return }
+
+            isRunningUI = true
+
+            // ✅ IMPORTANT: set name before start so VM logs correctly on completion
+            viewModel.sessionName = currentSessionDisplayName
+
+            // ✅ Only play start sound if this is a fresh start, not a resume from DI
+            let isFresh = (clampedRemaining == viewModel.totalSeconds)
+            if isFresh {
+                FocusSoundEngine.shared.playEvent(.start)
+            }
+
+            viewModel.start()
+
+            sessionTotalDuration = TimeInterval(viewModel.totalSeconds)
+            sessionEndDate = Date().addingTimeInterval(TimeInterval(clampedRemaining))
+            progressOverride = nil
+
+            FocusLocalNotificationManager.shared.scheduleSessionCompletionNotification(
+                after: clampedRemaining,
+                sessionName: currentSessionDisplayName
             )
         }
+    }
+
+    private func syncFromLiveActivityIfPossible() {
+        guard #available(iOS 18.0, *) else { return }
+
+        guard let activity = Activity<FocusSessionAttributes>.activities.first else {
+            return
+        }
+
+        let state = activity.content.state
+        let now = Date()
+
+        let isPaused = state.isPaused
+        let remaining: Int
+
+        if isPaused {
+            remaining = parseRemainingString(state.pausedDisplayTime)
+        } else {
+            remaining = max(0, Int(state.endDate.timeIntervalSince(now)))
+        }
+
+        print("FocusView: 📡 syncFromLiveActivity isPaused=\(isPaused), remaining=\(remaining)")
+        applyExternalSessionState(isPaused: isPaused, remaining: remaining)
     }
 
     // MARK: - Header (with status dot)
@@ -423,15 +556,17 @@ struct FocusView: View {
         return HStack {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .imageScale(.small)
-                        .foregroundColor(.white.opacity(0.9))
+                    Image("Focusflow_Logo")
+                        .resizable()
+                        .renderingMode(.original)
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
+                        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
 
                     Text("FocusFlow")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
 
-                    // subtle status dot
                     Circle()
                         .fill(
                             isRunningUI
@@ -441,16 +576,19 @@ struct FocusView: View {
                         .frame(width: 10, height: 10)
                         .shadow(
                             color: isRunningUI
-                                ? accentPrimary.opacity(0.7)
-                                : .clear,
+                            ? accentPrimary.opacity(0.7)
+                            : .clear,
                             radius: isRunningUI ? 6 : 0
                         )
-                        .scaleEffect(isRunningUI ? 1.15 : 1.0)
-                        .animation(
+                        .scaleEffect(
                             isRunningUI
-                            ? .easeInOut(duration: 1.6).repeatForever(autoreverses: true)
-                            : .easeOut(duration: 0.25),
-                            value: isRunningUI
+                            ? (orbGlowPulse ? 1.25 : 1.0)
+                            : 1.0
+                        )
+                        .opacity(isRunningUI ? (orbGlowPulse ? 1.0 : 0.7) : 0.5)
+                        .animation(
+                            .spring(response: 0.45, dampingFraction: 0.7),
+                            value: orbGlowPulse
                         )
                 }
 
@@ -472,7 +610,6 @@ struct FocusView: View {
             Spacer()
 
             HStack(spacing: 10) {
-                // Notifications
                 Button {
                     simpleTap()
                     showingNotificationCenter = true
@@ -495,7 +632,6 @@ struct FocusView: View {
                 }
                 .buttonStyle(.plain)
 
-                // Sounds
                 Button {
                     simpleTap()
                     showingSoundSheet = true
@@ -514,11 +650,18 @@ struct FocusView: View {
 
     private var greetingTitle: String {
         let hour = Calendar.current.component(.hour, from: Date())
+
         switch hour {
-        case 5..<12:  return "Good morning"
-        case 12..<17: return "Good afternoon"
-        case 17..<22: return "Good evening"
-        default:      return "Hey"
+        case 5..<12:
+            return "Good morning"
+        case 12..<17:
+            return "Good afternoon"
+        case 17..<21:
+            return "Good evening"
+        case 21..<24, 0..<5:
+            return "Good night"
+        default:
+            return "Hey"
         }
     }
 
@@ -531,8 +674,11 @@ struct FocusView: View {
                 .foregroundColor(.white.opacity(0.82))
 
             HStack(spacing: 10) {
-                Image(systemName: "sparkles")
-                    .imageScale(.small)
+                Image("Focusflow_Logo")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .frame(width: 14, height: 14)
                     .foregroundColor(.white.opacity(0.75))
 
                 TextField("Deep work, exam prep, client project…", text: $sessionName)
@@ -541,17 +687,15 @@ struct FocusView: View {
                     .disableAutocorrection(true)
                     .textInputAutocapitalization(.sentences)
                     .focused($isIntentionFocused)
-                    .onChange(of: sessionName) { _, _ in
-                        if isIntentionFocused {
-                            hasEditedIntention = true
-                        }
-                    }
 
                 if !sessionName.isEmpty {
                     Button {
                         simpleTap()
                         sessionName = ""
                         hasEditedIntention = false
+                        if !isRunningUI {
+                            viewModel.sessionName = currentSessionDisplayName
+                        }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .imageScale(.small)
@@ -574,8 +718,6 @@ struct FocusView: View {
     ) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-
-                // Add button ("+") FIRST
                 Button {
                     simpleTap()
                     showingPresetManager = true
@@ -589,7 +731,6 @@ struct FocusView: View {
                 }
                 .buttonStyle(.plain)
 
-                // Then existing presets
                 ForEach(presetStore.presets) { preset in
                     let isSelected = presetStore.activePresetID == preset.id
 
@@ -631,44 +772,50 @@ struct FocusView: View {
     private func handlePresetTap(_ preset: FocusPreset) {
         if isRunningUI {
             pendingPresetToApply = preset
-            showingPresetSwitchConfirm = true
+            activeAlert = .presetSwitch
         } else {
             applyPreset(preset, overrideRunningState: false)
         }
     }
 
     private func applyPreset(_ preset: FocusPreset, overrideRunningState: Bool) {
-        // Mark active preset
         presetStore.activePresetID = preset.id
 
-        // Apply theme
         if let themeRaw = preset.themeRaw,
            let presetTheme = AppTheme(rawValue: themeRaw) {
             appSettings.selectedTheme = presetTheme
         }
 
-        // Duration
         let minutes = max(1, preset.durationSeconds / 60)
         viewModel.updateMinutes(minutes)
 
-        // Only set intention if user hasn’t typed their own
         if !hasEditedIntention {
             sessionName = suggestedIntention(for: preset)
+            viewModel.sessionName = currentSessionDisplayName
         }
 
-        // Apply built-in sound
-        if let sound = soundForPreset(preset) {
-            appSettings.selectedFocusSound = sound
+        if let app = preset.externalMusicApp {
+            appSettings.selectedExternalMusicApp = app
+            appSettings.selectedFocusSound = nil
+
+            FocusSoundManager.shared.stop()
             activeSessionSound = nil
             soundChangedWhilePaused = false
-        } else if preset.soundID.isEmpty {
+        } else if let sound = soundForPreset(preset) {
+            appSettings.selectedExternalMusicApp = nil
+            appSettings.selectedFocusSound = sound
+
+            activeSessionSound = nil
+            soundChangedWhilePaused = false
+        } else {
+            appSettings.selectedExternalMusicApp = nil
             appSettings.selectedFocusSound = nil
+
             FocusSoundManager.shared.stop()
             activeSessionSound = nil
             soundChangedWhilePaused = false
         }
 
-        // Smooth ring baseline...
         sessionTotalDuration = TimeInterval(viewModel.totalSeconds)
         progressOverride = nil
         sessionEndDate = nil
@@ -681,25 +828,36 @@ struct FocusView: View {
     private func suggestedIntention(for preset: FocusPreset) -> String {
         switch preset.name.lowercased() {
         case "deep work":
-            return "Deep work: ship one important thing."
+            return "Settle in and stay focused."
         case "study":
-            return "Study: one chapter, no scrolling."
+            return "Learn with clarity."
         case "writing":
-            return "Writing: get 500 words out."
+            return "Write with focus."
         case "reading":
-            return "Reading: sink into a book."
+            return "Read without distraction."
         default:
             return "Focus: \(preset.name)"
         }
     }
 
-    /// Map preset.soundID (String) → FocusSound enum
     private func soundForPreset(_ preset: FocusPreset) -> FocusSound? {
         guard !preset.soundID.isEmpty else { return nil }
         return FocusSound(rawValue: preset.soundID)
     }
 
     // MARK: - Orb section
+
+    private func displayedTimeString() -> String {
+        if isRunningUI,
+           viewModel.remainingSeconds == 0,
+           let cached = lastKnownRemainingSeconds {
+            let minutes = cached / 60
+            let seconds = cached % 60
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+
+        return viewModel.formattedTime
+    }
 
     private func orbSection(
         size: CGSize,
@@ -799,7 +957,7 @@ struct FocusView: View {
                     .scaleEffect(innerBreathScale)
                     .overlay(
                         VStack(spacing: 6) {
-                            Text(viewModel.formattedTime)
+                            Text(displayedTimeString())
                                 .font(.system(size: timeFontSize, weight: .semibold, design: .monospaced))
                                 .foregroundColor(.black)
 
@@ -849,21 +1007,54 @@ struct FocusView: View {
                             FocusSoundEngine.shared.playEvent(.pause)
                             FocusLocalNotificationManager.shared.cancelSessionCompletionNotification()
 
-                            // Stop smooth ring timing
                             sessionEndDate = nil
                             progressOverride = nil
+
+                            if #available(iOS 18.0, *) {
+                                FocusLiveActivityManager.shared.updatePaused(
+                                    remainingSeconds: viewModel.remainingSeconds,
+                                    isPaused: true,
+                                    sessionName: currentSessionDisplayName
+                                )
+                            }
                         } else {
                             // START / RESUME
                             isRunningUI = true
+
+                            // ✅ IMPORTANT: set name before start so VM logs correctly on completion
+                            viewModel.sessionName = currentSessionDisplayName
                             viewModel.start()
+
                             FocusSoundEngine.shared.playEvent(.start)
 
-                            // New smooth session tracking
                             progressOverride = nil
+                            let isFreshSession = (viewModel.remainingSeconds == viewModel.totalSeconds)
                             let seconds = viewModel.remainingSeconds
+
                             if seconds > 0 {
                                 sessionTotalDuration = TimeInterval(viewModel.totalSeconds)
                                 sessionEndDate = Date().addingTimeInterval(TimeInterval(seconds))
+
+                                if isFreshSession,
+                                   let app = appSettings.selectedExternalMusicApp {
+                                    ExternalMusicLauncher.openSelectedApp(app)
+                                }
+
+                                if #available(iOS 18.0, *) {
+                                    if isFreshSession {
+                                        FocusLiveActivityManager.shared.startActivity(
+                                            totalSeconds: viewModel.totalSeconds,
+                                            sessionName: currentSessionDisplayName,
+                                            endDate: sessionEndDate ?? Date().addingTimeInterval(TimeInterval(seconds))
+                                        )
+                                    } else {
+                                        FocusLiveActivityManager.shared.updatePaused(
+                                            remainingSeconds: seconds,
+                                            isPaused: false,
+                                            sessionName: currentSessionDisplayName
+                                        )
+                                    }
+                                }
 
                                 FocusLocalNotificationManager.shared.scheduleSessionCompletionNotification(
                                     after: seconds,
@@ -886,28 +1077,34 @@ struct FocusView: View {
         accentSecondary: Color
     ) -> some View {
         HStack(spacing: 12) {
+            // Reset
             Button {
                 simpleTap()
                 viewModel.reset()
                 FocusSoundEngine.shared.playEvent(.pause)
                 FocusLocalNotificationManager.shared.cancelSessionCompletionNotification()
 
-                // Reset smooth ring state
                 sessionEndDate = nil
                 sessionTotalDuration = 0
                 progressOverride = nil
                 isRunningUI = false
 
-                // Full stop for audio on reset
-                if useSpotifyForFocus {
-                    SpotifyManager.shared.stopAll()
-                } else {
-                    FocusSoundManager.shared.stop()
-                }
+                FocusSoundManager.shared.stop()
                 activeSessionSound = nil
                 soundChangedWhilePaused = false
+
                 presetStore.activePresetID = nil
                 appSettings.selectedTheme = appSettings.profileTheme
+                appSettings.selectedFocusSound = nil
+                appSettings.selectedExternalMusicApp = nil
+
+                sessionName = ""
+                hasEditedIntention = false
+                viewModel.sessionName = currentSessionDisplayName
+
+                if #available(iOS 18.0, *) {
+                    FocusLiveActivityManager.shared.endActivity()
+                }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.counterclockwise")
@@ -923,10 +1120,15 @@ struct FocusView: View {
             }
             .buttonStyle(.plain)
 
+            // Length
             Button {
                 simpleTap()
-                prepareTimePicker()
-                showingTimePicker = true
+                if isRunningUI {
+                    activeAlert = .lengthChange
+                } else {
+                    prepareTimePicker()
+                    showingTimePicker = true
+                }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "clock")
@@ -944,6 +1146,7 @@ struct FocusView: View {
 
             Spacer()
 
+            // Start / Pause
             Button {
                 simpleTap()
                 if isRunningUI {
@@ -955,17 +1158,52 @@ struct FocusView: View {
 
                     sessionEndDate = nil
                     progressOverride = nil
+
+                    if #available(iOS 18.0, *) {
+                        FocusLiveActivityManager.shared.updatePaused(
+                            remainingSeconds: viewModel.remainingSeconds,
+                            isPaused: true,
+                            sessionName: currentSessionDisplayName
+                        )
+                    }
                 } else {
                     // START / RESUME
                     isRunningUI = true
+
+                    // ✅ IMPORTANT: set name before start so VM logs correctly on completion
+                    viewModel.sessionName = currentSessionDisplayName
                     viewModel.start()
+
                     FocusSoundEngine.shared.playEvent(.start)
 
                     progressOverride = nil
+                    let isFreshSession = (viewModel.remainingSeconds == viewModel.totalSeconds)
                     let seconds = viewModel.remainingSeconds
+
                     if seconds > 0 {
                         sessionTotalDuration = TimeInterval(viewModel.totalSeconds)
                         sessionEndDate = Date().addingTimeInterval(TimeInterval(seconds))
+
+                        if isFreshSession,
+                           let app = appSettings.selectedExternalMusicApp {
+                            ExternalMusicLauncher.openSelectedApp(app)
+                        }
+
+                        if #available(iOS 18.0, *) {
+                            if isFreshSession {
+                                FocusLiveActivityManager.shared.startActivity(
+                                    totalSeconds: viewModel.totalSeconds,
+                                    sessionName: currentSessionDisplayName,
+                                    endDate: sessionEndDate ?? Date().addingTimeInterval(TimeInterval(seconds))
+                                )
+                            } else {
+                                FocusLiveActivityManager.shared.updatePaused(
+                                    remainingSeconds: seconds,
+                                    isPaused: false,
+                                    sessionName: currentSessionDisplayName
+                                )
+                            }
+                        }
 
                         FocusLocalNotificationManager.shared.scheduleSessionCompletionNotification(
                             after: seconds,
@@ -986,9 +1224,8 @@ struct FocusView: View {
                 .background(
                     LinearGradient(
                         gradient: Gradient(colors: isRunningUI
-                            ? [accentSecondary, accentPrimary]
-                            : [accentPrimary, accentSecondary]
-                        ),
+                                            ? [accentSecondary, accentPrimary]
+                                            : [accentPrimary, accentSecondary]),
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -1121,33 +1358,13 @@ struct FocusView: View {
                     Button("Set timer") {
                         simpleTap()
                         let totalMinutes = selectedHours * 60 + selectedMinutes
-                        if totalMinutes > 0 {
-                            // Was the timer actively running?
-                            let wasRunning = isRunningUI
 
-                            // Update duration
-                            viewModel.updateMinutes(totalMinutes)
-
-                            // Reset smooth tracking; will be reconfigured on next Start
-                            sessionTotalDuration = TimeInterval(viewModel.totalSeconds)
-                            progressOverride = nil
-                            sessionEndDate = nil
-
-                            if wasRunning {
-                                // Pause session + stop all focus audio.
-                                isRunningUI = false
-                                viewModel.stop()
-                                FocusLocalNotificationManager.shared.cancelSessionCompletionNotification()
-
-                                if useSpotifyForFocus {
-                                    SpotifyManager.shared.stopAll()
-                                } else {
-                                    FocusSoundManager.shared.stop()
-                                    activeSessionSound = nil
-                                    soundChangedWhilePaused = false
-                                }
-                            }
+                        guard totalMinutes > 0 else {
+                            showingTimePicker = false
+                            return
                         }
+
+                        applyCustomLength(totalMinutes)
                         showingTimePicker = false
                     }
                     .font(.system(size: 16, weight: .semibold))
@@ -1170,6 +1387,14 @@ struct FocusView: View {
         let totalMinutes = viewModel.totalSeconds / 60
         selectedHours = totalMinutes / 60
         selectedMinutes = totalMinutes % 60
+    }
+
+    private func applyCustomLength(_ minutes: Int) {
+        viewModel.updateMinutes(minutes)
+
+        sessionTotalDuration = TimeInterval(viewModel.totalSeconds)
+        progressOverride = nil
+        sessionEndDate = nil
     }
 
     // MARK: - Ring progress helper (butter-smooth)
@@ -1208,11 +1433,7 @@ struct FocusView: View {
 
     // MARK: - Sound helpers
 
-    /// Handles what should happen when the selected built-in sound changes.
     private func handleSelectedSoundChanged() {
-        // If Spotify is being used for focus, ignore built-in changes.
-        guard !useSpotifyForFocus else { return }
-
         guard appSettings.soundEnabled,
               let sound = appSettings.selectedFocusSound else {
             FocusSoundManager.shared.stop()
@@ -1222,26 +1443,18 @@ struct FocusView: View {
         }
 
         if isRunningUI {
-            // Timer running → live switch to new sound for this session
             activeSessionSound = sound
             soundChangedWhilePaused = false
             FocusSoundManager.shared.play(sound: sound)
         } else if showingSoundSheet {
-            // Not running, but inside picker → preview only
             soundChangedWhilePaused = true
             FocusSoundManager.shared.play(sound: sound)
         } else {
-            // Not running, not in picker → silence
             FocusSoundManager.shared.stop()
         }
     }
 
-    /// Ensures the right built-in sound is playing for current "running" state
-    /// when global sound is toggled back on.
     private func startOrSwitchSoundForCurrentState() {
-        // Only applies when not using Spotify
-        guard !useSpotifyForFocus else { return }
-
         guard appSettings.soundEnabled,
               let selected = appSettings.selectedFocusSound else {
             FocusSoundManager.shared.stop()
@@ -1334,9 +1547,12 @@ struct FocusSplashView: View {
                 .scaleEffect(glowScale)
 
             VStack(spacing: 14) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundColor(.white)
+                Image("Focusflow_Logo")
+                    .resizable()
+                    .renderingMode(.original)
+                    .scaledToFit()
+                    .frame(width: 72, height: 72)
+                    .shadow(color: .black.opacity(0.35), radius: 18, x: 0, y: 10)
 
                 Text("FocusFlow")
                     .font(.system(size: 34, weight: .semibold))

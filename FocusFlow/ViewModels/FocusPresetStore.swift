@@ -1,24 +1,57 @@
 import Foundation
 import Combine
 
+@MainActor
 final class FocusPresetStore: ObservableObject {
     static let shared = FocusPresetStore()
 
+    // MARK: - Namespacing
+
+    private var activeNamespace: String = "guest"
+    private var lastNamespace: String? = nil
+    private var cancellables = Set<AnyCancellable>()
+    private var isApplyingNamespaceOrRemote = false
+
+    private func namespace(for state: AuthState) -> String {
+        switch state {
+        case .authenticated(let session):
+            return session.isGuest ? "guest" : session.userId.uuidString
+        case .unauthenticated, .unknown:
+            return "guest"
+        }
+    }
+
+    private func key(_ base: String) -> String {
+        "\(base)_\(activeNamespace)"
+    }
+
+    // MARK: - Published
+
     @Published var presets: [FocusPreset] = [] {
-        didSet { savePresets() }
+        didSet {
+            guard !isApplyingNamespaceOrRemote else { return }
+            savePresets()
+        }
     }
 
     @Published var activePresetID: UUID? {
-        didSet { saveActivePresetID() }
+        didSet {
+            guard !isApplyingNamespaceOrRemote else { return }
+            saveActivePresetID()
+        }
     }
 
-    private let presetsKey = "focus_presets"
-    private let activePresetIDKey = "focus_active_preset_id"
+    // MARK: - Keys (base)
+
+    private struct Keys {
+        static let presets = "ff_focus_presets"
+        static let activePresetID = "ff_focus_active_preset_id"
+    }
 
     private init() {
-        loadPresets()
-        loadActivePresetID()
-        seedDefaultsIfNeeded()
+        observeAuthChanges()
+        applyNamespace(for: AuthManager.shared.state)
+        startSyncIfNeeded()
     }
 
     // MARK: - Public
@@ -33,7 +66,6 @@ final class FocusPresetStore: ObservableObject {
         }
     }
 
-    /// Upsert helper used by older callsites.
     func upsert(_ preset: FocusPreset) {
         if let index = presets.firstIndex(where: { $0.id == preset.id }) {
             presets[index] = preset
@@ -42,12 +74,10 @@ final class FocusPresetStore: ObservableObject {
         }
     }
 
-    /// New nicer API for the editor – upserts and does small housekeeping.
     func save(_ preset: FocusPreset) {
         let isNew = !presets.contains(where: { $0.id == preset.id })
         upsert(preset)
 
-        // If nothing is active yet and this is a brand-new preset, make it active.
         if isNew && activePresetID == nil {
             activePresetID = preset.id
         }
@@ -60,31 +90,23 @@ final class FocusPresetStore: ObservableObject {
         }
     }
 
-    /// Reorder presets without needing SwiftUI's `.move(fromOffsets:toOffset:)`
     func move(fromOffsets source: IndexSet, toOffset destination: Int) {
-        // 1. Grab the items being moved
         let movingItems = source.map { presets[$0] }
-
-        // 2. Remove them from their original positions (highest index first)
         for index in source.sorted(by: >) {
             presets.remove(at: index)
         }
-
-        // 3. Adjust destination index because the array is now smaller
         var targetIndex = destination
         let removedBeforeDestination = source.filter { $0 < destination }.count
         targetIndex -= removedBeforeDestination
-
-        // 4. Insert at new location
         presets.insert(contentsOf: movingItems, at: targetIndex)
     }
 
     // MARK: - Defaults
 
-    private func seedDefaultsIfNeeded() {
-        guard presets.isEmpty else { return }
+    /// Used by the sync engine when a signed-in user has no cloud presets yet.
+    func seedDefaultsIfNeeded() -> [FocusPreset] {
+        guard presets.isEmpty else { return presets }
 
-        // Use your real sound IDs from the bundle (from your screenshot)
         let defaults: [FocusPreset] = [
             FocusPreset(
                 name: "Deep Work",
@@ -117,13 +139,50 @@ final class FocusPresetStore: ObservableObject {
         ]
 
         presets = defaults
-        activePresetID = defaults.first?.id
+        return defaults
     }
 
-    // MARK: - Persistence
+    // MARK: - Auth observation + namespace switching
+
+    private func observeAuthChanges() {
+        AuthManager.shared.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.applyNamespace(for: state)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func applyNamespace(for state: AuthState) {
+        let newNamespace = namespace(for: state)
+        if newNamespace == activeNamespace, lastNamespace != nil { return }
+
+        lastNamespace = activeNamespace
+        activeNamespace = newNamespace
+
+        isApplyingNamespaceOrRemote = true
+        defer { isApplyingNamespaceOrRemote = false }
+
+        // Reset to clean state
+        presets = []
+        activePresetID = nil
+
+        // Load from this namespace
+        loadPresets()
+        loadActivePresetID()
+
+        // For guest only, seed defaults locally (offline friendly)
+        if newNamespace == "guest" {
+            _ = seedDefaultsIfNeeded()
+        }
+
+        print("FocusPresetStore: active namespace -> \(activeNamespace)")
+    }
+
+    // MARK: - Persistence (namespaced)
 
     private func loadPresets() {
-        guard let data = UserDefaults.standard.data(forKey: presetsKey) else {
+        guard let data = UserDefaults.standard.data(forKey: key(Keys.presets)) else {
             presets = []
             return
         }
@@ -138,14 +197,14 @@ final class FocusPresetStore: ObservableObject {
     private func savePresets() {
         do {
             let data = try JSONEncoder().encode(presets)
-            UserDefaults.standard.set(data, forKey: presetsKey)
+            UserDefaults.standard.set(data, forKey: key(Keys.presets))
         } catch {
             print("⚠️ Failed to encode FocusPresets:", error)
         }
     }
 
     private func loadActivePresetID() {
-        guard let idString = UserDefaults.standard.string(forKey: activePresetIDKey),
+        guard let idString = UserDefaults.standard.string(forKey: key(Keys.activePresetID)),
               let id = UUID(uuidString: idString) else {
             activePresetID = nil
             return
@@ -155,9 +214,48 @@ final class FocusPresetStore: ObservableObject {
 
     private func saveActivePresetID() {
         if let id = activePresetID {
-            UserDefaults.standard.set(id.uuidString, forKey: activePresetIDKey)
+            UserDefaults.standard.set(id.uuidString, forKey: key(Keys.activePresetID))
         } else {
-            UserDefaults.standard.removeObject(forKey: activePresetIDKey)
+            UserDefaults.standard.removeObject(forKey: key(Keys.activePresetID))
         }
+    }
+
+    // MARK: - Sync wiring
+
+    private var didStartSync = false
+
+    private func startSyncIfNeeded() {
+        guard didStartSync == false else { return }
+        didStartSync = true
+
+        // ✅ CRITICAL: do not emit pushes while we are applying namespace/remote updates
+        let presetsPublisher = $presets
+            .filter { [weak self] _ in (self?.isApplyingNamespaceOrRemote == false) }
+            .eraseToAnyPublisher()
+
+        let activePublisher = $activePresetID
+            .filter { [weak self] _ in (self?.isApplyingNamespaceOrRemote == false) }
+            .eraseToAnyPublisher()
+
+        FocusPresetSyncEngine.shared.start(
+            presetsPublisher: presetsPublisher,
+            activePresetIdPublisher: activePublisher,
+            getLocalPresets: { [weak self] in self?.presets ?? [] },
+            getLocalActivePresetId: { [weak self] in self?.activePresetID },
+            seedDefaults: { [weak self] in
+                guard let self else { return [] }
+                return self.seedDefaultsIfNeeded()
+            },
+            applyRemote: { [weak self] remotePresets, remoteActiveId in
+                guard let self else { return }
+                self.isApplyingNamespaceOrRemote = true
+                defer { self.isApplyingNamespaceOrRemote = false }
+
+                self.presets = remotePresets
+                self.activePresetID = remoteActiveId
+            }
+        )
+
+        print("FocusPresetStore: FocusPresetSyncEngine started")
     }
 }

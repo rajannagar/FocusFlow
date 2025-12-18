@@ -12,9 +12,15 @@ struct FocusPreset: Identifiable, Codable, Equatable {
 
     /// Optional raw theme value for this preset (AppTheme.rawValue).
     /// If nil, the preset does not override the app theme.
-    var themeRaw: String?          // 👈 NEW
+    var themeRaw: String?
 
-    /// Convenience: typed access to the preset's theme, if any.
+    /// Optional raw external music app value (AppSettings.ExternalMusicApp.rawValue).
+    /// If nil, this preset does not launch a music app.
+    var externalMusicAppRaw: String?    // "spotify", "appleMusic", "youtubeMusic", or nil
+
+    // MARK: - Typed accessors
+
+    /// Typed access to the preset's theme, if any.
     var theme: AppTheme? {
         guard let themeRaw,
               let value = AppTheme(rawValue: themeRaw) else {
@@ -23,6 +29,14 @@ struct FocusPreset: Identifiable, Codable, Equatable {
         return value
     }
 
+    /// Typed access to the preset's external music app, if any.
+    var externalMusicApp: AppSettings.ExternalMusicApp? {
+        guard let raw = externalMusicAppRaw else { return nil }
+        return AppSettings.ExternalMusicApp(rawValue: raw)
+    }
+
+    // MARK: - Init
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -30,7 +44,8 @@ struct FocusPreset: Identifiable, Codable, Equatable {
         soundID: String,
         emoji: String? = nil,
         isSystemDefault: Bool = false,
-        themeRaw: String? = nil      // 👈 NEW (defaulted for backwards compatibility)
+        themeRaw: String? = nil,
+        externalMusicAppRaw: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -39,6 +54,7 @@ struct FocusPreset: Identifiable, Codable, Equatable {
         self.emoji = emoji
         self.isSystemDefault = isSystemDefault
         self.themeRaw = themeRaw
+        self.externalMusicAppRaw = externalMusicAppRaw
     }
 }
 

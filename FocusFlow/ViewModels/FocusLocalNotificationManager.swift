@@ -19,6 +19,9 @@ final class FocusLocalNotificationManager {
     // Single user-configurable daily reminder (Profile → Daily focus reminder)
     private let dailyReminderId = "focusflow.dailyReminder"
 
+    // Per-habit reminder prefix
+    private let habitReminderPrefix = "focusflow.habit."
+
     private init() {}
 
     // MARK: - Permission
@@ -178,6 +181,96 @@ final class FocusLocalNotificationManager {
     /// Cancel the user-configurable daily reminder only.
     func cancelDailyReminder() {
         center.removePendingNotificationRequests(withIdentifiers: [dailyReminderId])
+    }
+
+    // MARK: - Habit reminders (per-habit)
+
+    /// Schedule a reminder for a specific habit with optional repeat.
+    func scheduleHabitReminder(
+        habitId: UUID,
+        habitName: String,
+        date: Date,
+        repeatOption: HabitRepeat
+    ) {
+        // Make sure permission is requested at least once
+        requestAuthorizationIfNeeded()
+
+        let calendar = Calendar.current
+        var dateComponents = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .weekday],
+            from: date
+        )
+
+        let trigger: UNCalendarNotificationTrigger
+
+        switch repeatOption {
+        case .none:
+            // One-off reminder on that exact date/time
+            trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+
+        case .daily:
+            // Every day at the same time
+            dateComponents = DateComponents(
+                hour: dateComponents.hour,
+                minute: dateComponents.minute
+            )
+            trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+
+        case .weekly:
+            // Same weekday + time every week
+            dateComponents = DateComponents(
+                hour: dateComponents.hour,
+                minute: dateComponents.minute,
+                weekday: dateComponents.weekday
+            )
+            trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+
+        case .monthly:
+            // Same day-of-month + time
+            dateComponents = DateComponents(
+                day: dateComponents.day,
+                hour: dateComponents.hour,
+                minute: dateComponents.minute
+            )
+            trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+
+        case .yearly:
+            // Same month/day + time every year
+            dateComponents = DateComponents(
+                month: dateComponents.month,
+                day: dateComponents.day,
+                hour: dateComponents.hour,
+                minute: dateComponents.minute
+            )
+            trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Habit Reminder"
+        content.body = "It’s time for: \(habitName)"
+        content.sound = .default
+
+        let identifier = habitReminderPrefix + habitId.uuidString
+
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request) { error in
+            if let error = error {
+                print("🔔 Failed to schedule habit reminder for \(habitName): \(error)")
+            } else {
+                print("🔔 Scheduled habit reminder for \(habitName) with id \(identifier)")
+            }
+        }
+    }
+
+    /// Cancel all pending reminders for a specific habit.
+    func cancelHabitReminder(habitId: UUID) {
+        let identifier = habitReminderPrefix + habitId.uuidString
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
     }
 
     // MARK: - Internal helper for fixed nudges

@@ -1,18 +1,34 @@
 import SwiftUI
 
 // ---------------------------------------------------------
-// MARK: - Main Content View (launch + tabs)
+// MARK: - Main Content View (launch + auth + tabs)
 // ---------------------------------------------------------
 
 struct ContentView: View {
     @State private var showSplash = true
 
+    // Observe global auth state
+    @ObservedObject private var authManager = AuthManager.shared
+
     var body: some View {
         ZStack {
-            // Main app: starts invisible, then fades in at full size
-            mainTabs
-                .opacity(showSplash ? 0 : 1)
-                .scaleEffect(1.0)   // <- no shrinking, so no white bars
+            // Main layer: either login screen or main app.
+            Group {
+                switch authManager.state {
+                case .unknown:
+                    // While we’re restoring session, keep a neutral background
+                    Color.black.ignoresSafeArea()
+
+                case .unauthenticated:
+                    // New login screen that matches the app theme
+                    AuthLandingView()
+
+                case .authenticated:
+                    // Your existing main tabs
+                    mainTabs
+                }
+            }
+            .opacity(showSplash ? 0 : 1)   // hidden while splash is visible
 
             // Intro: starts visible, then fades / slightly zooms out
             FocusBarLaunchView()
@@ -22,7 +38,10 @@ struct ContentView: View {
         .background(Color.black.ignoresSafeArea()) // safety net behind everything
         .animation(.easeInOut(duration: 0.7), value: showSplash)
         .onAppear {
-            // Let the intro play, then blend into the app
+            // 1) Try to restore a previous session (if user logged in before)
+            authManager.restoreSessionIfNeeded()
+
+            // 2) Let the intro play, then blend into auth / app
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
                 showSplash = false
             }
@@ -56,7 +75,9 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(AppSettings.shared)
 }
+
 
 // ---------------------------------------------------------
 // MARK: - FocusBarLaunchView
@@ -171,3 +192,4 @@ struct FocusBarLaunchView: View {
         }
     }
 }
+

@@ -2,31 +2,18 @@ import UIKit
 
 class AppDelegate: NSObject, UIApplicationDelegate {
 
-    // Called when your app becomes active (after coming back from Spotify, or from background)
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Whenever FocusFlow becomes active, quietly reconnect if we have a token.
-        SpotifyManager.shared.connectIfNeeded()
+        // App came to foreground (unlocking phone, returning from home, etc).
+
+        // ⬇️ IMPORTANT:
+        // Do NOT consume the FocusSessionBridge here anymore,
+        // otherwise we eat the update before FocusView can see it.
+
+        // If you add analytics / refresh later, this is still a good hook.
     }
 
-    // Called when app is about to go to background (home button, lock, switch apps)
     func applicationWillResignActive(_ application: UIApplication) {
-        // Courtesy disconnect when going to background.
-        SpotifyManager.shared.disconnect()
-    }
-
-    // Handle incoming URLs (Spotify auth redirect)
-    func application(
-        _ app: UIApplication,
-        open url: URL,
-        options: [UIApplication.OpenURLOptionsKey : Any] = [:]
-    ) -> Bool {
-
-        // Handle Spotify auth redirect
-        if url.absoluteString.hasPrefix(SpotifyConfig.redirectURI.absoluteString) {
-            SpotifyManager.shared.handleOpenURL(url)
-            return true
-        }
-
-        return false
+        // App is about to move to the background.
+        // Pause/save lightweight state here if needed.
     }
 }
