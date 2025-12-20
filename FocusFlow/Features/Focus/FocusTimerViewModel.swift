@@ -1,29 +1,35 @@
-import SwiftUI
+import Foundation
 import Combine
 
 @MainActor
 final class FocusTimerViewModel: ObservableObject {
 
-    // MARK: - Published Properties
-    @Published var totalSeconds: Int = 25 * 60 // Default 25 min
+    enum Phase: Equatable {
+        case idle
+        case running
+        case paused
+        case completed
+    }
+
+    // MARK: - Published
+    @Published var totalSeconds: Int = 25 * 60
     @Published var remainingSeconds: Int = 25 * 60
-    @Published var isRunning: Bool = false
-    @Published var didCompleteSession: Bool = false
+    @Published private(set) var phase: Phase = .idle
 
     /// Optional session label to store with Stats (set by FocusView before start/resume)
     @Published var sessionName: String = ""
 
-    // MARK: - Private Properties
+    // MARK: - Private
     private var timer: Timer?
-    private var endDate: Date? // Used to track time accurately when app is in background
+    private var endDate: Date?
 
-    /// Planned session length captured on the FIRST start of a run (so pause/resume doesn't shrink it)
+    /// Captured planned length on first start (pause/resume doesn't change this)
     private var plannedSessionTotalSeconds: Int = 0
 
     /// Prevent double-logging
     private var didLogCompletion: Bool = false
 
-    // MARK: - Computed Properties
+    // MARK: - Computed
     var progress: Double {
         guard totalSeconds > 0 else { return 0 }
         return Double(totalSeconds - remainingSeconds) / Double(totalSeconds)
@@ -35,82 +41,160 @@ final class FocusTimerViewModel: ObservableObject {
         return String(format: "%02d:%02d", minutes, seconds)
     }
 
-    // MARK: - Public Methods
+    // MARK: - Public API
 
-    func start() {
-        guard remainingSeconds > 0 else { return }
+    /// Single “one true toggle” used by the orb + the main button.
+    func toggle(sessionName: String) {
+        switch phase {
+        case .idle:
+            self.sessionName = sessionName
+            startInternal(isFresh: true)
 
-        // If this is a fresh run (or we never captured a plan), capture planned duration once.
-        let isFresh = (remainingSeconds == totalSeconds) || (plannedSessionTotalSeconds == 0)
-        if isFresh {
-            plannedSessionTotalSeconds = remainingSeconds
-            didLogCompletion = false
-            didCompleteSession = false
+        case .running:
+            pauseInternal()
+
+        case .paused:
+            self.sessionName = sessionName
+            startInternal(isFresh: false)
+
+        case .completed:
+            // Start again with same duration
+            remainingSeconds = totalSeconds
+            self.sessionName = sessionName
+            startInternal(isFresh: true)
         }
-
-        isRunning = true
-
-        // Calculate exactly when the timer should end
-        endDate = Date().addingTimeInterval(TimeInterval(remainingSeconds))
-
-        timer?.invalidate()
-
-        // Ensure the Timer lives on the main runloop; keep updates on MainActor
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            Task { @MainActor in
-                self.tick()
-            }
-        }
-        RunLoop.main.add(timer!, forMode: .common)
     }
 
-    /// Stop WITHOUT logging (stop = user interrupted / paused)
-    func stop() {
-        isRunning = false
-        timer?.invalidate()
-        timer = nil
-        endDate = nil
+    func pause() {
+        pauseInternal()
     }
 
-    func reset() {
-        stop()
+    /// “Factory reset” for the focus timer only (FocusView may also clear presets/theme/sound).
+    func resetToDefault() {
+        stopTimer()
+        totalSeconds = 25 * 60
         remainingSeconds = totalSeconds
-        didCompleteSession = false
-        didLogCompletion = false
         plannedSessionTotalSeconds = 0
+        didLogCompletion = false
+        phase = .idle
+    }
+
+    func resetToIdleKeepDuration() {
+        stopTimer()
+        remainingSeconds = totalSeconds
+        plannedSessionTotalSeconds = 0
+        didLogCompletion = false
+        phase = .idle
     }
 
     func updateMinutes(_ minutes: Int) {
-        stop()
+        stopTimer()
         totalSeconds = max(1, minutes) * 60
         remainingSeconds = totalSeconds
-        didCompleteSession = false
-        didLogCompletion = false
         plannedSessionTotalSeconds = 0
+        didLogCompletion = false
+        phase = .idle
     }
 
-    // MARK: - Private Logic
+    /// Called when syncing from Live Activity / external controls.
+    func applyExternalState(isPaused: Bool, remaining: Int, sessionName: String) {
+        let clamped = max(0, remaining)
 
-    private func tick() {
-        guard let endDate else {
-            // Safety: if something cleared endDate while running, stop cleanly.
-            if isRunning {
-                stop()
-            }
+        if clamped == 0 {
+            completeIfNeeded()
             return
         }
 
-        let timeLeft = endDate.timeIntervalSinceNow
+        self.sessionName = sessionName
+        remainingSeconds = clamped
 
+        if isPaused {
+            // Pause without resetting remaining
+            if phase == .running {
+                pauseInternal()
+            } else {
+                stopTimer(keepRemaining: true)
+                phase = .paused
+            }
+        } else {
+            // Resume running with correct endDate
+            startInternal(isFresh: false)
+        }
+    }
+
+    /// Smooth progress based on the endDate while running.
+    func smoothProgress(now: Date) -> Double {
+        if phase == .completed { return 1.0 }
+        guard totalSeconds > 0 else { return 0 }
+
+        if phase == .running,
+           let endDate,
+           plannedSessionTotalSeconds > 0 {
+            let remaining = max(endDate.timeIntervalSince(now), 0)
+            let elapsed = Double(plannedSessionTotalSeconds) - remaining
+            return min(max(elapsed / Double(plannedSessionTotalSeconds), 0), 1)
+        }
+
+        return progress
+    }
+
+    // MARK: - Internals
+
+    private func startInternal(isFresh: Bool) {
+        guard remainingSeconds > 0 else { return }
+
+        if isFresh || plannedSessionTotalSeconds == 0 {
+            plannedSessionTotalSeconds = remainingSeconds
+            didLogCompletion = false
+        }
+
+        phase = .running
+        endDate = Date().addingTimeInterval(TimeInterval(remainingSeconds))
+
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in self.tick() }
+        }
+        if let timer {
+            RunLoop.main.add(timer, forMode: .common)
+        }
+    }
+
+    private func pauseInternal() {
+        guard phase == .running else { return }
+        phase = .paused
+        stopTimer(keepRemaining: true)
+    }
+
+    private func stopTimer(keepRemaining: Bool = true) {
+        timer?.invalidate()
+        timer = nil
+        endDate = nil
+
+        if !keepRemaining {
+            remainingSeconds = totalSeconds
+        }
+    }
+
+    private func tick() {
+        guard phase == .running, let endDate else { return }
+
+        let timeLeft = endDate.timeIntervalSinceNow
         if timeLeft <= 0 {
-            remainingSeconds = 0
-            stop()
-            didCompleteSession = true
-            logCompletedSessionIfNeeded()
+            completeIfNeeded()
         } else {
             remainingSeconds = Int(ceil(timeLeft))
         }
+    }
+
+    private func completeIfNeeded() {
+        guard phase != .completed else { return }
+
+        remainingSeconds = 0
+        stopTimer(keepRemaining: true)
+        phase = .completed
+        logCompletedSessionIfNeeded()
     }
 
     private func logCompletedSessionIfNeeded() {

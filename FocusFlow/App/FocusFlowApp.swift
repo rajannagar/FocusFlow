@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct FocusFlowApp: App {
@@ -7,7 +8,12 @@ struct FocusFlowApp: App {
     @StateObject private var pro = ProEntitlementManager()
 
     init() {
+        // Restore auth session as early as possible
         AuthManager.shared.restoreSessionIfNeeded()
+
+        // Extra safety: ensure foreground notifications can show banner/sound.
+        // (AppDelegate also sets this, but this guarantees it even if lifecycle timing changes.)
+        UNUserNotificationCenter.current().delegate = appDelegate
     }
 
     var body: some Scene {

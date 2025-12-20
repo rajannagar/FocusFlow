@@ -8,13 +8,12 @@ import AppIntents
 fileprivate struct DesignSystem {
     // Layout Constants
     static let contentPadding: CGFloat = 22
-    
+
     struct ThemeColors {
         let top: Color
         let bottom: Color
         let accent: Color
-        
-        // Creates the background gradient using your app's specific colors
+
         var mainGradient: LinearGradient {
             LinearGradient(
                 colors: [top, bottom],
@@ -22,8 +21,7 @@ fileprivate struct DesignSystem {
                 endPoint: .bottomTrailing
             )
         }
-        
-        // A subtle border matching the theme
+
         var borderGradient: LinearGradient {
             LinearGradient(
                 colors: [accent.opacity(0.3), accent.opacity(0.05)],
@@ -31,11 +29,8 @@ fileprivate struct DesignSystem {
                 endPoint: .bottom
             )
         }
-        
-        // A subtle glow for the timer text
-        var textShadow: Color {
-            accent.opacity(0.5)
-        }
+
+        var textShadow: Color { accent.opacity(0.5) }
     }
 
     static func colors(for themeID: String) -> ThemeColors {
@@ -66,39 +61,31 @@ fileprivate struct DesignSystem {
     }
 }
 
-
 // MARK: - 2. Widget Entry Point
 @available(iOSApplicationExtension 18.0, *)
 struct FocusSessionLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FocusSessionAttributes.self) { context in
-            // Lock screen / banner
             LockScreenMasterpiece(context: context)
                 .activityBackgroundTint(.clear)
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded (long-press)
                 DynamicIslandExpandedRegion(.center) {
                     ExpandedMasterpiece(context: context)
                 }
             } compactLeading: {
-                // Compact leading pill
                 CompactTimer(context: context)
             } compactTrailing: {
-                // Compact trailing pill
                 CompactVisual(context: context)
             } minimal: {
-                // Minimal pill (when competing with other activities)
                 MinimalMasterpiece(context: context)
             }
         }
     }
 }
 
-
 // MARK: - 3. Shared time helper
-
 @available(iOSApplicationExtension 18.0, *)
 fileprivate func timeText(
     for context: ActivityViewContext<FocusSessionAttributes>,
@@ -107,14 +94,19 @@ fileprivate func timeText(
     dimIfPaused: Bool = true
 ) -> some View {
     let isPaused = context.state.isPaused
-    
+    let now = Date()
+
+    // ✅ Derive completion even if the app never set isCompleted (e.g. app killed)
+    let derivedCompleted = context.state.isCompleted || (!isPaused && now >= context.state.endDate)
+
     return Group {
-        if isPaused {
-            // Static string while paused
+        if derivedCompleted {
+            Text("Session complete")
+        } else if isPaused {
             Text(context.state.pausedDisplayTime)
         } else {
-            // Live countdown while running
-            Text(context.state.endDate, style: .timer)
+            // ✅ Countdown that never counts up after end
+            Text(timerInterval: now...context.state.endDate, countsDown: true)
         }
     }
     .font(font)
@@ -123,45 +115,39 @@ fileprivate func timeText(
     .opacity(isPaused && dimIfPaused ? 0.6 : 1.0)
 }
 
-
-// MARK: - 4. Lock Screen View (Updated text logic)
-
+// MARK: - 4. Lock Screen View
 @available(iOSApplicationExtension 18.0, *)
 struct LockScreenMasterpiece: View {
     let context: ActivityViewContext<FocusSessionAttributes>
-    
+
     var body: some View {
         let theme = DesignSystem.colors(for: context.state.themeID)
         let isPaused = context.state.isPaused
-        let isCompleted = context.state.isCompleted
-        
+        let now = Date()
+        let derivedCompleted = context.state.isCompleted || (!isPaused && now >= context.state.endDate)
+
         HStack(alignment: .center, spacing: 0) {
-            // LEFT: labels + timer
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    // Switch icon based on state
-                    Image(systemName: isCompleted ? "checkmark.circle.fill" : (isPaused ? "pause.circle.fill" : "record.circle"))
+                    Image(systemName: derivedCompleted ? "checkmark.circle.fill" : (isPaused ? "pause.circle.fill" : "record.circle"))
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(theme.accent)
-                        .symbolEffect(.pulse, options: .repeating, isActive: !isPaused && !isCompleted)
-                    
-                    Text(isCompleted ? "SESSION COMPLETE" : "FOCUS SESSION")
+                        .symbolEffect(.pulse, options: .repeating, isActive: !isPaused && !derivedCompleted)
+
+                    Text(derivedCompleted ? "SESSION COMPLETE" : "FOCUS SESSION")
                         .font(.system(size: 10, weight: .bold))
                         .tracking(1.5)
                         .foregroundStyle(theme.accent.opacity(0.9))
                 }
-                
-                if isCompleted {
-                    // ✅ FIXED: Show Intention Name + Completed
-                    // Reduced size to 28 and added minimumScaleFactor to fit long names
+
+                if derivedCompleted {
                     Text("\(context.state.sessionName) - Completed")
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .minimumScaleFactor(0.5) // Shrinks down if name is too long
+                        .minimumScaleFactor(0.5)
                         .lineLimit(2)
                         .foregroundStyle(.white)
                         .shadow(color: theme.textShadow, radius: 10)
                 } else {
-                    // Normal Timer
                     timeText(
                         for: context,
                         font: .system(size: 44, weight: .light, design: .rounded),
@@ -174,20 +160,16 @@ struct LockScreenMasterpiece: View {
                     )
                 }
             }
-            
+
             Spacer()
-            
-            // RIGHT: state indicator glyph (no tap)
+
             ZStack {
                 Circle()
-                    .strokeBorder(theme.accent.opacity(isPaused || isCompleted ? 0.45 : 0.7), lineWidth: 2)
-                    .background(
-                        Circle()
-                            .fill(theme.accent.opacity(0.12))
-                    )
+                    .strokeBorder(theme.accent.opacity(isPaused || derivedCompleted ? 0.45 : 0.7), lineWidth: 2)
+                    .background(Circle().fill(theme.accent.opacity(0.12)))
                     .frame(width: 40, height: 40)
-                
-                Image(systemName: isCompleted ? "checkmark" : (isPaused ? "pause.fill" : "play.fill"))
+
+                Image(systemName: derivedCompleted ? "checkmark" : (isPaused ? "pause.fill" : "play.fill"))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(theme.accent)
             }
@@ -197,50 +179,43 @@ struct LockScreenMasterpiece: View {
     }
 }
 
-
-// MARK: - 5. Expanded View (Updated for Completion)
-
+// MARK: - 5. Expanded View
 @available(iOSApplicationExtension 18.0, *)
 struct ExpandedMasterpiece: View {
     let context: ActivityViewContext<FocusSessionAttributes>
-    
+
     var body: some View {
         let theme = DesignSystem.colors(for: context.state.themeID)
         let isPaused = context.state.isPaused
-        let isCompleted = context.state.isCompleted
-        
+        let now = Date()
+        let derivedCompleted = context.state.isCompleted || (!isPaused && now >= context.state.endDate)
+
         ZStack {
-            // Black capsule
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.black.opacity(0.96))
-            
+
             HStack(spacing: 14) {
-                // LEFT: theme orb
                 ZStack {
-                    Circle()
-                        .fill(theme.accent.opacity(0.16))
-                    Circle()
-                        .stroke(theme.accent.opacity(0.5), lineWidth: 1)
-                    Image(systemName: isCompleted ? "checkmark" : "sparkles")
+                    Circle().fill(theme.accent.opacity(0.16))
+                    Circle().stroke(theme.accent.opacity(0.5), lineWidth: 1)
+                    Image(systemName: derivedCompleted ? "checkmark" : "sparkles")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(theme.accent)
                 }
                 .frame(width: 32, height: 32)
-                
-                // CENTER: text stack
+
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(isCompleted ? "Session Complete" : "Focus Session")
+                    Text(derivedCompleted ? "Session Complete" : "Focus Session")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.85))
-                    
-                    if isCompleted {
-                        // ✅ Show session name on island when done
+
+                    if derivedCompleted {
                         Text(context.state.sessionName)
                             .font(.system(size: 20, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white)
                             .minimumScaleFactor(0.7)
                             .lineLimit(1)
-                        
+
                         Text("Completed")
                             .font(.caption2)
                             .foregroundStyle(theme.accent)
@@ -250,26 +225,20 @@ struct ExpandedMasterpiece: View {
                             font: .system(size: 22, weight: .semibold, design: .rounded),
                             color: .white
                         )
-                        
+
                         Text(isPaused ? "Paused" : "In progress")
                             .font(.caption2)
                             .foregroundStyle(.white.opacity(0.55))
                     }
                 }
-                
+
                 Spacer()
-                
-                // RIGHT: status orb
+
                 ZStack {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 48, height: 48)
-                    
-                    Circle()
-                        .stroke(theme.accent.opacity(0.3), lineWidth: 2)
-                        .frame(width: 52, height: 52)
-                    
-                    Image(systemName: isCompleted ? "checkmark" : (isPaused ? "pause.fill" : "play.fill"))
+                    Circle().fill(.white).frame(width: 48, height: 48)
+                    Circle().stroke(theme.accent.opacity(0.3), lineWidth: 2).frame(width: 52, height: 52)
+
+                    Image(systemName: derivedCompleted ? "checkmark" : (isPaused ? "pause.fill" : "play.fill"))
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(.black)
                 }
@@ -281,18 +250,18 @@ struct ExpandedMasterpiece: View {
     }
 }
 
-
 // MARK: - 6. Compact Views
-
 @available(iOSApplicationExtension 18.0, *)
 struct CompactTimer: View {
     let context: ActivityViewContext<FocusSessionAttributes>
-    
+
     var body: some View {
         let theme = DesignSystem.colors(for: context.state.themeID)
-        let isCompleted = context.state.isCompleted
-        
-        if isCompleted {
+        let isPaused = context.state.isPaused
+        let now = Date()
+        let derivedCompleted = context.state.isCompleted || (!isPaused && now >= context.state.endDate)
+
+        if derivedCompleted {
             Image(systemName: "checkmark")
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(theme.accent)
@@ -312,31 +281,29 @@ struct CompactTimer: View {
 @available(iOSApplicationExtension 18.0, *)
 struct CompactVisual: View {
     let context: ActivityViewContext<FocusSessionAttributes>
-    
+
     var body: some View {
         let theme = DesignSystem.colors(for: context.state.themeID)
-        let isCompleted = context.state.isCompleted
-        
         Circle()
-            .fill(isCompleted ? theme.accent : theme.accent)
+            .fill(theme.accent)
             .frame(width: 8, height: 8)
             .shadow(color: theme.accent.opacity(0.8), radius: 4)
             .padding(.trailing, 4)
     }
 }
 
-
 // MARK: - 7. Minimal View
-
 @available(iOSApplicationExtension 18.0, *)
 struct MinimalMasterpiece: View {
     let context: ActivityViewContext<FocusSessionAttributes>
-    
+
     var body: some View {
         let theme = DesignSystem.colors(for: context.state.themeID)
-        let isCompleted = context.state.isCompleted
-        
-        if isCompleted {
+        let isPaused = context.state.isPaused
+        let now = Date()
+        let derivedCompleted = context.state.isCompleted || (!isPaused && now >= context.state.endDate)
+
+        if derivedCompleted {
             Image(systemName: "checkmark")
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(theme.accent)

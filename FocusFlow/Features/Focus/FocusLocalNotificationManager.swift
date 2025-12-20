@@ -6,8 +6,11 @@ final class FocusLocalNotificationManager {
 
     private let center = UNUserNotificationCenter.current()
 
-    // Single-shot session completion notification
-    private let sessionNotificationId = "focusflow.sessionCompletion"
+    // Scheduled session completion (background / killed)
+    private let scheduledSessionNotificationId = "focusflow.sessionCompletion"
+
+    // Immediate completion (foreground banner)
+    private let immediateSessionNotificationId = "focusflow.sessionCompletion.immediate"
 
     // Repeating daily nudges (3x per day)
     private let dailyNudgeIds = [
@@ -43,30 +46,28 @@ final class FocusLocalNotificationManager {
         }
     }
 
-    // MARK: - Session completion notification
+    // MARK: - Session completion notifications
 
-    /// Schedule a notification for session completion after `seconds`
-    func scheduleSessionCompletionNotification(
-        after seconds: Int,
-        sessionName: String
-    ) {
+    /// Schedule a notification for session completion after `seconds` (works if app is backgrounded or terminated).
+    func scheduleSessionCompletionNotification(after seconds: Int, sessionName: String) {
         guard seconds > 0 else { return }
 
-        // Clear any previous session-completion notifications
-        cancelSessionCompletionNotification()
+        // Make sure we've requested permission at least once.
+        requestAuthorizationIfNeeded()
+
+        // ✅ Important: only cancel the scheduled one here.
+        // (Do NOT cancel the immediate one, or it can race-cancel your foreground banner.)
+        cancelScheduledSessionCompletionNotification()
 
         let content = UNMutableNotificationContent()
         content.title = "Session complete"
-        content.body = "You finished your focus session: \(sessionName)"
+        content.body = "Your focus session ended: \(sessionName)"
         content.sound = .default
 
-        let trigger = UNTimeIntervalNotificationTrigger(
-            timeInterval: TimeInterval(seconds),
-            repeats: false
-        )
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(seconds), repeats: false)
 
         let request = UNNotificationRequest(
-            identifier: sessionNotificationId,
+            identifier: scheduledSessionNotificationId,
             content: content,
             trigger: trigger
         )
@@ -80,9 +81,53 @@ final class FocusLocalNotificationManager {
         }
     }
 
-    /// Cancel any pending session-completion notifications
+    /// Cancel ONLY the scheduled completion notification.
+    func cancelScheduledSessionCompletionNotification() {
+        center.removePendingNotificationRequests(withIdentifiers: [scheduledSessionNotificationId])
+        center.removeDeliveredNotifications(withIdentifiers: [scheduledSessionNotificationId])
+    }
+
+    /// Cancel ONLY the immediate completion notification.
+    func cancelImmediateSessionCompletionNotification() {
+        center.removePendingNotificationRequests(withIdentifiers: [immediateSessionNotificationId])
+        center.removeDeliveredNotifications(withIdentifiers: [immediateSessionNotificationId])
+    }
+
+    /// Cancel both scheduled + immediate completion notifications.
     func cancelSessionCompletionNotification() {
-        center.removePendingNotificationRequests(withIdentifiers: [sessionNotificationId])
+        cancelScheduledSessionCompletionNotification()
+        cancelImmediateSessionCompletionNotification()
+    }
+
+    /// Deliver an immediate completion notification (useful when the app is in the foreground and we still
+    /// want a banner/sound).
+    func deliverImmediateSessionCompletionNotification(sessionName: String) {
+        requestAuthorizationIfNeeded()
+
+        // Replace any previous immediate notification.
+        cancelImmediateSessionCompletionNotification()
+
+        let content = UNMutableNotificationContent()
+        content.title = "Session complete"
+        content.body = "Your focus session ended: \(sessionName)"
+        content.sound = .default
+
+        // Fire quickly so it feels immediate, but not 0s (0 can be flaky on some devices).
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.35, repeats: false)
+
+        let request = UNNotificationRequest(
+            identifier: immediateSessionNotificationId,
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request) { error in
+            if let error = error {
+                print("🔔 Failed to deliver immediate session notification: \(error)")
+            } else {
+                print("🔔 Delivered immediate session notification")
+            }
+        }
     }
 
     // MARK: - Daily nudges (3× per day, repeating)
@@ -90,10 +135,9 @@ final class FocusLocalNotificationManager {
     /// Schedule three repeating daily nudges (morning, afternoon, evening).
     /// Safe to call multiple times – requests with same identifiers will be replaced.
     func scheduleDailyNudges() {
-        // Optional: clear existing nudges before re-adding
         center.removePendingNotificationRequests(withIdentifiers: dailyNudgeIds)
 
-        // Morning – e.g. 9:00
+        // Morning – 9:00
         scheduleDailyNudge(
             id: dailyNudgeIds[0],
             hour: 9,
@@ -102,7 +146,7 @@ final class FocusLocalNotificationManager {
             body: "Take 2 minutes to set your intention and start a FocusFlow session."
         )
 
-        // Afternoon – e.g. 2:00 PM
+        // Afternoon – 2:00 PM
         scheduleDailyNudge(
             id: dailyNudgeIds[1],
             hour: 14,
@@ -111,7 +155,7 @@ final class FocusLocalNotificationManager {
             body: "How’s your energy? A short focus block now can move something important forward."
         )
 
-        // Evening – e.g. 8:00 PM
+        // Evening – 8:00 PM
         scheduleDailyNudge(
             id: dailyNudgeIds[2],
             hour: 20,
@@ -124,6 +168,7 @@ final class FocusLocalNotificationManager {
     /// Cancel all daily nudges (if you ever add a setting to turn them off)
     func cancelDailyNudges() {
         center.removePendingNotificationRequests(withIdentifiers: dailyNudgeIds)
+        center.removeDeliveredNotifications(withIdentifiers: dailyNudgeIds)
     }
 
     // MARK: - User-configurable daily reminder (Profile setting)
@@ -133,7 +178,6 @@ final class FocusLocalNotificationManager {
     /// - enabled == false → cancel that reminder
     func applyDailyReminderSettings(enabled: Bool, time: Date) {
         if enabled {
-            // Make sure we have permission (no-op if already decided)
             requestAuthorizationIfNeeded()
             scheduleDailyReminder(at: time)
         } else {
@@ -143,7 +187,6 @@ final class FocusLocalNotificationManager {
 
     /// Schedule one repeating daily reminder at the given time of day.
     private func scheduleDailyReminder(at time: Date) {
-        // Clear any previous reminder with this id
         cancelDailyReminder()
 
         let comps = Calendar.current.dateComponents([.hour, .minute], from: time)
@@ -156,10 +199,7 @@ final class FocusLocalNotificationManager {
         content.body = "Take a moment to start your focus goal in FocusFlow."
         content.sound = .default
 
-        let trigger = UNCalendarNotificationTrigger(
-            dateMatching: dateComponents,
-            repeats: true
-        )
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
 
         let request = UNNotificationRequest(
             identifier: dailyReminderId,
@@ -181,6 +221,7 @@ final class FocusLocalNotificationManager {
     /// Cancel the user-configurable daily reminder only.
     func cancelDailyReminder() {
         center.removePendingNotificationRequests(withIdentifiers: [dailyReminderId])
+        center.removeDeliveredNotifications(withIdentifiers: [dailyReminderId])
     }
 
     // MARK: - Habit reminders (per-habit)
@@ -192,7 +233,6 @@ final class FocusLocalNotificationManager {
         date: Date,
         repeatOption: HabitRepeat
     ) {
-        // Make sure permission is requested at least once
         requestAuthorizationIfNeeded()
 
         let calendar = Calendar.current
@@ -205,43 +245,22 @@ final class FocusLocalNotificationManager {
 
         switch repeatOption {
         case .none:
-            // One-off reminder on that exact date/time
             trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
 
         case .daily:
-            // Every day at the same time
-            dateComponents = DateComponents(
-                hour: dateComponents.hour,
-                minute: dateComponents.minute
-            )
+            dateComponents = DateComponents(hour: dateComponents.hour, minute: dateComponents.minute)
             trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
 
         case .weekly:
-            // Same weekday + time every week
-            dateComponents = DateComponents(
-                hour: dateComponents.hour,
-                minute: dateComponents.minute,
-                weekday: dateComponents.weekday
-            )
+            dateComponents = DateComponents(hour: dateComponents.hour, minute: dateComponents.minute, weekday: dateComponents.weekday)
             trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
 
         case .monthly:
-            // Same day-of-month + time
-            dateComponents = DateComponents(
-                day: dateComponents.day,
-                hour: dateComponents.hour,
-                minute: dateComponents.minute
-            )
+            dateComponents = DateComponents(day: dateComponents.day, hour: dateComponents.hour, minute: dateComponents.minute)
             trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
 
         case .yearly:
-            // Same month/day + time every year
-            dateComponents = DateComponents(
-                month: dateComponents.month,
-                day: dateComponents.day,
-                hour: dateComponents.hour,
-                minute: dateComponents.minute
-            )
+            dateComponents = DateComponents(month: dateComponents.month, day: dateComponents.day, hour: dateComponents.hour, minute: dateComponents.minute)
             trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
         }
 
@@ -252,11 +271,7 @@ final class FocusLocalNotificationManager {
 
         let identifier = habitReminderPrefix + habitId.uuidString
 
-        let request = UNNotificationRequest(
-            identifier: identifier,
-            content: content,
-            trigger: trigger
-        )
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
         center.add(request) { error in
             if let error = error {
@@ -271,6 +286,7 @@ final class FocusLocalNotificationManager {
     func cancelHabitReminder(habitId: UUID) {
         let identifier = habitReminderPrefix + habitId.uuidString
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
     }
 
     // MARK: - Internal helper for fixed nudges
@@ -291,16 +307,9 @@ final class FocusLocalNotificationManager {
         content.body = body
         content.sound = .default
 
-        let trigger = UNCalendarNotificationTrigger(
-            dateMatching: components,
-            repeats: true
-        )
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
 
-        let request = UNNotificationRequest(
-            identifier: id,
-            content: content,
-            trigger: trigger
-        )
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
 
         center.add(request) { error in
             if let error = error {

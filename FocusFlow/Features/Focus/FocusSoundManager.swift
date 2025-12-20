@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import AVFoundation
 
 final class FocusSoundManager: NSObject {
@@ -93,9 +94,6 @@ final class FocusSoundManager: NSObject {
     }
 
     /// Full stop (reset position and release player).
-    /// We keep the audio session configured; if you want to
-    /// aggressively release it, you could also setActive(false),
-    /// but it's not required.
     func stop() {
         audioPlayer?.stop()
         audioPlayer = nil
@@ -119,7 +117,6 @@ final class FocusSoundManager: NSObject {
 
         switch type {
         case .began:
-            // Another audio source took over (phone call, Siri, etc.)
             if let player = audioPlayer, player.isPlaying {
                 shouldResumeAfterInterruption = true
                 player.pause()
@@ -134,7 +131,6 @@ final class FocusSoundManager: NSObject {
 
             let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
 
-            // Only resume if we were playing before & system says it's OK.
             if options.contains(.shouldResume), shouldResumeAfterInterruption {
                 shouldResumeAfterInterruption = false
                 resume()

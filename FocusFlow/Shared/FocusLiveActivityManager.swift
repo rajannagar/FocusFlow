@@ -52,7 +52,9 @@ final class FocusLiveActivityManager {
             isCompleted: false // Start as not completed
         )
 
-        let content = ActivityContent(state: initialContentState, staleDate: nil)
+        // Mark content stale at the expected end time so the system can deprioritize/remove it
+        // even if the app doesn't get a chance to explicitly end the activity.
+        let content = ActivityContent(state: initialContentState, staleDate: endDate)
 
         do {
             self.activity = try Activity<FocusSessionAttributes>.request(
@@ -86,7 +88,7 @@ final class FocusLiveActivityManager {
         )
 
         Task {
-            let content = ActivityContent(state: state, staleDate: nil)
+            let content = ActivityContent(state: state, staleDate: isPaused ? nil : endDate)
             await activity.update(content)
             print("FocusLiveActivityManager: Updated (paused=\(isPaused), remaining=\(remainingSeconds))")
         }
