@@ -1,54 +1,49 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.0";
 
-// NOTE: We removed bcrypt because Edge Functions cannot use FFI.
-// Instead we use WebCrypto (crypto.subtle) to hash the password with SHA-256.
-// This is still hashed (not plain text), but for production you'd ideally
-// switch to a stronger scheme like Argon2 via a service that supports it.
+type AuthResponse = {
+  user: { id: string; email: string | null };
+  access_token: string | null;
+  refresh_token: string | null;
+};
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars.");
+function corsHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
+  };
 }
-
-const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
+    headers: corsHeaders(),
   });
 }
 
-// Simple SHA-256 hashing using WebCrypto (no FFI, works in Edge Functions)
-async function sha256Hex(input: string): Promise<string> {
-  const data = new TextEncoder().encode(input);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    // CORS preflight (optional)
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders() });
+  if (req.method !== "POST") return jsonResponse({ message: "Method not allowed" }, 405);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const anonKey =
+    Deno.env.get("SUPABASE_ANON_KEY") ??
+    Deno.env.get("SUPABASE_ANON_PUBLIC_KEY") ??
+    "";
+
+  if (!supabaseUrl || !anonKey) {
+    console.error("Missing SUPABASE_URL or SUPABASE_ANON_KEY env vars.");
+    return jsonResponse(
+      { message: "Server misconfigured. Missing env vars." },
+      500,
+    );
   }
 
-  if (req.method !== "POST") {
-    return jsonResponse({ message: "Method not allowed" }, 405);
-  }
+  const supabase = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false },
+  });
 
   let payload: any;
   try {
@@ -61,51 +56,31 @@ serve(async (req: Request) => {
   const email = rawEmail.toLowerCase();
   const password = (payload.password ?? "").toString();
 
-  if (!email || !password) {
-    return jsonResponse({ message: "Email and password are required." }, 400);
-  }
-
-  if (!email.includes("@") || !email.includes(".")) {
-    return jsonResponse({ message: "Please enter a valid email address." }, 400);
-  }
-
-  if (password.length < 6) {
-    return jsonResponse({ message: "Password must be at least 6 characters." }, 400);
-  }
+  if (!email || !password) return jsonResponse({ message: "Email and password are required." }, 400);
+  if (!email.includes("@") || !email.includes(".")) return jsonResponse({ message: "Please enter a valid email address." }, 400);
+  if (password.length < 6) return jsonResponse({ message: "Password must be at least 6 characters." }, 400);
 
   try {
-    // Hash the password with SHA-256 (no FFI)
-    const passwordHash = await sha256Hex(password);
-    const userId = crypto.randomUUID();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
-    const { error } = await supabase
-      .from("users")
-      .insert({
-        id: userId,
-        email,
-        password_hash: passwordHash,
-        is_guest: false,
-      });
-
-    if (error) {
-      console.error("Insert error:", error);
-
-      // 23505 = unique violation (email already exists)
-      if ((error as any).code === "23505") {
-        return jsonResponse(
-          { message: "An account already exists for this email." },
-          400,
-        );
-      }
-
+    if (error || !data.user) {
       return jsonResponse(
-        { message: "Error creating account. Please try again." },
-        500,
+        { message: error?.message ?? "Error creating account." },
+        400,
       );
     }
 
-    // Return shape that matches AuthAPIUser on iOS
-    return jsonResponse({ id: userId, email }, 200);
+    const result: AuthResponse = {
+      user: { id: data.user.id, email: data.user.email ?? email },
+      // If email confirmation is ON, session may be null until verify + login.
+      access_token: data.session?.access_token ?? null,
+      refresh_token: data.session?.refresh_token ?? null,
+    };
+
+    return jsonResponse(result, 200);
   } catch (err) {
     console.error("Unhandled error in auth-email-signup:", err);
     return jsonResponse(

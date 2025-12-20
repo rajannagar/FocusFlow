@@ -1,48 +1,49 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.0";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+type AuthResponse = {
+  user: { id: string; email: string | null };
+  access_token: string | null;
+  refresh_token: string | null;
+};
 
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars.");
+function corsHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
+  };
 }
-
-const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
+    headers: corsHeaders(),
   });
 }
 
-// Same SHA-256 helper we used in auth-email-signup
-async function sha256Hex(input: string): Promise<string> {
-  const data = new TextEncoder().encode(input);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders() });
+  if (req.method !== "POST") return jsonResponse({ message: "Method not allowed" }, 405);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const anonKey =
+    Deno.env.get("SUPABASE_ANON_KEY") ??
+    Deno.env.get("SUPABASE_ANON_PUBLIC_KEY") ??
+    "";
+
+  if (!supabaseUrl || !anonKey) {
+    console.error("Missing SUPABASE_URL or SUPABASE_ANON_KEY env vars.");
+    return jsonResponse(
+      { message: "Server misconfigured. Missing env vars." },
+      500,
+    );
   }
 
-  if (req.method !== "POST") {
-    return jsonResponse({ message: "Method not allowed" }, 405);
-  }
+  const supabase = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false },
+  });
 
   let payload: any;
   try {
@@ -55,47 +56,28 @@ serve(async (req: Request) => {
   const email = rawEmail.toLowerCase();
   const password = (payload.password ?? "").toString();
 
-  if (!email || !password) {
-    return jsonResponse({ message: "Email and password are required." }, 400);
-  }
+  if (!email || !password) return jsonResponse({ message: "Email and password are required." }, 400);
 
   try {
-    // Look up user by email
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("id, email, password_hash")
-      .eq("email", email)
-      .maybeSingle();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    if (error) {
-      console.error("Query error in auth-email-login:", error);
+    if (error || !data.user) {
       return jsonResponse(
-        { message: "Error checking account. Please try again." },
-        500,
-      );
-    }
-
-    if (!user) {
-      return jsonResponse(
-        { message: "No account found for that email." },
+        { message: error?.message ?? "Incorrect email or password." },
         400,
       );
     }
 
-    const passwordHash = await sha256Hex(password);
+    const result: AuthResponse = {
+      user: { id: data.user.id, email: data.user.email ?? email },
+      access_token: data.session?.access_token ?? null,
+      refresh_token: data.session?.refresh_token ?? null,
+    };
 
-    if (passwordHash !== user.password_hash) {
-      return jsonResponse(
-        { message: "Incorrect email or password." },
-        400,
-      );
-    }
-
-    // Success – return shape that matches AuthAPIUser on iOS
-    return jsonResponse(
-      { id: user.id, email: user.email ?? email },
-      200,
-    );
+    return jsonResponse(result, 200);
   } catch (err) {
     console.error("Unhandled error in auth-email-login:", err);
     return jsonResponse(
