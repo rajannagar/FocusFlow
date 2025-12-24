@@ -11,6 +11,11 @@ struct FocusFlowApp: App {
         // Restore auth session as early as possible
         AuthManager.shared.restoreSessionIfNeeded()
 
+        // ✅ Ensure task reminders are scheduled even if Tasks tab is never opened.
+        // (TasksStore remains the single source of truth; the scheduler only reacts.
+        // No view models are created here.)
+        _ = TaskReminderScheduler.shared
+
         // Ensure UNUserNotificationCenter delegate is set (foreground behavior)
         UNUserNotificationCenter.current().delegate = appDelegate
 

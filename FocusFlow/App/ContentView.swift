@@ -74,15 +74,13 @@ struct ContentView: View {
             FocusView()
                 .tabItem { Label("Focus", systemImage: "timer") }
 
-            // ✅ New Tasks tab (v1 shell)
+            // ✅ New Tasks tab
             TasksView()
                 .tabItem { Label("Tasks", systemImage: "checklist") }
 
-            HabitsView()
-                .tabItem { Label("Habits", systemImage: "checkmark.circle") }
-
-            StatsView()
-                .tabItem { Label("Stats", systemImage: "chart.bar") }
+            // ✅ Progress (Stats v2)
+            ProgressViewV2()
+                .tabItem { Label("Progress", systemImage: "chart.bar") }
 
             ProfileView()
                 .tabItem { Label("Profile", systemImage: "person.circle") }

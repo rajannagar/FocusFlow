@@ -3,6 +3,78 @@ import UIKit
 import UniformTypeIdentifiers
 
 // =========================================================
+// MARK: - Shared UI Components (Local for full file context)
+// =========================================================
+
+// NOTE: Ideally move these to a SharedUI.swift file
+private struct GlassCard<Content: View>: View {
+    var cornerRadius: CGFloat = 26
+    let content: () -> Content
+
+    var body: some View {
+        content()
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.white.opacity(0.20),
+                                Color.white.opacity(0.08)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                    )
+            )
+    }
+}
+
+private struct ParticleEffect: GeometryEffect {
+    var time: Double
+    var speed: Double = Double.random(in: 20...100)
+    var direction: Double = Double.random(in: -Double.pi...Double.pi)
+
+    var animatableData: Double {
+        get { time }
+        set { time = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let xTranslation = speed * cos(direction) * time
+        let yTranslation = speed * sin(direction) * time
+        let affineTranslation = CGAffineTransform(translationX: xTranslation, y: yTranslation)
+        let transform = CGAffineTransform(rotationAngle: CGFloat(time * speed * 0.1))
+        return ProjectionTransform(transform.concatenating(affineTranslation))
+    }
+}
+
+private struct ConfettiBurst: View {
+    @State private var time: Double = 0.0
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<12) { _ in
+                Circle()
+                    .fill(color)
+                    .frame(width: 4, height: 4)
+                    .modifier(ParticleEffect(time: time))
+                    .opacity(1 - time)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6)) {
+                time = 1.5
+            }
+        }
+    }
+}
+
+// =========================================================
 // MARK: - TasksView (Theme-consistent + glass + reorder)
 // =========================================================
 
@@ -26,8 +98,8 @@ struct TasksView: View {
     // Animation State
     @State private var confettiTaskID: UUID? = nil
 
-    // Reorder state
-    @State private var draggingTaskID: UUID? = nil
+    // Dynamic Greeting
+    @State private var greeting: String = "Make today feel light."
 
     // Sheets
     @State private var editorMode: TaskEditorMode? = nil
@@ -43,8 +115,6 @@ struct TasksView: View {
     private var cal: Calendar { .autoupdatingCurrent }
     private var day: Date { cal.startOfDay(for: selectedDate) }
 
-    private var isReordering: Bool { draggingTaskID != nil }
-
     // MARK: - Derived UI
 
     private var monthYearLabel: String {
@@ -57,9 +127,6 @@ struct TasksView: View {
     private var visibleTasks: [FFTaskItem] {
         let d = day
         let base = vm.orderedTasks().filter { $0.occurs(on: d, calendar: cal) }
-
-        // Reorder mode: show in pure manual order so dragging feels natural
-        if isReordering { return base }
 
         // Normal mode: incomplete first, but keep manual order within groups
         let incomplete = base.filter { !isCompleted($0, on: d) }
@@ -171,36 +238,34 @@ struct TasksView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
-                // Outlook-style delete behavior for repeating tasks
-        // Outlook-style delete behavior for repeating tasks (Apple-style alert)
-.alert("Delete task?", isPresented: $showDeleteAlert, presenting: pendingDeleteTask) { task in
-    if task.repeatRule != .none {
-        Button("Delete this day", role: .destructive) {
-            vm.deleteOccurrence(taskID: task.id, on: day, calendar: cal)
-            pendingDeleteTask = nil
+        // Outlook-style delete behavior for repeating tasks
+        .alert("Delete task?", isPresented: $showDeleteAlert, presenting: pendingDeleteTask) { task in
+            if task.repeatRule != .none {
+                Button("Delete this day", role: .destructive) {
+                    vm.deleteOccurrence(taskID: task.id, on: day, calendar: cal)
+                    pendingDeleteTask = nil
+                }
+                Button("Delete series", role: .destructive) {
+                    vm.delete(taskID: task.id)
+                    pendingDeleteTask = nil
+                }
+            } else {
+                Button("Delete task", role: .destructive) {
+                    vm.delete(taskID: task.id)
+                    pendingDeleteTask = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                pendingDeleteTask = nil
+            }
+        } message: { task in
+            if task.repeatRule != .none {
+                Text("Delete only this task for the selected day, or delete the entire series?")
+            } else {
+                Text("This action can't be undone.")
+            }
         }
-        Button("Delete series", role: .destructive) {
-            vm.delete(taskID: task.id)
-            pendingDeleteTask = nil
-        }
-    } else {
-        Button("Delete task", role: .destructive) {
-            vm.delete(taskID: task.id)
-            pendingDeleteTask = nil
-        }
-    }
-
-    Button("Cancel", role: .cancel) {
-        pendingDeleteTask = nil
-    }
-} message: { task in
-    if task.repeatRule != .none {
-        Text("Delete only this task for the selected day, or delete the entire series?")
-    } else {
-        Text("This action can’t be undone.")
-    }
-}
-.sheet(item: $editorMode) { mode in
+        .sheet(item: $editorMode) { mode in
             editorSheet(mode: mode)
         }
         .sheet(isPresented: $showingJumpToDate) { jumpToDateSheet }
@@ -211,6 +276,16 @@ struct TasksView: View {
             centeredDateID = id
             scrollRequestID = id
             iconPulse = true
+            
+            // Randomize greeting
+            let greetings = [
+                "Make today feel light.",
+                "One step at a time.",
+                "Focus on the present.",
+                "Keep the loop going.",
+                "Small wins add up."
+            ]
+            greeting = greetings.randomElement() ?? "Make today feel light."
         }
     }
 
@@ -240,9 +315,10 @@ struct TasksView: View {
                     }
                 }
 
-                Text("Make today feel light.")
+                Text(greeting)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white.opacity(0.85))
+                    .animation(.easeInOut, value: greeting)
             }
 
             Spacer()
@@ -261,8 +337,6 @@ struct TasksView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
-            .disabled(isReordering)
-            .opacity(isReordering ? 0.4 : 1.0)
         }
     }
 
@@ -272,14 +346,19 @@ struct TasksView: View {
             Circle()
                 .fill(done ? theme.accentPrimary : Color.white.opacity(0.35))
                 .frame(width: 8, height: 8)
+            
+            // Improved smooth transition
             Text(done ? "All done" : "In progress")
                 .font(.system(size: 10, weight: .semibold))
+                .id(done)
+                .transition(.push(from: .bottom).combined(with: .opacity))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(Color.white.opacity(0.15))
         .clipShape(Capsule())
         .foregroundColor(.white.opacity(0.9))
+        .animation(.bouncy(duration: 0.3), value: done)
     }
 
     // =========================================================
@@ -326,8 +405,6 @@ struct TasksView: View {
                     .shadow(radius: 10)
                 }
                 .buttonStyle(.plain)
-                .disabled(isReordering)
-                .opacity(isReordering ? 0.4 : 1.0)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -410,8 +487,6 @@ struct TasksView: View {
             }
             .buttonStyle(.plain)
         }
-        .disabled(isReordering)
-        .opacity(isReordering ? 0.45 : 1.0)
     }
 
     // =========================================================
@@ -419,91 +494,71 @@ struct TasksView: View {
     // =========================================================
 
     private var sectionHeader: some View {
-    HStack {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Tasks")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white.opacity(0.95))
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Tasks")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.95))
 
-            Text("Tap to complete. Swipe to edit or delete. Press and hold to reorder.")
-                .font(.system(size: 11))
-                .foregroundColor(.white.opacity(0.6))
-        }
-
-        Spacer()
-
-        if !visibleTasks.isEmpty {
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark.circle").imageScale(.small)
-                Text("\(completedCount)/\(visibleTasks.count)")
+                Text("Tap to complete. Swipe to edit or delete.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.6))
             }
-            .font(.system(size: 11, weight: .medium))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color.white.opacity(0.18))
-            .clipShape(Capsule())
-            .foregroundColor(.white.opacity(0.9))
+
+            Spacer()
+
+            if !visibleTasks.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle").imageScale(.small)
+                    Text("\(completedCount)/\(visibleTasks.count)")
+                }
+                .font(.system(size: 11, weight: .medium))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color.white.opacity(0.18))
+                .clipShape(Capsule())
+                .foregroundColor(.white.opacity(0.9))
+                .padding(.leading, 6)
+            }
         }
     }
-    .disabled(isReordering)
-    .opacity(isReordering ? 0.45 : 1.0)
-}
 
-private var tasksList: some View {
-    List {
-        ForEach(visibleTasks) { task in
-            Group {
-                if isReordering {
-                    taskRow(task)
-                } else {
-                    Button {
-                        withAnimation(.spring(response: 0.25, dampingFraction: 0.82)) {
-                            toggleCompletion(task, on: day)
-                        }
-                    } label: {
-                        taskRow(task)
+    private var tasksList: some View {
+        List {
+            ForEach(visibleTasks) { task in
+                Button {
+                    // Standard tap action
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.82)) {
+                        toggleCompletion(task, on: day)
                     }
-                    .buttonStyle(.plain)
+                } label: {
+                    taskRow(task)
                 }
-            }
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-            .contentShape(Rectangle())
-            // HabitView-style reorder: long-press + drag the card (no handles)
-            .onDrag {
-                draggingTaskID = task.id
-                return NSItemProvider(object: task.id.uuidString as NSString)
-            }
-            .onDrop(of: [UTType.text], delegate: TaskReorderDropDelegate(
-                item: task,
-                visibleIDs: visibleTasks.map { $0.id },
-                draggingTaskID: $draggingTaskID,
-                move: { from, to in
-                    moveVisibleTasks(fromOffsets: from, toOffset: to)
-                }
-            ))
-            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                if !isReordering {
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                
+                // Swipe actions
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) { delete(task: task) } label: { Image(systemName: "trash") }
                 }
-            }
-            .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                if !isReordering {
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
                     Button { prepareSheetForEditing(task) } label: { Image(systemName: "pencil") }
-                        .tint(theme.accentPrimary)
+                    .tint(theme.accentPrimary)
                 }
             }
+            .onMove(perform: moveVisibleTasks)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
     }
-    .listStyle(.plain)
-    .scrollContentBackground(.hidden)
-    .scrollIndicators(.hidden)
-}
 
-private func moveVisibleTasks(fromOffsets: IndexSet, toOffset: Int) {
+    private func moveVisibleTasks(from source: IndexSet, to destination: Int) {
         let ids = visibleTasks.map { $0.id }
-        vm.moveTasks(visibleTaskIDs: ids, fromOffsets: fromOffsets, toOffset: toOffset)
+        vm.moveTasks(visibleTaskIDs: ids, fromOffsets: source, toOffset: destination)
         Haptics.impact(.light)
     }
 
@@ -546,6 +601,7 @@ private func moveVisibleTasks(fromOffsets: IndexSet, toOffset: Int) {
                     .font(.system(size: 16, weight: .regular))
                     .strikethrough(done, color: .white.opacity(0.35))
                     .lineLimit(2)
+                    .multilineTextAlignment(.leading)
 
                 let meta = taskMeta(task)
                 if !meta.isEmpty {
@@ -773,36 +829,6 @@ private func moveVisibleTasks(fromOffsets: IndexSet, toOffset: Int) {
 private struct TaskEditorMode: Identifiable {
     let id: UUID
     let task: FFTaskItem?
-}
-
-// =========================================================
-// MARK: - GlassCard
-// =========================================================
-
-private struct GlassCard<Content: View>: View {
-    var cornerRadius: CGFloat = 26
-    let content: () -> Content
-
-    var body: some View {
-        content()
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.white.opacity(0.20),
-                                Color.white.opacity(0.08)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(Color.white.opacity(0.14), lineWidth: 1)
-                    )
-            )
-    }
 }
 
 // =========================================================
@@ -1277,6 +1303,7 @@ private struct TaskEditorSheet: View {
                     .padding(.top, 18)
                     .padding(.bottom, 24)
                 }
+                .scrollDismissesKeyboard(.interactively) // ✨ 3. Improved keyboard handling
             }
         }
         .onAppear { hydrate() }
@@ -1715,97 +1742,6 @@ private struct WeekdayChips: View {
     }
 }
 
-// =========================================================
-// MARK: - Particle / Confetti Effects
-// =========================================================
-
-struct ParticleEffect: GeometryEffect {
-    var time: Double
-    var speed: Double = Double.random(in: 20...100)
-    var direction: Double = Double.random(in: -Double.pi...Double.pi)
-
-    var animatableData: Double {
-        get { time }
-        set { time = newValue }
-    }
-
-    func effectValue(size: CGSize) -> ProjectionTransform {
-        let xTranslation = speed * cos(direction) * time
-        let yTranslation = speed * sin(direction) * time
-        let affineTranslation = CGAffineTransform(translationX: xTranslation, y: yTranslation)
-        let transform = CGAffineTransform(rotationAngle: CGFloat(time * speed * 0.1))
-        return ProjectionTransform(transform.concatenating(affineTranslation))
-    }
-}
-
-struct ConfettiBurst: View {
-    @State private var time: Double = 0.0
-    let color: Color
-
-    var body: some View {
-        ZStack {
-            ForEach(0..<12) { _ in
-                Circle()
-                    .fill(color)
-                    .frame(width: 4, height: 4)
-                    .modifier(ParticleEffect(time: time))
-                    .opacity(1 - time)
-            }
-        }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
-                time = 1.5
-            }
-        }
-    }
-}
-
 #Preview {
     TasksView()
 }
-
-// =========================================================
-// MARK: - Reorder Drop Delegate (HabitView-style)
-// =========================================================
-
-private struct TaskReorderDropDelegate: DropDelegate {
-    let item: FFTaskItem
-    let visibleIDs: [UUID]
-    @Binding var draggingTaskID: UUID?
-    let move: (IndexSet, Int) -> Void
-
-    func validateDrop(info: DropInfo) -> Bool {
-        true
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard let fromID = draggingTaskID else { return }
-        guard fromID != item.id else { return }
-
-        guard let fromIndex = visibleIDs.firstIndex(of: fromID),
-              let toIndex = visibleIDs.firstIndex(of: item.id) else { return }
-
-        if fromIndex == toIndex { return }
-
-        // List-style move semantics
-        let from = IndexSet(integer: fromIndex)
-        let adjustedTo = (toIndex > fromIndex) ? (toIndex + 1) : toIndex
-        move(from, adjustedTo)
-        Haptics.impact(.light)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggingTaskID = nil
-        return true
-    }
-
-    func dropExited(info: DropInfo) {
-        // no-op
-    }
-}
-
-// =========================================================
