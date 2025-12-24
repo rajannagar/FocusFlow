@@ -1,15 +1,22 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 // =========================================================
-// MARK: - TasksView (Theme-consistent + glass)
+// MARK: - TasksView (Theme-consistent + glass + reorder)
 // =========================================================
 
 struct TasksView: View {
     @ObservedObject private var appSettings = AppSettings.shared
     @State private var iconPulse = false
 
-    @StateObject private var vm = TasksViewModel()
+    // Use the shared TasksStore so Tasks data can be read across the app without
+    // notification scheduling side-effects tied to view lifetime.
+    @ObservedObject private var vm = TasksStore.shared
+
+    // Delete confirmation (Outlook-style for repeating tasks)
+    @State private var pendingDeleteTask: FFTaskItem? = nil
+    @State private var showDeleteAlert: Bool = false
 
     // Date state
     @State private var selectedDate: Date = Calendar.autoupdatingCurrent.startOfDay(for: Date())
@@ -18,6 +25,9 @@ struct TasksView: View {
 
     // Animation State
     @State private var confettiTaskID: UUID? = nil
+
+    // Reorder state
+    @State private var draggingTaskID: UUID? = nil
 
     // Sheets
     @State private var editorMode: TaskEditorMode? = nil
@@ -33,7 +43,7 @@ struct TasksView: View {
     private var cal: Calendar { .autoupdatingCurrent }
     private var day: Date { cal.startOfDay(for: selectedDate) }
 
-    private var tasks: [FFTaskItem] { vm.tasks }
+    private var isReordering: Bool { draggingTaskID != nil }
 
     // MARK: - Derived UI
 
@@ -46,19 +56,15 @@ struct TasksView: View {
 
     private var visibleTasks: [FFTaskItem] {
         let d = day
-        let filtered = tasks.filter { $0.occurs(on: d, calendar: cal) }
+        let base = vm.orderedTasks().filter { $0.occurs(on: d, calendar: cal) }
 
-        return filtered.sorted { a, b in
-            let aDone = isCompleted(a, on: d)
-            let bDone = isCompleted(b, on: d)
-            if aDone != bDone { return !aDone && bDone } // incomplete first
+        // Reorder mode: show in pure manual order so dragging feels natural
+        if isReordering { return base }
 
-            if let ta = a.reminderDate, let tb = b.reminderDate { return ta < tb }
-            if a.reminderDate != nil && b.reminderDate == nil { return true }
-            if a.reminderDate == nil && b.reminderDate != nil { return false }
-
-            return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
-        }
+        // Normal mode: incomplete first, but keep manual order within groups
+        let incomplete = base.filter { !isCompleted($0, on: d) }
+        let complete = base.filter { isCompleted($0, on: d) }
+        return incomplete + complete
     }
 
     private var hasTasksForSelectedDay: Bool { !visibleTasks.isEmpty }
@@ -138,7 +144,7 @@ struct TasksView: View {
                             accentSecondary: accentSecondary,
                             hasIndicator: { date in
                                 let d = cal.startOfDay(for: date)
-                                return tasks.contains(where: { $0.showsIndicator(on: d, calendar: cal) })
+                                return vm.orderedTasks().contains(where: { $0.showsIndicator(on: d, calendar: cal) })
                             }
                         )
                         .frame(height: 54)
@@ -165,8 +171,36 @@ struct TasksView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
-        // ✅ Present using sheet(item:) so edit always loads correctly
-        .sheet(item: $editorMode) { mode in
+                // Outlook-style delete behavior for repeating tasks
+        // Outlook-style delete behavior for repeating tasks (Apple-style alert)
+.alert("Delete task?", isPresented: $showDeleteAlert, presenting: pendingDeleteTask) { task in
+    if task.repeatRule != .none {
+        Button("Delete this day", role: .destructive) {
+            vm.deleteOccurrence(taskID: task.id, on: day, calendar: cal)
+            pendingDeleteTask = nil
+        }
+        Button("Delete series", role: .destructive) {
+            vm.delete(taskID: task.id)
+            pendingDeleteTask = nil
+        }
+    } else {
+        Button("Delete task", role: .destructive) {
+            vm.delete(taskID: task.id)
+            pendingDeleteTask = nil
+        }
+    }
+
+    Button("Cancel", role: .cancel) {
+        pendingDeleteTask = nil
+    }
+} message: { task in
+    if task.repeatRule != .none {
+        Text("Delete only this task for the selected day, or delete the entire series?")
+    } else {
+        Text("This action can’t be undone.")
+    }
+}
+.sheet(item: $editorMode) { mode in
             editorSheet(mode: mode)
         }
         .sheet(isPresented: $showingJumpToDate) { jumpToDateSheet }
@@ -227,6 +261,8 @@ struct TasksView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
+            .disabled(isReordering)
+            .opacity(isReordering ? 0.4 : 1.0)
         }
     }
 
@@ -290,6 +326,8 @@ struct TasksView: View {
                     .shadow(radius: 10)
                 }
                 .buttonStyle(.plain)
+                .disabled(isReordering)
+                .opacity(isReordering ? 0.4 : 1.0)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -372,6 +410,8 @@ struct TasksView: View {
             }
             .buttonStyle(.plain)
         }
+        .disabled(isReordering)
+        .opacity(isReordering ? 0.45 : 1.0)
     }
 
     // =========================================================
@@ -379,60 +419,92 @@ struct TasksView: View {
     // =========================================================
 
     private var sectionHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Tasks")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.95))
-                Text("Tap to complete. Swipe to edit or delete.")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.6))
-            }
+    HStack {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Tasks")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white.opacity(0.95))
 
-            Spacer()
+            Text("Tap to complete. Swipe to edit or delete. Press and hold to reorder.")
+                .font(.system(size: 11))
+                .foregroundColor(.white.opacity(0.6))
+        }
 
-            if !visibleTasks.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle").imageScale(.small)
-                    Text("\(completedCount)/\(visibleTasks.count)")
-                }
-                .font(.system(size: 11, weight: .medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Color.white.opacity(0.18))
-                .clipShape(Capsule())
-                .foregroundColor(.white.opacity(0.9))
+        Spacer()
+
+        if !visibleTasks.isEmpty {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle").imageScale(.small)
+                Text("\(completedCount)/\(visibleTasks.count)")
             }
+            .font(.system(size: 11, weight: .medium))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.18))
+            .clipShape(Capsule())
+            .foregroundColor(.white.opacity(0.9))
         }
     }
+    .disabled(isReordering)
+    .opacity(isReordering ? 0.45 : 1.0)
+}
 
-    private var tasksList: some View {
-        List {
-            ForEach(visibleTasks) { task in
-                Button {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.82)) {
-                        toggleCompletion(task, on: day)
-                    }
-                } label: {
+private var tasksList: some View {
+    List {
+        ForEach(visibleTasks) { task in
+            Group {
+                if isReordering {
                     taskRow(task)
+                } else {
+                    Button {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.82)) {
+                            toggleCompletion(task, on: day)
+                        }
+                    } label: {
+                        taskRow(task)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                .contentShape(Rectangle())
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+            .contentShape(Rectangle())
+            // HabitView-style reorder: long-press + drag the card (no handles)
+            .onDrag {
+                draggingTaskID = task.id
+                return NSItemProvider(object: task.id.uuidString as NSString)
+            }
+            .onDrop(of: [UTType.text], delegate: TaskReorderDropDelegate(
+                item: task,
+                visibleIDs: visibleTasks.map { $0.id },
+                draggingTaskID: $draggingTaskID,
+                move: { from, to in
+                    moveVisibleTasks(fromOffsets: from, toOffset: to)
+                }
+            ))
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                if !isReordering {
                     Button(role: .destructive) { delete(task: task) } label: { Image(systemName: "trash") }
                 }
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            }
+            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                if !isReordering {
                     Button { prepareSheetForEditing(task) } label: { Image(systemName: "pencil") }
                         .tint(theme.accentPrimary)
                 }
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .scrollIndicators(.hidden)
+    }
+    .listStyle(.plain)
+    .scrollContentBackground(.hidden)
+    .scrollIndicators(.hidden)
+}
+
+private func moveVisibleTasks(fromOffsets: IndexSet, toOffset: Int) {
+        let ids = visibleTasks.map { $0.id }
+        vm.moveTasks(visibleTaskIDs: ids, fromOffsets: fromOffsets, toOffset: toOffset)
+        Haptics.impact(.light)
     }
 
     private func taskRow(_ task: FFTaskItem) -> some View {
@@ -625,7 +697,8 @@ struct TasksView: View {
     }
 
     private func delete(task: FFTaskItem) {
-        withAnimation(.easeInOut(duration: 0.2)) { vm.delete(taskID: task.id) }
+        pendingDeleteTask = task
+        showDeleteAlert = true
         Haptics.impact(.light)
     }
 
@@ -785,9 +858,7 @@ private struct InfiniteDateStrip: View {
                 dates = makeWindow(around: today)
                 let id = FFDateID(today).value
                 centeredDateID = id
-                DispatchQueue.main.async {
-                    reader.scrollTo(id, anchor: .center)
-                }
+                DispatchQueue.main.async { reader.scrollTo(id, anchor: .center) }
             }
             .onChange(of: scrollRequestID) { _, newID in
                 guard let newID else { return }
@@ -1017,7 +1088,7 @@ private struct JumpToDateSheet: View {
 }
 
 // =========================================================
-// MARK: - Task Editor Sheet
+// MARK: - Task Editor Sheet (Reminders toggle + sortIndex preserved)
 // =========================================================
 
 private struct TaskEditorSheet: View {
@@ -1030,13 +1101,13 @@ private struct TaskEditorSheet: View {
     @State private var title: String = ""
     @State private var notes: String = ""
 
-    // ✅ Dedicated reminders toggle
+    // Dedicated reminders toggle
     @State private var remindersEnabled: Bool = true
 
     @State private var reminderDate: Date? = nil
     @State private var reminderTime: Date = Date()
 
-    // Used to restore when toggle turns back ON
+    // Restore when toggle turns ON
     @State private var lastReminderDate: Date? = nil
     @State private var lastReminderTime: Date = Date()
 
@@ -1056,7 +1127,6 @@ private struct TaskEditorSheet: View {
     private var canSave: Bool { !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     private var sheetTitle: String { taskToEdit == nil ? "Add task" : "Edit task" }
     private var totalMinutes: Int { durationHours * 60 + durationMinutesComponent }
-
     private var reminderControlsEnabled: Bool { remindersEnabled && reminderDate != nil }
 
     var body: some View {
@@ -1122,14 +1192,11 @@ private struct TaskEditorSheet: View {
                         GlassCard(cornerRadius: 28) {
                             VStack(alignment: .leading, spacing: 0) {
 
-                                // ✅ Header row with toggle
                                 HStack {
                                     Text("Reminders")
                                         .font(.system(size: 13, weight: .semibold))
                                         .foregroundColor(.white.opacity(0.85))
-
                                     Spacer()
-
                                     Toggle("", isOn: $remindersEnabled)
                                         .labelsHidden()
                                         .tint(theme.accentPrimary)
@@ -1142,9 +1209,7 @@ private struct TaskEditorSheet: View {
                                     settingRow(
                                         title: "Date",
                                         value: remindersEnabled ? formattedDate(reminderDate) : "Off"
-                                    ) {
-                                        showingDatePickerSheet = true
-                                    }
+                                    ) { showingDatePickerSheet = true }
                                     .opacity(remindersEnabled ? 1.0 : 0.45)
                                     .disabled(!remindersEnabled)
 
@@ -1153,15 +1218,12 @@ private struct TaskEditorSheet: View {
                                     settingRow(
                                         title: "Time of day",
                                         value: reminderControlsEnabled ? formattedTime(reminderTime) : "Off"
-                                    ) {
-                                        showingTimePickerSheet = true
-                                    }
+                                    ) { showingTimePickerSheet = true }
                                     .opacity(reminderControlsEnabled ? 1.0 : 0.45)
                                     .disabled(!reminderControlsEnabled)
 
                                     Divider().background(Color.white.opacity(0.18)).padding(.leading, 18)
 
-                                    // Duration is always enabled (not tied to reminders)
                                     settingRow(title: "Duration", value: formattedDuration()) {
                                         showingDurationPickerSheet = true
                                     }
@@ -1219,16 +1281,13 @@ private struct TaskEditorSheet: View {
         }
         .onAppear { hydrate() }
         .onChange(of: remindersEnabled) { _, enabled in
-            // ✅ Toggle OFF cancels reminders (by saving nil reminderDate)
             if enabled == false {
                 lastReminderDate = reminderDate
                 lastReminderTime = reminderTime
-
                 reminderDate = nil
                 repeatRule = .none
                 customWeekdays.removeAll()
             } else {
-                // Restore last values or sensible defaults
                 if reminderDate == nil {
                     reminderDate = lastReminderDate ?? selectedDay
                 }
@@ -1514,7 +1573,6 @@ private struct TaskEditorSheet: View {
 
             remindersEnabled = (t.reminderDate != nil)
 
-            // keep last so toggle restore feels good
             lastReminderDate = t.reminderDate.map { Calendar.autoupdatingCurrent.startOfDay(for: $0) }
             lastReminderTime = t.reminderDate ?? Date()
 
@@ -1523,8 +1581,10 @@ private struct TaskEditorSheet: View {
 
             repeatRule = t.repeatRule
             customWeekdays = t.customWeekdays
+
             durationHours = max(0, t.durationMinutes) / 60
             durationMinutesComponent = max(0, t.durationMinutes) % 60
+
             convertToPreset = t.convertToPreset
             return
         }
@@ -1532,7 +1592,6 @@ private struct TaskEditorSheet: View {
         title = ""
         notes = ""
 
-        // New tasks default to reminders ON for the selected day
         remindersEnabled = true
         reminderDate = selectedDay
         reminderTime = Date()
@@ -1567,12 +1626,12 @@ private struct TaskEditorSheet: View {
         let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         let finalNotes = trimmedNotes.isEmpty ? nil : trimmedNotes
 
-        // If reminders are off, force repeat off to keep state clean
         let finalRepeat: FFTaskRepeatRule = remindersEnabled ? repeatRule : .none
         let finalCustomDays: Set<Int> = (remindersEnabled && repeatRule == .customDays) ? customWeekdays : []
 
         return FFTaskItem(
             id: taskToEdit?.id ?? UUID(),
+            sortIndex: taskToEdit?.sortIndex ?? 0,   // ✅ preserve manual order on edit
             title: trimmedTitle,
             notes: finalNotes,
             reminderDate: mergedReminder,
@@ -1704,3 +1763,49 @@ struct ConfettiBurst: View {
 #Preview {
     TasksView()
 }
+
+// =========================================================
+// MARK: - Reorder Drop Delegate (HabitView-style)
+// =========================================================
+
+private struct TaskReorderDropDelegate: DropDelegate {
+    let item: FFTaskItem
+    let visibleIDs: [UUID]
+    @Binding var draggingTaskID: UUID?
+    let move: (IndexSet, Int) -> Void
+
+    func validateDrop(info: DropInfo) -> Bool {
+        true
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let fromID = draggingTaskID else { return }
+        guard fromID != item.id else { return }
+
+        guard let fromIndex = visibleIDs.firstIndex(of: fromID),
+              let toIndex = visibleIDs.firstIndex(of: item.id) else { return }
+
+        if fromIndex == toIndex { return }
+
+        // List-style move semantics
+        let from = IndexSet(integer: fromIndex)
+        let adjustedTo = (toIndex > fromIndex) ? (toIndex + 1) : toIndex
+        move(from, adjustedTo)
+        Haptics.impact(.light)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggingTaskID = nil
+        return true
+    }
+
+    func dropExited(info: DropInfo) {
+        // no-op
+    }
+}
+
+// =========================================================
