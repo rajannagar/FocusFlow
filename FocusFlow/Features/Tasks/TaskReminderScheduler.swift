@@ -7,6 +7,8 @@ import Combine
 
 /// Watches TasksStore and schedules/cancels notifications.
 /// This keeps reminders correct even if Tasks tab isn't opened.
+///
+/// ✅ Phase 2: Now respects NotificationPreferencesStore settings.
 final class TaskReminderScheduler {
     static let shared = TaskReminderScheduler()
 
@@ -36,6 +38,29 @@ final class TaskReminderScheduler {
     }
 
     private func reconcile(_ tasks: [FFTaskItem]) {
+        // ✅ Check if task reminders are enabled in preferences
+        // Must dispatch to main to read @MainActor isolated store
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            
+            let prefs = NotificationPreferencesStore.shared.preferences
+            
+            // If master disabled OR task reminders disabled → cancel all and return
+            guard prefs.masterEnabled, prefs.taskRemindersEnabled else {
+                self.queue.async {
+                    self.cancelAllTaskReminders()
+                }
+                return
+            }
+            
+            // Otherwise proceed with normal reconciliation on our queue
+            self.queue.async {
+                self.performReconcile(tasks)
+            }
+        }
+    }
+    
+    private func performReconcile(_ tasks: [FFTaskItem]) {
         let currentIDs = Set(tasks.map { $0.id })
 
         // Cancel reminders for tasks that no longer exist
@@ -73,6 +98,15 @@ final class TaskReminderScheduler {
                 lastScheduled[id] = sig
             }
         }
+    }
+    
+    /// Cancel all task reminders (called when disabled in preferences)
+    private func cancelAllTaskReminders() {
+        for (taskId, _) in lastScheduled {
+            notifier.cancelTaskReminder(taskId: taskId)
+        }
+        lastScheduled.removeAll()
+        print("🔔 TaskReminderScheduler: cancelled all (disabled in preferences)")
     }
 
     /// Manual trigger (useful right after permission changes).

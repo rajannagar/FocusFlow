@@ -1,10 +1,25 @@
 import Foundation
 import Combine
 
+// MARK: - Navigation Destination
+
+enum NotificationDestination: String {
+    case journey
+    case profile
+    case progress
+    case focus
+    case tasks
+}
+
 final class NotificationCenterManager: ObservableObject {
     static let shared = NotificationCenterManager()
 
     @Published private(set) var notifications: [FocusNotification] = []
+    
+    // MARK: - Navigation Event
+    
+    /// Posted when user taps a notification that should navigate somewhere
+    static let navigateToDestination = Notification.Name("NotificationCenterManager.navigateToDestination")
 
     private let storageKey = "focusflow.notifications"
     private let encoder = JSONEncoder()
@@ -70,6 +85,40 @@ final class NotificationCenterManager: ObservableObject {
     func clearAll() {
         notifications.removeAll()
         persist()
+    }
+    
+    // MARK: - Navigation
+    
+    /// Returns the destination for a notification kind, or nil if not navigable
+    func destination(for kind: FocusNotification.Kind) -> NotificationDestination? {
+        switch kind {
+        case .dailyRecap:       return .journey
+        case .streak:           return .journey
+        case .levelUp:          return .profile
+        case .badgeUnlocked:    return .profile
+        case .goalUpdated:      return .progress
+        case .sessionCompleted: return nil  // Usually already on Focus
+        case .taskCompleted:    return nil  // Just confirmation
+        case .general:          return nil
+        }
+    }
+    
+    /// Call this when user taps a notification to navigate
+    func handleTap(on notification: FocusNotification) {
+        // Mark as read
+        markAsRead(notification)
+        
+        // Get destination
+        guard let destination = destination(for: notification.kind) else { return }
+        
+        // Post navigation event (after small delay to let sheet dismiss)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            NotificationCenter.default.post(
+                name: Self.navigateToDestination,
+                object: nil,
+                userInfo: ["destination": destination]
+            )
+        }
     }
 
     // MARK: - Persistence

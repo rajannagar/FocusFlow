@@ -17,28 +17,28 @@ struct FocusFlowApp: App {
 
         // ✅ Ensure task reminders are scheduled even if Tasks tab is never opened.
         _ = TaskReminderScheduler.shared
+        
+        // ✅ Initialize notification preferences store (namespace-aware)
+        _ = NotificationPreferencesStore.shared
+        
+        // ✅ Initialize in-app notifications bridge (listens to AppSyncManager events)
+        _ = InAppNotificationsBridge.shared
 
         // Ensure UNUserNotificationCenter delegate is set (foreground behavior)
         UNUserNotificationCenter.current().delegate = appDelegate
 
-        // ✅ Premium notification bootstrap:
-        FocusLocalNotificationManager.shared.requestAuthorizationIfNeeded { auth in
-            // Only schedule repeating things if allowed (authorized/provisional)
-            switch auth {
-            case .authorized, .provisional:
-                FocusLocalNotificationManager.shared.scheduleDailyNudges()
-
-                // Apply user-configured daily reminder from saved AppSettings
-                let settings = AppSettings.shared
-                FocusLocalNotificationManager.shared.applyDailyReminderSettings(
-                    enabled: settings.dailyReminderEnabled,
-                    time: settings.dailyReminderTime
-                )
-
-            case .denied, .notDetermined, .unknown:
-                // Do nothing – user can enable later in settings.
-                break
-            }
+        // ✅ Reconcile notifications on launch (no prompting, respects preferences)
+        Task { @MainActor in
+            // 🧹 Nuclear cleanup: remove ALL old notifications and start fresh
+            let center = UNUserNotificationCenter.current()
+            center.removeAllPendingNotificationRequests()
+            center.removeAllDeliveredNotifications()
+            
+            // Now reschedule only what we want
+            await NotificationsCoordinator.shared.reconcileAll(reason: "launch")
+            
+            // ✅ Generate daily recap in-app notification if needed
+            InAppNotificationsBridge.shared.generateDailyRecapIfNeeded()
         }
     }
 

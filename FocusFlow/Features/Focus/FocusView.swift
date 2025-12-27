@@ -1097,8 +1097,9 @@ struct FocusView: View {
             didFireCompletionSideEffectsForThisSession = false
             didAcknowledgeCompletion = false
 
-            FocusLocalNotificationManager.shared.scheduleSessionCompletionNotification(
-                after: viewModel.remainingSeconds,
+            // ✅ Phase 2: Use NotificationsCoordinator instead of direct FocusLocalNotificationManager call
+            NotificationsCoordinator.shared.scheduleSessionCompletionIfEnabled(
+                afterSeconds: viewModel.remainingSeconds,
                 sessionName: currentSessionDisplayName
             )
 

@@ -4,8 +4,12 @@ import SwiftUI
 struct FocusNotification: Identifiable, Codable, Hashable {
     enum Kind: String, Codable {
         case sessionCompleted
+        case taskCompleted
         case streak
-        case habit
+        case levelUp
+        case badgeUnlocked
+        case goalUpdated
+        case dailyRecap
         case general
     }
 
@@ -34,12 +38,15 @@ struct FocusNotification: Identifiable, Codable, Hashable {
 
     // MARK: - Presentation helpers
 
-    /// Neutral, focus-y icons (no hard-coded colors)
     var iconName: String {
         switch kind {
         case .sessionCompleted: return "sparkles"
+        case .taskCompleted:    return "checkmark.circle.fill"
         case .streak:           return "flame.fill"
-        case .habit:            return "checkmark.circle"
+        case .levelUp:          return "arrow.up.circle.fill"
+        case .badgeUnlocked:    return "rosette"
+        case .goalUpdated:      return "target"
+        case .dailyRecap:       return "book.pages.fill"
         case .general:          return "bell.fill"
         }
     }

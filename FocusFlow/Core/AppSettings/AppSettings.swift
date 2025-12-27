@@ -186,7 +186,8 @@ final class AppSettings: ObservableObject {
             .store(in: &cancellables)
     }
 
-    // ✅ Keep daily reminder scheduling in sync with settings
+    // ✅ Phase 2: Forward daily reminder changes to NotificationPreferencesStore
+    // The store will trigger reconcileAll() automatically
     private func observeNotificationPreferencesIfNeeded() {
         guard didSetupNotificationObservers == false else { return }
         didSetupNotificationObservers = true
@@ -196,7 +197,12 @@ final class AppSettings: ObservableObject {
             .sink { [weak self] enabled, time in
                 guard let self else { return }
                 guard self.isApplyingNamespace == false else { return }
-                FocusLocalNotificationManager.shared.applyDailyReminderSettings(enabled: enabled, time: time)
+                
+                // ✅ Update the new notification preferences store
+                NotificationPreferencesStore.shared.update { prefs in
+                    prefs.dailyReminderEnabled = enabled
+                    prefs.dailyReminderTime = time
+                }
             }
             .store(in: &cancellables)
     }
@@ -260,13 +266,9 @@ final class AppSettings: ObservableObject {
             UserProfileSyncEngine.shared.disableSyncAndResetCloudState()
         }
 
-        // Apply reminder scheduling for *this* namespace after switching
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            FocusLocalNotificationManager.shared.applyDailyReminderSettings(
-                enabled: self.dailyReminderEnabled,
-                time: self.dailyReminderTime
-            )
+        // ✅ Phase 2: Trigger notification reconcile for this namespace after switching
+        Task { @MainActor in
+            await NotificationsCoordinator.shared.reconcileAll(reason: "namespace changed")
         }
 
         print("AppSettings: active namespace -> \(activeNamespace)")

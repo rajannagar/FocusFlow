@@ -278,6 +278,9 @@ private struct RingProgress: View {
 // =========================================================
 
 struct ProfileView: View {
+    // External navigation trigger from ContentView
+    @Binding var navigateToJourney: Bool
+    
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var progressStore = ProgressStore.shared
     @ObservedObject private var tasksStore = TasksStore.shared
@@ -289,7 +292,6 @@ struct ProfileView: View {
     @State private var showingAllBadges = false
     @State private var showingLevelInfo = false
     @State private var showingPaywall = false
-    @State private var showingJourney = false
     @State private var selectedBadge: Badge? = nil
     @State private var dataVersion = 0
 
@@ -451,7 +453,7 @@ struct ProfileView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(isPresented: $showingJourney) {
+            .navigationDestination(isPresented: $navigateToJourney) {
                 JourneyView()
             }
         }
@@ -581,7 +583,7 @@ struct ProfileView: View {
     private var journeyButton: some View {
         Button {
             Haptics.impact(.light)
-            showingJourney = true
+            navigateToJourney = true
         } label: {
             HStack(spacing: 14) {
                 ZStack {
@@ -1247,37 +1249,7 @@ private struct BadgeDetailSheet: View {
 }
 
 // =========================================================
-// MARK: - Daily Reminder Scheduler (REAL notifications)
-// =========================================================
-
-private enum DailyReminderScheduler {
-    private static let id = "focusflow.dailyReminder"
-
-    static func update(enabled: Bool, time: Date) {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: [id])
-        guard enabled else { return }
-
-        let comps = Calendar.autoupdatingCurrent.dateComponents([.hour, .minute], from: time)
-
-        var dateComps = DateComponents()
-        dateComps.hour = comps.hour
-        dateComps.minute = comps.minute
-
-        let content = UNMutableNotificationContent()
-        content.title = "Time to focus"
-        content.body = "Start a session and keep your streak alive."
-        content.sound = .default
-
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComps, repeats: true)
-        let req = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
-
-        center.add(req)
-    }
-}
-
-// =========================================================
-// MARK: - Settings Sheet (REAL notifications + full reset)
+// MARK: - Settings Sheet (Updated with new notification system)
 // =========================================================
 
 private struct SettingsSheet: View {
@@ -1291,7 +1263,7 @@ private struct SettingsSheet: View {
     @State private var showingReset = false
     @State private var resetText = ""
     @State private var showingPaywall = false
-    @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
+    @State private var showingNotificationSettings = false
 
     var body: some View {
         NavigationStack {
@@ -1312,9 +1284,6 @@ private struct SettingsSheet: View {
             }
             .toolbarBackground(.hidden, for: .navigationBar)
         }
-        .onAppear { checkNotificationStatus() }
-        .onChange(of: settings.dailyReminderEnabled) { _, _ in applyDailyReminder() }
-        .onChange(of: settings.dailyReminderTime) { _, _ in applyDailyReminder() }
         .alert("Reset All Data", isPresented: $showingReset) {
             TextField("Type RESET to confirm", text: $resetText)
             Button("Cancel", role: .cancel) { resetText = "" }
@@ -1332,6 +1301,9 @@ private struct SettingsSheet: View {
         }
         .sheet(isPresented: $showingPaywall) {
             PaywallView().environmentObject(pro)
+        }
+        .sheet(isPresented: $showingNotificationSettings) {
+            NotificationSettingsView()
         }
     }
 
@@ -1395,43 +1367,31 @@ private struct SettingsSheet: View {
         }
     }
 
+    // ✅ Updated to use new NotificationSettingsView
     private var notificationsSection: some View {
         SettingsSectionView(title: "NOTIFICATIONS") {
-            notificationStatusRow
-            if notificationStatus == .authorized {
-                Toggle("Daily Reminder", isOn: $settings.dailyReminderEnabled)
-                    .tint(theme.accentPrimary)
-
-                if settings.dailyReminderEnabled {
-                    DatePicker("Reminder Time", selection: $settings.dailyReminderTime, displayedComponents: .hourAndMinute)
-                        .colorScheme(.dark)
+            Button {
+                Haptics.impact(.light)
+                showingNotificationSettings = true
+            } label: {
+                HStack {
+                    HStack(spacing: 10) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(theme.accentPrimary)
+                        
+                        Text("Manage Notifications")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.3))
                 }
             }
-        }
-    }
-
-    private var notificationStatusRow: some View {
-        HStack {
-            Text("Push Notifications")
-            Spacer()
-            notificationStatusButton
-        }
-    }
-
-    @ViewBuilder
-    private var notificationStatusButton: some View {
-        if notificationStatus == .authorized {
-            Text("Enabled")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.green)
-        } else if notificationStatus == .denied {
-            Button("Open Settings") { openAppSettings() }
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(theme.accentPrimary)
-        } else {
-            Button("Enable") { requestNotifications() }
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(theme.accentPrimary)
         }
     }
 
@@ -1485,32 +1445,6 @@ private struct SettingsSheet: View {
                     Image(systemName: "arrow.up.right").foregroundColor(.white.opacity(0.3))
                 }
             }
-        }
-    }
-
-    private func checkNotificationStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { s in
-            DispatchQueue.main.async { notificationStatus = s.authorizationStatus }
-        }
-    }
-
-    private func requestNotifications() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
-            DispatchQueue.main.async {
-                notificationStatus = granted ? .authorized : .denied
-                if granted { applyDailyReminder() }
-            }
-        }
-    }
-
-    private func applyDailyReminder() {
-        guard notificationStatus == .authorized else { return }
-        DailyReminderScheduler.update(enabled: settings.dailyReminderEnabled, time: settings.dailyReminderTime)
-    }
-
-    private func openAppSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(url)
         }
     }
 }
@@ -1750,5 +1684,6 @@ private struct AvatarPickerSheet: View {
 }
 
 #Preview {
-    ProfileView().environmentObject(ProEntitlementManager())
+    ProfileView(navigateToJourney: .constant(false))
+        .environmentObject(ProEntitlementManager())
 }

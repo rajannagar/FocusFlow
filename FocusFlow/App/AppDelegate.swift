@@ -36,7 +36,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) {
         let id = notification.request.identifier
 
-        // ✅ Suppress “session complete” banners while the app is open.
+        // ✅ Suppress "session complete" banners while the app is open.
         // We show a premium in-app completion overlay instead.
         if id == FocusLocalNotificationManager.shared.sessionCompletionIdentifier {
             completionHandler([])
@@ -58,13 +58,55 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) {
         let id = response.notification.request.identifier
 
+        // ✅ Handle session completion tap
         if id == FocusLocalNotificationManager.shared.sessionCompletionIdentifier {
-            // Premium cleanup if user tapped it
             FocusLocalNotificationManager.shared.clearDeliveredSessionCompletionNotifications()
+            completionHandler()
+            return
+        }
+        
+        // ✅ Handle Daily Recap tap → Navigate to Journey
+        if id == NotificationIDs.dailyRecap {
+            navigateToDestination(.journey)
+            completionHandler()
+            return
+        }
+        
+        // ✅ Handle Daily Reminder tap → Navigate to Focus
+        if id == NotificationIDs.dailyReminder {
+            navigateToDestination(.focus)
+            completionHandler()
+            return
+        }
+        
+        // ✅ Handle Daily Nudges tap → Navigate to Focus
+        if NotificationIDs.allNudges.contains(id) {
+            navigateToDestination(.focus)
+            completionHandler()
+            return
+        }
+        
+        // ✅ Handle Task Reminder tap → Navigate to Tasks
+        if id.hasPrefix(NotificationIDs.taskPrefix) {
+            navigateToDestination(.tasks)
             completionHandler()
             return
         }
 
         completionHandler()
+    }
+    
+    // MARK: - Navigation Helper
+    
+    /// Posts navigation event that ContentView listens to
+    private func navigateToDestination(_ destination: NotificationDestination) {
+        // Small delay to ensure app is fully active
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            NotificationCenter.default.post(
+                name: NotificationCenterManager.navigateToDestination,
+                object: nil,
+                userInfo: ["destination": destination]
+            )
+        }
     }
 }
