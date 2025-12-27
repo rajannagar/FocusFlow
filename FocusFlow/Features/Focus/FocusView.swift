@@ -6,320 +6,336 @@ import ActivityKit
 
 struct FocusView: View {
     @Environment(\.scenePhase) private var scenePhase
-
+    
     private enum ActiveAlert: Identifiable {
         case presetSwitch
         case lengthChange
         case resetConfirm
         var id: Int { hashValue }
     }
-
+    
     @StateObject private var viewModel = FocusTimerViewModel()
-
+    
     @ObservedObject private var appSettings = AppSettings.shared
-    @ObservedObject private var stats = StatsManager.shared
+    @ObservedObject private var progressStore = ProgressStore.shared
     @ObservedObject private var notifications = NotificationCenterManager.shared
     @ObservedObject private var presetStore = FocusPresetStore.shared
-
+    
     @State private var showingTimePicker = false
     @State private var selectedHours: Int = 0
     @State private var selectedMinutes: Int = 25
-
+    
     @State private var showingSoundSheet = false
     @State private var showingNotificationCenter = false
     @State private var showingPresetManager = false
     @State private var showingAmbientPicker = false
+    @State private var showingFocusInfoSheet = false
+    
     
     @State private var ambientMode: AmbientMode = .minimal
     @State private var ambientIntensity: Double = 0.7
-
+    
     @State private var pendingPresetToApply: FocusPreset?
-
+    
     @State private var sessionName: String = ""
     @FocusState private var isIntentionFocused: Bool
     @State private var hasEditedIntention: Bool = false
-
+    
     @State private var orbGlowPulse = false
     @State private var orbTapFlash = false
-
+    
     @State private var activeSessionSound: FocusSound? = nil
     @State private var soundChangedWhilePaused: Bool = false
-
+    
     @State private var lastKnownRemainingSeconds: Int? = nil
     @State private var lastUserStartDate: Date? = nil
-
+    
     // Prevent duplicate completion side-effects
     @State private var didFireCompletionSideEffectsForThisSession: Bool = false
-
+    
     // ✅ Premium in-app completion overlay
     @State private var showingCompletionOverlay: Bool = false
     @State private var completionOverlaySessionName: String = ""
-
+    
     // ✅ Prevent overlay from reappearing after user acknowledged completion
     @State private var didAcknowledgeCompletion: Bool = false
-
+    
     @State private var activeAlert: ActiveAlert? = nil
-
+    
     private let calendar = Calendar.current
-
+    
     private var activePreset: FocusPreset? { presetStore.activePreset }
-
+    
     private var isRunning: Bool { viewModel.phase == .running }
     private var isPaused: Bool { viewModel.phase == .paused }
     private var isCompleted: Bool { viewModel.phase == .completed }
     private var isIdle: Bool { viewModel.phase == .idle }
-
+    
     private var currentSessionDisplayName: String {
         if !sessionName.isEmpty { return sessionName }
         if let preset = activePreset { return preset.name }
         return "Focus session"
     }
-
+    
     private var currentPresetSubtitle: String {
         guard let preset = activePreset else { return "Choose how you want to focus today." }
         return "Stay present with \(preset.name.lowercased())."
     }
-
+    
     // ✅ helper: are we actually in the foreground?
     private var isAppActive: Bool {
         UIApplication.shared.applicationState == .active
     }
     
     private var theme: AppTheme { appSettings.profileTheme }
-
+    
     var body: some View {
         GeometryReader { proxy in
             content(size: proxy.size)
         }
     }
-
+    
     // MARK: - Main content (split to avoid type-check timeouts)
-    @ViewBuilder
     private func content(size: CGSize) -> some View {
         let accentPrimary: Color = theme.accentPrimary
         let accentSecondary: Color = theme.accentSecondary
         let isTyping: Bool = isIntentionFocused
-        let todayTotal: TimeInterval = stats.totalToday
+        let todayTotal: TimeInterval = progressStore.totalToday
         let totalMinutes: Int = max(viewModel.totalSeconds / 60, 1)
 
-        ZStack {
-            AmbientBackground(mode: ambientMode, theme: theme, isActive: isRunning, intensity: ambientIntensity)
+        // ✅ Type-erasure here prevents "unable to type-check" explosions
+        let root = AnyView(
+            ZStack {
+                AmbientBackground(
+                    mode: ambientMode,
+                    theme: theme,
+                    isActive: isRunning,
+                    intensity: ambientIntensity
+                )
 
-            VStack(spacing: 20) {
-                header(accentPrimary: accentPrimary)
+                VStack(spacing: 20) {
+                    header(accentPrimary: accentPrimary)
 
-                intentionSection
-                    .padding(.top, 4)
+                    // ✅ IMPORTANT: call the function version
+                    intentionSection(accentPrimary: accentPrimary)
+                        .padding(.top, 4)
 
-                presetSelector(accentPrimary: accentPrimary, accentSecondary: accentSecondary)
-                    .opacity(isTyping ? 0 : 1)
+                    presetSelector(accentPrimary: accentPrimary, accentSecondary: accentSecondary)
+                        .opacity(isTyping ? 0 : 1)
 
-                Spacer(minLength: 4)
+                    Spacer(minLength: 4)
 
-                TimelineView(.animation) { context in
-                    let now = context.date
-                    let smoothProgress = viewModel.smoothProgress(now: now)
+                    TimelineView(.animation) { context in
+                        let now = context.date
+                        let smoothProgress = viewModel.smoothProgress(now: now)
 
-                    let t = now.timeIntervalSinceReferenceDate
-                    let period: Double = 2.0
-                    let phase = sin((t / period) * 2 * .pi)
+                        let t = now.timeIntervalSinceReferenceDate
+                        let period: Double = 2.0
+                        let phase = sin((t / period) * 2 * .pi)
 
-                    let outerBase: CGFloat = 0.9
-                    let outerAmp: CGFloat = 0.18
-                    let innerBase: CGFloat = 1.0
-                    let innerAmp: CGFloat = 0.05
+                        let outerBase: CGFloat = 0.9
+                        let outerAmp: CGFloat = 0.18
+                        let innerBase: CGFloat = 1.0
+                        let innerAmp: CGFloat = 0.05
 
-                    let outerBreath: CGFloat = isRunning
-                    ? outerBase + outerAmp * CGFloat((phase + 1) / 2)
-                    : outerBase
+                        let outerBreath: CGFloat = isRunning
+                        ? outerBase + outerAmp * CGFloat((phase + 1) / 2)
+                        : outerBase
 
-                    let innerBreath: CGFloat = isRunning
-                    ? innerBase + innerAmp * CGFloat((phase + 1) / 2)
-                    : innerBase
+                        let innerBreath: CGFloat = isRunning
+                        ? innerBase + innerAmp * CGFloat((phase + 1) / 2)
+                        : innerBase
 
-                    orbSection(
-                        size: size,
-                        accentPrimary: accentPrimary,
-                        accentSecondary: accentSecondary,
-                        totalMinutes: totalMinutes,
-                        progress: smoothProgress,
-                        compact: isTyping,
-                        outerBreathScale: outerBreath,
-                        innerBreathScale: innerBreath
+                        orbSection(
+                            size: size,
+                            accentPrimary: accentPrimary,
+                            accentSecondary: accentSecondary,
+                            totalMinutes: totalMinutes,
+                            progress: smoothProgress,
+                            compact: isTyping,
+                            outerBreathScale: outerBreath,
+                            innerBreathScale: innerBreath
+                        )
+                    }
+
+                    Spacer(minLength: 6)
+
+                    primaryControls(accentPrimary: accentPrimary, accentSecondary: accentSecondary)
+                    bottomPersonalRow(todayTotal: todayTotal, isTyping: isTyping)
+
+                    Spacer(minLength: 6)
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+                .padding(.bottom, isTyping ? 120 : 24)
+                .animation(.spring(response: 0.45, dampingFraction: 0.9), value: isTyping)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+                if showingCompletionOverlay {
+                    CompletionOverlay(
+                        theme: theme,
+                        sessionTitle: completionOverlaySessionName,
+                        durationText: "\(max(viewModel.totalSeconds / 60, 1)) min",
+                        onDone: { acknowledgeCompletionAndResetReady() }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 1.01)))
+                    .zIndex(50)
+                }
+            }
+        )
+
+        return root
+            .onAppear {
+                viewModel.sessionName = currentSessionDisplayName
+                syncFromLiveActivityIfPossible()
+                if isIdle { showingCompletionOverlay = false }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .focusSessionExternalToggle)) { notification in
+                guard
+                    let userInfo = notification.userInfo,
+                    let isPaused = userInfo["isPaused"] as? Bool,
+                    let remaining = userInfo["remainingSeconds"] as? Int
+                else { return }
+
+                applyExternalSessionState(isPaused: isPaused, remaining: remaining)
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else { return }
+
+                if #available(iOS 18.0, *) {
+                    FocusSessionStore.shared.applyExternalToggleIfNeeded()
+                }
+                syncFromLiveActivityIfPossible()
+
+                if isIdle { showingCompletionOverlay = false }
+            }
+            .onChange(of: viewModel.remainingSeconds) { oldValue, newValue in
+                if newValue > 0 { lastKnownRemainingSeconds = newValue }
+
+                guard isRunning,
+                      newValue < oldValue,
+                      newValue > 0,
+                      newValue % 60 == 0,
+                      newValue != viewModel.totalSeconds
+                else { return }
+
+                minuteTickHaptic()
+                FocusSoundEngine.shared.playEvent(.minuteTick)
+
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
+                    orbGlowPulse.toggle()
+                }
+            }
+            .onChange(of: viewModel.phase) { oldPhase, newPhase in
+                handlePhaseTransition(from: oldPhase, to: newPhase)
+            }
+            .onChange(of: appSettings.soundEnabled) { _, enabled in
+                if enabled {
+                    if isRunning { startOrSwitchSoundForCurrentState() }
+                } else {
+                    FocusSoundManager.shared.stop()
+                    activeSessionSound = nil
+                    soundChangedWhilePaused = false
+                }
+            }
+            .onChange(of: appSettings.selectedFocusSound) { _, _ in
+                handleSelectedSoundChanged()
+            }
+            .onChange(of: showingSoundSheet) { _, isShowing in
+                if !isShowing && !isRunning {
+                    FocusSoundManager.shared.stop()
+                }
+            }
+            .onChange(of: sessionName) { _, _ in
+                if isIdle || isPaused || isCompleted {
+                    viewModel.sessionName = currentSessionDisplayName
+                }
+                if isIntentionFocused {
+                    hasEditedIntention = true
+                }
+            }
+            .sheet(isPresented: $showingTimePicker) { timePickerSheet }
+            .sheet(isPresented: $showingSoundSheet) { FocusSoundPicker() }
+            .sheet(isPresented: $showingNotificationCenter) { NotificationCenterView() }
+            .sheet(isPresented: $showingPresetManager) { FocusPresetManagerView() }
+            .sheet(isPresented: $showingAmbientPicker) {
+                AmbientPickerSheet(theme: theme, selectedMode: $ambientMode, intensity: $ambientIntensity)
+                    .presentationDetents([.large])
+            }
+            // ✅ Your new Focus Info Sheet
+            .sheet(isPresented: $showingFocusInfoSheet) {
+                FocusInfoSheet(theme: theme)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(.clear)
+                    .presentationCornerRadius(32)
+            }
+            .alert(item: $activeAlert) { alert in
+                switch alert {
+                case .presetSwitch:
+                    return Alert(
+                        title: Text("Switch preset?"),
+                        message: Text("This will reset your current session and apply \"\(pendingPresetToApply?.name ?? "")\"."),
+                        primaryButton: .destructive(Text("Switch")) {
+                            if let preset = pendingPresetToApply {
+                                resetAllToDefault()
+                                applyPreset(preset)
+                            }
+                            pendingPresetToApply = nil
+                        },
+                        secondaryButton: .cancel {
+                            pendingPresetToApply = nil
+                        }
+                    )
+
+                case .lengthChange:
+                    return Alert(
+                        title: Text("Change session length?"),
+                        message: Text("This will reset your current focus session and let you pick a new length."),
+                        primaryButton: .destructive(Text("Change length")) {
+                            viewModel.resetToIdleKeepDuration()
+                            FocusLocalNotificationManager.shared.cancelSessionCompletionNotification()
+                            if #available(iOS 18.0, *) { FocusLiveActivityManager.shared.endActivity() }
+
+                            prepareTimePicker()
+                            showingTimePicker = true
+                        },
+                        secondaryButton: .cancel()
+                    )
+
+                case .resetConfirm:
+                    return Alert(
+                        title: Text("Reset session?"),
+                        message: Text("Reset will stop the current session and return everything to default."),
+                        primaryButton: .destructive(Text("Reset")) {
+                            resetAllToDefault()
+                        },
+                        secondaryButton: .cancel()
                     )
                 }
-
-                Spacer(minLength: 6)
-
-                primaryControls(accentPrimary: accentPrimary, accentSecondary: accentSecondary)
-                bottomPersonalRow(todayTotal: todayTotal, isTyping: isTyping)
-
-                Spacer(minLength: 6)
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 18)
-            .padding(.bottom, isTyping ? 120 : 24)
-            .animation(.spring(response: 0.45, dampingFraction: 0.9), value: isTyping)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-
-            // ✅ Premium completion overlay (only when in-app and not yet acknowledged)
-            if showingCompletionOverlay {
-                CompletionOverlay(
-                    theme: theme,
-                    sessionTitle: completionOverlaySessionName,
-                    durationText: "\(max(viewModel.totalSeconds / 60, 1)) min",
-                    onDone: { acknowledgeCompletionAndResetReady() }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 1.01)))
-                .zIndex(50)
-            }
-        }
-        .onAppear {
-            viewModel.sessionName = currentSessionDisplayName
-
-            // Resync from Live Activity, avoid stale .completed re-trigger
-            syncFromLiveActivityIfPossible()
-
-            if isIdle { showingCompletionOverlay = false }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .focusSessionExternalToggle)) { notification in
-            guard
-                let userInfo = notification.userInfo,
-                let isPaused = userInfo["isPaused"] as? Bool,
-                let remaining = userInfo["remainingSeconds"] as? Int
-            else { return }
-
-            applyExternalSessionState(isPaused: isPaused, remaining: remaining)
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            guard newPhase == .active else { return }
-
-            if #available(iOS 18.0, *) {
-                FocusSessionStore.shared.applyExternalToggleIfNeeded()
-            }
-            syncFromLiveActivityIfPossible()
-
-            if isIdle { showingCompletionOverlay = false }
-        }
-        .onChange(of: viewModel.remainingSeconds) { oldValue, newValue in
-            if newValue > 0 { lastKnownRemainingSeconds = newValue }
-
-            guard isRunning,
-                  newValue < oldValue,
-                  newValue > 0,
-                  newValue % 60 == 0,
-                  newValue != viewModel.totalSeconds
-            else { return }
-
-            minuteTickHaptic()
-            FocusSoundEngine.shared.playEvent(.minuteTick)
-
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
-                orbGlowPulse.toggle()
-            }
-        }
-        .onChange(of: viewModel.phase) { oldPhase, newPhase in
-            handlePhaseTransition(from: oldPhase, to: newPhase)
-        }
-        .onChange(of: appSettings.soundEnabled) { _, enabled in
-            if enabled {
-                if isRunning { startOrSwitchSoundForCurrentState() }
-            } else {
-                FocusSoundManager.shared.stop()
-                activeSessionSound = nil
-                soundChangedWhilePaused = false
-            }
-        }
-        .onChange(of: appSettings.selectedFocusSound) { _, _ in
-            handleSelectedSoundChanged()
-        }
-        .onChange(of: showingSoundSheet) { _, isShowing in
-            if !isShowing && !isRunning {
-                FocusSoundManager.shared.stop()
-            }
-        }
-        .onChange(of: sessionName) { _, _ in
-            if isIdle || isPaused || isCompleted {
-                viewModel.sessionName = currentSessionDisplayName
-            }
-            if isIntentionFocused {
-                hasEditedIntention = true
-            }
-        }
-        .sheet(isPresented: $showingTimePicker) { timePickerSheet }
-        .sheet(isPresented: $showingSoundSheet) { FocusSoundPicker() }
-        .sheet(isPresented: $showingNotificationCenter) { NotificationCenterView() }
-        .sheet(isPresented: $showingPresetManager) { FocusPresetManagerView() }
-        .sheet(isPresented: $showingAmbientPicker) {
-            AmbientPickerSheet(theme: theme, selectedMode: $ambientMode, intensity: $ambientIntensity)
-                .presentationDetents([.large])
-        }
-        .alert(item: $activeAlert) { alert in
-            switch alert {
-            case .presetSwitch:
-                return Alert(
-                    title: Text("Switch preset?"),
-                    message: Text("This will reset your current session and apply \"\(pendingPresetToApply?.name ?? "")\"."),
-                    primaryButton: .destructive(Text("Switch")) {
-                        if let preset = pendingPresetToApply {
-                            resetAllToDefault()
-                            applyPreset(preset)
-                        }
-                        pendingPresetToApply = nil
-                    },
-                    secondaryButton: .cancel {
-                        pendingPresetToApply = nil
-                    }
-                )
-
-            case .lengthChange:
-                return Alert(
-                    title: Text("Change session length?"),
-                    message: Text("This will reset your current focus session and let you pick a new length."),
-                    primaryButton: .destructive(Text("Change length")) {
-                        viewModel.resetToIdleKeepDuration()
-                        FocusLocalNotificationManager.shared.cancelSessionCompletionNotification()
-                        if #available(iOS 18.0, *) { FocusLiveActivityManager.shared.endActivity() }
-
-                        prepareTimePicker()
-                        showingTimePicker = true
-                    },
-                    secondaryButton: .cancel()
-                )
-
-            case .resetConfirm:
-                return Alert(
-                    title: Text("Reset session?"),
-                    message: Text("Reset will stop the current session and return everything to default."),
-                    primaryButton: .destructive(Text("Reset")) {
-                        resetAllToDefault()
-                    },
-                    secondaryButton: .cancel()
-                )
-            }
-        }
     }
 
     // MARK: - Completion acknowledge
     private func acknowledgeCompletionAndResetReady() {
         simpleTap()
-
+        
         didAcknowledgeCompletion = true
         withAnimation(.spring(response: 0.38, dampingFraction: 0.9)) {
             showingCompletionOverlay = false
         }
-
+        
         viewModel.resetToIdleKeepDuration()
         didFireCompletionSideEffectsForThisSession = false
-
+        
         FocusLocalNotificationManager.shared.clearDeliveredSessionCompletionNotifications()
     }
-
+    
     // MARK: - Header (Premium style)
     private func header(accentPrimary: Color) -> some View {
         let name = appSettings.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasUnread = notifications.notifications.contains { !$0.isRead }
-
+        
         return HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
@@ -329,7 +345,7 @@ struct FocusView: View {
                         .scaledToFit()
                         .frame(width: 24, height: 24)
                         .shadow(color: .black.opacity(0.30), radius: 8, x: 0, y: 4)
-
+                    
                     Text("FocusFlow")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
@@ -345,23 +361,11 @@ struct FocusView: View {
                         .foregroundColor(.white.opacity(0.5))
                 }
             }
-
+            
             Spacer()
-
+            
+            // ✅ Only keep Bell + Info on the top-right
             HStack(spacing: 10) {
-                Button {
-                    simpleTap()
-                    showingAmbientPicker = true
-                } label: {
-                    Image(systemName: ambientMode == .minimal ? "circle.hexagongrid" : ambientMode.icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(ambientMode == .minimal ? .white.opacity(0.70) : theme.accentPrimary)
-                        .frame(width: 36, height: 36)
-                        .background(ambientMode == .minimal ? Color.white.opacity(0.06) : theme.accentPrimary.opacity(0.15))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                
                 Button {
                     simpleTap()
                     showingNotificationCenter = true
@@ -373,7 +377,7 @@ struct FocusView: View {
                             .frame(width: 36, height: 36)
                             .background(Color.white.opacity(0.06))
                             .clipShape(Circle())
-
+                        
                         if hasUnread {
                             Circle()
                                 .fill(Color.red)
@@ -383,12 +387,12 @@ struct FocusView: View {
                     }
                 }
                 .buttonStyle(.plain)
-
+                
                 Button {
                     simpleTap()
-                    showingSoundSheet = true
+                    showingFocusInfoSheet = true
                 } label: {
-                    Image(systemName: "headphones")
+                    Image(systemName: "info")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.70))
                         .frame(width: 36, height: 36)
@@ -399,7 +403,7 @@ struct FocusView: View {
             }
         }
     }
-
+    
     private var greetingTitle: String {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
@@ -410,50 +414,63 @@ struct FocusView: View {
         default: return "Hey"
         }
     }
-
+    
     // MARK: - Intention (Premium glass)
-    private var intentionSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("INTENTION")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.white.opacity(0.4))
-                .tracking(1)
+    private func intentionSection(accentPrimary: Color) -> some View {
+        HStack(spacing: 10) {
 
+            // Music icon (left)
+            Button {
+                simpleTap()
+                showingSoundSheet = true
+            } label: {
+                Image(systemName: "headphones")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+                    .frame(width: 40, height: 40)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            // Vibe / ambience icon (left)
+            Button {
+                simpleTap()
+                showingAmbientPicker = true
+            } label: {
+                Image(systemName: ambientMode.icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+                    .frame(width: 40, height: 40)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            // Intention field (fills the rest)
             HStack(spacing: 10) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(theme.accentPrimary.opacity(0.7))
+                    .foregroundColor(accentPrimary.opacity(0.70))
 
-                TextField("Deep work, exam prep, client project…", text: $sessionName)
-                    .font(.system(size: 15))
+                TextField("Deep work, exam prep, client project...", text: $sessionName)
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
-                    .tint(.white)
-                    .disableAutocorrection(true)
-                    .textInputAutocapitalization(.sentences)
-                    .focused($isIntentionFocused)
+                    .submitLabel(.done)
 
-                if !sessionName.isEmpty {
-                    Button {
-                        simpleTap()
-                        sessionName = ""
-                        hasEditedIntention = false
-                        viewModel.sessionName = currentSessionDisplayName
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.45))
-                    }
-                    .buttonStyle(.plain)
-                }
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 14)
             .padding(.vertical, 14)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.white.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -905,7 +922,7 @@ struct FocusView: View {
 
     private var currentStreak: Int {
         let daysWithFocus: Set<Date> = Set(
-            stats.sessions
+            progressStore.sessions
                 .filter { $0.duration > 0 }
                 .map { calendar.startOfDay(for: $0.date) }
         )
@@ -1128,9 +1145,9 @@ struct FocusView: View {
             successHaptic()
             FocusSoundEngine.shared.playEvent(.completed)
             
-            // ✅ Sync with entire app - updates Progress, Profile, XP, Badges
+            // ✅ Save session to ProgressStore (this also triggers AppSyncManager)
             let sessionDuration = TimeInterval(viewModel.totalSeconds - viewModel.remainingSeconds)
-            AppSyncManager.shared.sessionDidComplete(
+            ProgressStore.shared.addSession(
                 duration: sessionDuration,
                 sessionName: currentSessionDisplayName
             )

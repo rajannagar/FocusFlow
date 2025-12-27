@@ -20,9 +20,6 @@ final class FocusLocalNotificationManager {
     // Single user-configurable daily reminder (Profile → Daily focus reminder)
     private let dailyReminderId = "focusflow.dailyReminder"
 
-    // Per-habit reminder prefix
-    private let habitReminderPrefix = "focusflow.habit."
-
     // ✅ Per-task reminder prefix
     private let taskReminderPrefix = "focusflow.task."
 
@@ -48,6 +45,7 @@ final class FocusLocalNotificationManager {
         case .denied: return .denied
         case .notDetermined: return .notDetermined
         case .ephemeral:
+            // Treat ephemeral as provisional
             return .provisional
         @unknown default:
             return .unknown
@@ -97,7 +95,6 @@ final class FocusLocalNotificationManager {
     // MARK: - Categories (optional / premium-ready)
 
     func registerNotificationCategoriesIfNeeded() {
-        // You can add actions later if desired. For now, register category so we can attach it.
         let category = UNNotificationCategory(
             identifier: categorySessionComplete,
             actions: [],
@@ -182,7 +179,7 @@ final class FocusLocalNotificationManager {
                 hour: 20,
                 minute: 0,
                 title: "Close the loop",
-                body: "Wrap up the day with one last calm, focused session or review your stats in FocusFlow."
+                body: "Wrap up the day with one last calm, focused session — or review your progress in FocusFlow."
             )
         }
     }
@@ -243,64 +240,21 @@ final class FocusLocalNotificationManager {
         center.removeDeliveredNotifications(withIdentifiers: [dailyReminderId])
     }
 
-    // MARK: - Habit reminders
+    // MARK: - Habit reminders (REMOVED)
+    //
+    // Habits are deprecated in this build. We keep these stubs so any older
+    // call-sites won't block compilation while Habit files are deleted.
 
     func scheduleHabitReminder(
         habitId: UUID,
         habitName: String,
-        date: Date,
-        repeatOption: HabitRepeat
+        date: Date
     ) {
-        requestAuthorizationIfNeeded { [weak self] auth in
-            guard let self else { return }
-            guard self.isAllowedToSchedule(auth) else { return }
-
-            let calendar = Calendar.current
-            var dateComponents = calendar.dateComponents(
-                [.year, .month, .day, .hour, .minute, .weekday],
-                from: date
-            )
-
-            let trigger: UNCalendarNotificationTrigger
-            switch repeatOption {
-            case .none:
-                trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
-            case .daily:
-                dateComponents = DateComponents(hour: dateComponents.hour, minute: dateComponents.minute)
-                trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-            case .weekly:
-                dateComponents = DateComponents(hour: dateComponents.hour, minute: dateComponents.minute, weekday: dateComponents.weekday)
-                trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-            case .monthly:
-                dateComponents = DateComponents(day: dateComponents.day, hour: dateComponents.hour, minute: dateComponents.minute)
-                trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-            case .yearly:
-                dateComponents = DateComponents(month: dateComponents.month, day: dateComponents.day, hour: dateComponents.hour, minute: dateComponents.minute)
-                trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-            }
-
-            let content = UNMutableNotificationContent()
-            content.title = "Habit Reminder"
-            content.body = "It’s time for: \(habitName)"
-            content.sound = .default
-
-            let identifier = self.habitReminderPrefix + habitId.uuidString
-            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-
-            self.center.add(request) { error in
-                if let error = error {
-                    print("🔔 Failed to schedule habit reminder for \(habitName): \(error)")
-                } else {
-                    print("🔔 Scheduled habit reminder for \(habitName) with id \(identifier)")
-                }
-            }
-        }
+        // Habits removed — no-op
     }
 
     func cancelHabitReminder(habitId: UUID) {
-        let identifier = habitReminderPrefix + habitId.uuidString
-        center.removePendingNotificationRequests(withIdentifiers: [identifier])
-        center.removeDeliveredNotifications(withIdentifiers: [identifier])
+        // Habits removed — no-op
     }
 
     // MARK: - ✅ Task reminders

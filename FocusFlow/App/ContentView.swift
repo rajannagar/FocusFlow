@@ -74,17 +74,17 @@ struct ContentView: View {
             FocusView()
                 .tabItem { Label("Focus", systemImage: "timer") }
 
-            // ✅ New Tasks tab
             TasksView()
                 .tabItem { Label("Tasks", systemImage: "checklist") }
 
-            // ✅ Progress (Stats v2)
             ProgressViewV2()
                 .tabItem { Label("Progress", systemImage: "chart.bar") }
 
             ProfileView()
                 .tabItem { Label("Profile", systemImage: "person.circle") }
         }
+        // ✅ Keeps the whole app reacting to global sync events (session completed, task completed, etc.)
+        .syncWithAppState()
     }
 }
 

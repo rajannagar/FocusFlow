@@ -166,7 +166,7 @@ struct PaywallView: View {
             featureRow(icon: "slider.horizontal.3", title: "Custom Focus Presets", description: "Create & edit your own focus modes")
             featureRow(icon: "speaker.wave.3.fill", title: "Full Sound Library", description: "Access all ambient sounds")
             featureRow(icon: "checklist", title: "Unlimited Tasks", description: "No limits on your to-do list")
-            featureRow(icon: "chart.bar.fill", title: "Stats Dashboard", description: "Deep insights into your focus")
+            featureRow(icon: "chart.bar.fill", title: "Progress Dashboard", description: "Deep insights into your focus")
             featureRow(icon: "trophy.fill", title: "Levels & Achievements", description: "Track progress with XP system")
             featureRow(icon: "paintpalette.fill", title: "All Themes", description: "Personalize your experience")
         }

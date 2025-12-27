@@ -11,18 +11,17 @@ struct FocusFlowApp: App {
         // Restore auth session as early as possible
         AuthManager.shared.restoreSessionIfNeeded()
 
+        // ✅ Keep these alive early so they observe and broadcast app-wide updates
+        _ = AppSyncManager.shared
+        _ = JourneyManager.shared
+
         // ✅ Ensure task reminders are scheduled even if Tasks tab is never opened.
-        // (TasksStore remains the single source of truth; the scheduler only reacts.
-        // No view models are created here.)
         _ = TaskReminderScheduler.shared
 
         // Ensure UNUserNotificationCenter delegate is set (foreground behavior)
         UNUserNotificationCenter.current().delegate = appDelegate
 
         // ✅ Premium notification bootstrap:
-        // - Request permission once (safe if already decided)
-        // - Schedule fixed daily nudges once
-        // - Apply the user-configured daily reminder setting once
         FocusLocalNotificationManager.shared.requestAuthorizationIfNeeded { auth in
             // Only schedule repeating things if allowed (authorized/provisional)
             switch auth {

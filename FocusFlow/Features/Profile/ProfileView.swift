@@ -1,6 +1,8 @@
 import SwiftUI
+import UIKit
 import PhotosUI
 import UserNotifications
+
 
 // MARK: - Level System
 
@@ -175,7 +177,7 @@ private struct RingProgress: View {
 
 struct ProfileView: View {
     @ObservedObject private var settings = AppSettings.shared
-    @ObservedObject private var stats = StatsManager.shared
+    @ObservedObject private var progressStore = ProgressStore.shared
     @ObservedObject private var tasksStore = TasksStore.shared
     @ObservedObject private var auth = AuthManager.shared
     @EnvironmentObject private var pro: ProEntitlementManager
@@ -198,15 +200,15 @@ struct ProfileView: View {
     // These computed properties automatically recalculate when stats updates (stats is @ObservedObject)
     private var goalsHitCount: Int {
         let _ = dataVersion // Force dependency on dataVersion for manual refresh
-        let goal = Double(stats.dailyGoalMinutes * 60)
+        let goal = Double(progressStore.dailyGoalMinutes * 60)
         guard goal > 0 else { return 0 }
-        let sessionsByDay = Dictionary(grouping: stats.sessions) { cal.startOfDay(for: $0.date) }
+        let sessionsByDay = Dictionary(grouping: progressStore.sessions) { cal.startOfDay(for: $0.date) }
         return sessionsByDay.values.filter { $0.reduce(0) { $0 + $1.duration } >= goal }.count
     }
     
     private var totalXP: Int {
         let _ = dataVersion // Force dependency
-        return Int(stats.lifetimeFocusSeconds / 60) + stats.lifetimeBestStreak * 10 + stats.lifetimeSessionCount * 5 + goalsHitCount * 20 + tasksStore.completedOccurrenceKeys.count * 3
+        return Int(progressStore.lifetimeFocusSeconds / 60) + progressStore.lifetimeBestStreak * 10 + progressStore.lifetimeSessionCount * 5 + goalsHitCount * 20 + tasksStore.completedOccurrenceKeys.count * 3
     }
     
     private var currentLevel: Int { LevelSystem.levelFromXP(totalXP) }
@@ -214,8 +216,8 @@ struct ProfileView: View {
     private var xpToNext: Int { LevelSystem.xpToNextLevel(totalXP) }
     private var currentTitle: String { LevelSystem.title(for: currentLevel) }
     
-    private var todayMinutes: Int { Int(stats.totalToday / 60) }
-    private var todayGoal: Int { max(1, stats.dailyGoalMinutes) }
+    private var todayMinutes: Int { Int(progressStore.totalToday / 60) }
+    private var todayGoal: Int { max(1, progressStore.dailyGoalMinutes) }
     private var todayProgress: Double { min(1.0, Double(todayMinutes) / Double(todayGoal)) }
     
     private var tasksCompletedToday: Int {
@@ -228,15 +230,15 @@ struct ProfileView: View {
     private var weekInterval: DateInterval? { cal.dateInterval(of: .weekOfYear, for: Date()) }
     private var activeDaysThisWeek: Set<Date> {
         guard let interval = weekInterval else { return [] }
-        return Set(stats.sessions.filter { $0.date >= interval.start && $0.date < interval.end && $0.duration >= 60 }.map { cal.startOfDay(for: $0.date) })
+        return Set(progressStore.sessions.filter { $0.date >= interval.start && $0.date < interval.end && $0.duration >= 60 }.map { cal.startOfDay(for: $0.date) })
     }
     private var thisWeekMinutes: Int {
         guard let interval = weekInterval else { return 0 }
-        return Int(stats.sessions.filter { $0.date >= interval.start && $0.date < interval.end }.reduce(0) { $0 + $1.duration } / 60)
+        return Int(progressStore.sessions.filter { $0.date >= interval.start && $0.date < interval.end }.reduce(0) { $0 + $1.duration } / 60)
     }
     
     private var currentStreak: Int {
-        let days = Set(stats.sessions.filter { $0.duration > 0 }.map { cal.startOfDay(for: $0.date) })
+        let days = Set(progressStore.sessions.filter { $0.duration > 0 }.map { cal.startOfDay(for: $0.date) })
         guard !days.isEmpty else { return 0 }
         var streak = 0; var cursor = today
         while days.contains(cursor) { streak += 1; guard let prev = cal.date(byAdding: .day, value: -1, to: cursor) else { break }; cursor = prev }
@@ -244,11 +246,11 @@ struct ProfileView: View {
     }
     
     private var allBadges: [Badge] {
-        let totalMinutes = Int(stats.lifetimeFocusSeconds / 60)
-        let longestSession = Int((stats.sessions.map { $0.duration }.max() ?? 0) / 60)
-        let morningCount = stats.sessions.filter { cal.component(.hour, from: $0.date) < 8 && $0.duration >= 300 }.count
-        let nightCount = stats.sessions.filter { cal.component(.hour, from: $0.date) >= 22 && $0.duration >= 300 }.count
-        return BadgeSystem.allBadges(totalMinutes: totalMinutes, totalSessions: stats.lifetimeSessionCount, bestStreak: stats.lifetimeBestStreak, tasksCompleted: totalTasksCompleted, goalsHit: goalsHitCount, longestSession: longestSession, morningCount: morningCount, nightCount: nightCount)
+        let totalMinutes = Int(progressStore.lifetimeFocusSeconds / 60)
+        let longestSession = Int((progressStore.sessions.map { $0.duration }.max() ?? 0) / 60)
+        let morningCount = progressStore.sessions.filter { cal.component(.hour, from: $0.date) < 8 && $0.duration >= 300 }.count
+        let nightCount = progressStore.sessions.filter { cal.component(.hour, from: $0.date) >= 22 && $0.duration >= 300 }.count
+        return BadgeSystem.allBadges(totalMinutes: totalMinutes, totalSessions: progressStore.lifetimeSessionCount, bestStreak: progressStore.lifetimeBestStreak, tasksCompleted: totalTasksCompleted, goalsHit: goalsHitCount, longestSession: longestSession, morningCount: morningCount, nightCount: nightCount)
     }
     private var unlockedBadges: [Badge] { allBadges.filter { $0.isUnlocked } }
     private var inProgressBadges: [Badge] { allBadges.filter { !$0.isUnlocked && $0.progress > 0 }.sorted { $0.progress > $1.progress } }
@@ -466,9 +468,9 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("ALL TIME").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundColor(.white.opacity(0.4)).tracking(1.5)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                statCell(icon: "clock.fill", value: formatTime(stats.lifetimeFocusSeconds), label: "Focused", color: theme.accentPrimary)
-                statCell(icon: "flame.fill", value: "\(stats.lifetimeBestStreak)", label: "Best Streak", color: .orange)
-                statCell(icon: "play.circle.fill", value: "\(stats.lifetimeSessionCount)", label: "Sessions", color: .blue)
+                statCell(icon: "clock.fill", value: formatTime(progressStore.lifetimeFocusSeconds), label: "Focused", color: theme.accentPrimary)
+                statCell(icon: "flame.fill", value: "\(progressStore.lifetimeBestStreak)", label: "Best Streak", color: .orange)
+                statCell(icon: "play.circle.fill", value: "\(progressStore.lifetimeSessionCount)", label: "Sessions", color: .blue)
                 statCell(icon: "checkmark.circle.fill", value: "\(totalTasksCompleted)", label: "Tasks Done", color: .green)
             }
             HStack(spacing: 16) {
@@ -481,11 +483,11 @@ struct ProfileView: View {
                 }
                 Spacer()
                 HStack(spacing: 8) {
-                    Button { Haptics.impact(.light); if stats.dailyGoalMinutes > 5 { stats.dailyGoalMinutes -= 5 } } label: {
+                    Button { Haptics.impact(.light); if progressStore.dailyGoalMinutes > 5 { progressStore.dailyGoalMinutes -= 5 } } label: {
                         Image(systemName: "minus").font(.system(size: 10, weight: .bold)).foregroundColor(.white.opacity(0.5)).frame(width: 24, height: 24).background(Color.white.opacity(0.1)).clipShape(Circle())
                     }
                     Text("\(todayGoal)m").font(.system(size: 13, weight: .bold, design: .rounded)).foregroundColor(.white.opacity(0.7))
-                    Button { Haptics.impact(.light); if stats.dailyGoalMinutes < 240 { stats.dailyGoalMinutes += 5 } } label: {
+                    Button { Haptics.impact(.light); if progressStore.dailyGoalMinutes < 240 { progressStore.dailyGoalMinutes += 5 } } label: {
                         Image(systemName: "plus").font(.system(size: 10, weight: .bold)).foregroundColor(.white.opacity(0.5)).frame(width: 24, height: 24).background(Color.white.opacity(0.1)).clipShape(Circle())
                     }
                 }
@@ -729,7 +731,7 @@ private struct BadgeDetailSheet: View {
 private struct SettingsSheet: View {
     let theme: AppTheme
     @ObservedObject private var settings = AppSettings.shared
-    @ObservedObject private var stats = StatsManager.shared
+    @ObservedObject private var progressStore = ProgressStore.shared
     @EnvironmentObject private var pro: ProEntitlementManager
     @Environment(\.dismiss) private var dismiss
     
@@ -763,7 +765,7 @@ private struct SettingsSheet: View {
             Button("Cancel", role: .cancel) { resetText = "" }
             Button("Delete Everything", role: .destructive) {
                 if resetText.uppercased() == "RESET" {
-                    stats.clearAll()
+                    progressStore.clearAll()
                     resetText = ""
                 }
             }

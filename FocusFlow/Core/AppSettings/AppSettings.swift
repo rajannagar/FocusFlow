@@ -4,7 +4,7 @@ import Combine
 
 // MARK: - Theme model
 
-enum AppTheme: String, CaseIterable, Identifiable {
+enum AppTheme: String, CaseIterable, Identifiable, Codable {
     // Core favourites (kept)
     case forest
     case neon
@@ -37,7 +37,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Background gradient colors for screens
+    /// Background gradient colors (legacy support, still used by a few views)
     var backgroundColors: [Color] {
         switch self {
         case .forest:
@@ -96,55 +96,38 @@ enum AppTheme: String, CaseIterable, Identifiable {
     /// Main accent color
     var accentPrimary: Color {
         switch self {
-        case .forest:
-            return Color(red: 0.55, green: 0.90, blue: 0.70)
-        case .neon:
-            return Color(red: 0.25, green: 0.95, blue: 0.85)
-        case .peach:
-            return Color(red: 1.00, green: 0.72, blue: 0.63)
-        case .cyber:
-            return Color(red: 0.80, green: 0.60, blue: 1.00)
-        case .ocean:
-            return Color(red: 0.48, green: 0.84, blue: 1.00)
-        case .sunrise:
-            return Color(red: 1.00, green: 0.62, blue: 0.63)
-        case .amber:
-            return Color(red: 1.00, green: 0.78, blue: 0.45)
-        case .mint:
-            return Color(red: 0.60, green: 0.96, blue: 0.78)
-        case .royal:
-            return Color(red: 0.65, green: 0.72, blue: 1.00)
-        case .slate:
-            return Color(red: 0.75, green: 0.82, blue: 0.96)
+        case .forest:  return Color(red: 0.55, green: 0.90, blue: 0.70)
+        case .neon:    return Color(red: 0.25, green: 0.95, blue: 0.85)
+        case .peach:   return Color(red: 1.00, green: 0.72, blue: 0.63)
+        case .cyber:   return Color(red: 0.80, green: 0.60, blue: 1.00)
+
+        case .ocean:   return Color(red: 0.48, green: 0.84, blue: 1.00)
+        case .sunrise: return Color(red: 1.00, green: 0.62, blue: 0.63)
+        case .amber:   return Color(red: 1.00, green: 0.78, blue: 0.45)
+        case .mint:    return Color(red: 0.60, green: 0.96, blue: 0.78)
+        case .royal:   return Color(red: 0.65, green: 0.72, blue: 1.00)
+        case .slate:   return Color(red: 0.75, green: 0.82, blue: 0.96)
         }
     }
 
     /// Secondary accent (for gradients)
     var accentSecondary: Color {
         switch self {
-        case .forest:
-            return Color(red: 0.42, green: 0.78, blue: 0.62)
-        case .neon:
-            return Color(red: 0.60, green: 0.40, blue: 1.00)
-        case .peach:
-            return Color(red: 1.00, green: 0.85, blue: 0.70)
-        case .cyber:
-            return Color(red: 0.38, green: 0.86, blue: 1.00)
-        case .ocean:
-            return Color(red: 0.23, green: 0.95, blue: 0.96)
-        case .sunrise:
-            return Color(red: 1.00, green: 0.80, blue: 0.55)
-        case .amber:
-            return Color(red: 1.00, green: 0.60, blue: 0.40)
-        case .mint:
-            return Color(red: 0.46, green: 0.88, blue: 0.92)
-        case .royal:
-            return Color(red: 0.50, green: 0.60, blue: 1.00)
-        case .slate:
-            return Color(red: 0.70, green: 0.76, blue: 0.90)
+        case .forest:  return Color(red: 0.42, green: 0.78, blue: 0.62)
+        case .neon:    return Color(red: 0.60, green: 0.40, blue: 1.00)
+        case .peach:   return Color(red: 1.00, green: 0.85, blue: 0.70)
+        case .cyber:   return Color(red: 0.38, green: 0.86, blue: 1.00)
+
+        case .ocean:   return Color(red: 0.23, green: 0.95, blue: 0.96)
+        case .sunrise: return Color(red: 1.00, green: 0.80, blue: 0.55)
+        case .amber:   return Color(red: 1.00, green: 0.60, blue: 0.40)
+        case .mint:    return Color(red: 0.46, green: 0.88, blue: 0.92)
+        case .royal:   return Color(red: 0.50, green: 0.60, blue: 1.00)
+        case .slate:   return Color(red: 0.70, green: 0.76, blue: 0.90)
         }
     }
 
+    /// Legacy alias
     var accentColor: Color { accentPrimary }
 }
 
@@ -203,7 +186,7 @@ final class AppSettings: ObservableObject {
             .store(in: &cancellables)
     }
 
-    // ✅ NEW: keep daily reminder scheduling in sync with settings
+    // ✅ Keep daily reminder scheduling in sync with settings
     private func observeNotificationPreferencesIfNeeded() {
         guard didSetupNotificationObservers == false else { return }
         didSetupNotificationObservers = true
@@ -253,6 +236,9 @@ final class AppSettings: ObservableObject {
         dailyReminderEnabled = false
         dailyReminderTime = Self.makeDate(hour: 9, minute: 0)
 
+        // ✅ NEW (Focus logging UX)
+        askToRecordIncompleteSessions = false
+
         profileImageData = nil
 
         selectedFocusSound = .lightRainAmbient
@@ -274,8 +260,7 @@ final class AppSettings: ObservableObject {
             UserProfileSyncEngine.shared.disableSyncAndResetCloudState()
         }
 
-        // ✅ Apply reminder scheduling for *this* namespace after switching
-        // (do it on next runloop so didSet writes settle)
+        // Apply reminder scheduling for *this* namespace after switching
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             FocusLocalNotificationManager.shared.applyDailyReminderSettings(
@@ -307,6 +292,9 @@ final class AppSettings: ObservableObject {
         defaults.removeObject(forKey: "\(Keys.reminderHour)_\(namespace)")
         defaults.removeObject(forKey: "\(Keys.reminderMinute)_\(namespace)")
 
+        // ✅ NEW
+        defaults.removeObject(forKey: "\(Keys.askToRecordIncompleteSessions)_\(namespace)")
+
         defaults.removeObject(forKey: "\(Keys.profileImageData)_\(namespace)")
         defaults.removeObject(forKey: "\(Keys.selectedFocusSound)_\(namespace)")
         defaults.removeObject(forKey: "\(Keys.externalMusicApp)_\(namespace)")
@@ -324,12 +312,12 @@ final class AppSettings: ObservableObject {
         didSet { if !isApplyingNamespace { UserDefaults.standard.set(tagline, forKey: key(Keys.tagline)) } }
     }
 
-    /// ✅ Avatar id (SF Symbol choice) — synced via user_preferences
+    /// Avatar id (SF Symbol choice) — synced via user_preferences
     @Published var avatarID: String {
         didSet { if !isApplyingNamespace { UserDefaults.standard.set(avatarID, forKey: key(Keys.avatarID)) } }
     }
 
-    /// ✅ Identity fields (synced via user_profiles)
+    /// Identity fields (synced via user_profiles)
     @Published var accountFullName: String {
         didSet { if !isApplyingNamespace { UserDefaults.standard.set(accountFullName, forKey: key(Keys.accountFullName)) } }
     }
@@ -379,6 +367,16 @@ final class AppSettings: ObservableObject {
             let comps = Calendar.current.dateComponents([.hour, .minute], from: dailyReminderTime)
             UserDefaults.standard.set(comps.hour ?? 9, forKey: key(Keys.reminderHour))
             UserDefaults.standard.set(comps.minute ?? 0, forKey: key(Keys.reminderMinute))
+        }
+    }
+
+    // ✅ NEW: Focus logging UX setting (persisted)
+    // When ON, you can prompt the user when an early-ended / interrupted session qualifies to be logged.
+    @Published var askToRecordIncompleteSessions: Bool {
+        didSet {
+            if !isApplyingNamespace {
+                UserDefaults.standard.set(askToRecordIncompleteSessions, forKey: key(Keys.askToRecordIncompleteSessions))
+            }
         }
     }
 
@@ -432,6 +430,9 @@ final class AppSettings: ObservableObject {
         self.dailyReminderEnabled = false
         self.dailyReminderTime = Self.makeDate(hour: 9, minute: 0)
 
+        // ✅ NEW
+        self.askToRecordIncompleteSessions = false
+
         self.profileImageData = nil
         self.selectedFocusSound = .lightRainAmbient
 
@@ -440,7 +441,7 @@ final class AppSettings: ObservableObject {
         observeAuthChanges()
         applyNamespace(for: AuthManager.shared.state)
 
-        // ✅ Start observing notification preferences once
+        // Start observing notification preferences once
         observeNotificationPreferencesIfNeeded()
 
         startSyncIfNeeded()
@@ -472,6 +473,9 @@ final class AppSettings: ObservableObject {
         let minute = defaults.object(forKey: key(Keys.reminderMinute)) as? Int ?? 0
         self.dailyReminderTime = Self.makeDate(hour: hour, minute: minute)
 
+        // ✅ NEW
+        self.askToRecordIncompleteSessions = defaults.object(forKey: key(Keys.askToRecordIncompleteSessions)) as? Bool ?? false
+
         self.profileImageData = defaults.data(forKey: key(Keys.profileImageData))
 
         if let rawSound = defaults.string(forKey: key(Keys.selectedFocusSound)),
@@ -489,7 +493,7 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    /// ✅ Returns "today at hour:minute" (safe for DatePicker / scheduling)
+    /// Returns "today at hour:minute" (safe for DatePicker / scheduling)
     private static func makeDate(hour: Int, minute: Int) -> Date {
         let cal = Calendar.current
         let now = Date()
@@ -500,7 +504,7 @@ final class AppSettings: ObservableObject {
         return cal.date(from: comps) ?? now
     }
 
-    // MARK: - ✅ Sync wiring
+    // MARK: - Sync wiring (existing)
 
     private func startSyncIfNeeded() {
         guard didStartSyncEngines == false else { return }
@@ -575,6 +579,8 @@ final class AppSettings: ObservableObject {
                 } else {
                     self.selectedExternalMusicApp = nil
                 }
+
+                // NOTE: askToRecordIncompleteSessions is local-only for now (no DB column)
             }
         )
 
@@ -582,7 +588,6 @@ final class AppSettings: ObservableObject {
 
         // ----------------------------
         // UserProfileSyncEngine
-        // (only identity/admin fields)
         // ----------------------------
 
         let profilePublisher: AnyPublisher<UserProfileLocal, Never> =
@@ -605,7 +610,6 @@ final class AppSettings: ObservableObject {
             applyRemoteProfile: { [weak self] cloud in
                 guard let self else { return }
 
-                // Only fill identity fields (don’t fight user_preferences)
                 if (self.accountFullName.isEmpty), let fn = cloud.fullName, !fn.isEmpty {
                     self.accountFullName = fn
                 }
@@ -614,7 +618,6 @@ final class AppSettings: ObservableObject {
                     self.accountEmail = em
                 }
 
-                // Optional: only apply display name if still default
                 if (self.displayName == "You" || self.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty),
                    let dn = cloud.displayName, !dn.isEmpty {
                     self.displayName = dn
@@ -644,6 +647,9 @@ final class AppSettings: ObservableObject {
         static let dailyReminderEnabled = "ff_dailyReminderEnabled"
         static let reminderHour = "ff_reminderHour"
         static let reminderMinute = "ff_reminderMinute"
+
+        // ✅ NEW
+        static let askToRecordIncompleteSessions = "ff_askToRecordIncompleteSessions"
 
         static let profileImageData = "ff_profileImageData"
         static let selectedFocusSound = "ff_selectedFocusSound"

@@ -1,5 +1,17 @@
 import Foundation
 
+// =========================================================
+// MARK: - FocusSessionsMapping (Feature-gated)
+// =========================================================
+//
+// Cloud sync is intentionally disabled for now (local-only build).
+// When we revisit sync and want a fresh cloud design, we will:
+// 1) Add `CLOUD_SYNC` to Active Compilation Conditions
+// 2) Restore/replace record types + mapping logic cleanly
+//
+
+#if CLOUD_SYNC
+
 // MARK: - FocusSession <-> Supabase records
 
 extension FocusSession {
@@ -35,3 +47,9 @@ extension Array where Element == FocusSession {
         map { $0.toUpsertRecord(userId: userId) }
     }
 }
+
+#else
+
+// Cloud sync disabled (local-only build)
+
+#endif

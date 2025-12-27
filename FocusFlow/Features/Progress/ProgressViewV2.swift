@@ -7,7 +7,7 @@ import UIKit
 
 struct ProgressViewV2: View {
     @ObservedObject private var appSettings = AppSettings.shared
-    @ObservedObject private var stats = StatsManager.shared
+    @ObservedObject private var progressStore = ProgressStore.shared
     @ObservedObject private var tasksStore = TasksStore.shared
 
     @State private var selectedDate: Date = Date()
@@ -93,7 +93,7 @@ struct ProgressViewV2: View {
                     get: { goalMinutes(for: selectedDate) },
                     set: { newValue in
                         PV2GoalHistory.set(goalMinutes: max(0, newValue), for: selectedDate, calendar: cal)
-                        stats.dailyGoalMinutes = max(0, newValue)
+                        progressStore.dailyGoalMinutes = max(0, newValue)
                         goalVersion &+= 1
                     }
                 )
@@ -1020,7 +1020,7 @@ struct ProgressViewV2: View {
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
-    private func sessionRow(session: FocusSession, isLast: Bool) -> some View {
+    private func sessionRow(session: ProgressSession, isLast: Bool) -> some View {
         HStack(spacing: 14) {
             // Time
             Text(session.date.formatted(date: .omitted, time: .shortened))
@@ -1059,7 +1059,7 @@ struct ProgressViewV2: View {
         .padding(.vertical, isLast ? 0 : 8)
     }
 
-    private func sessionTitle(_ s: FocusSession) -> String {
+    private func sessionTitle(_ s: ProgressSession) -> String {
         let raw = (s.sessionName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return raw.isEmpty ? "Focus Session" : raw
     }
@@ -1135,8 +1135,8 @@ struct ProgressViewV2: View {
     // MARK: - Focus Data
     // =========================================================
 
-    private func sessions(in interval: DateInterval) -> [FocusSession] {
-        stats.sessions
+    private func sessions(in interval: DateInterval) -> [ProgressSession] {
+        progressStore.sessions
             .filter { $0.date >= interval.start && $0.date < interval.end }
             .sorted(by: { $0.date > $1.date })
     }
@@ -1145,13 +1145,13 @@ struct ProgressViewV2: View {
         sessions(in: interval).reduce(0) { $0 + $1.duration }
     }
 
-    private func avgSessionMinutes(_ list: [FocusSession]) -> Int {
+    private func avgSessionMinutes(_ list: [ProgressSession]) -> Int {
         guard !list.isEmpty else { return 0 }
         let avg = list.reduce(0.0) { $0 + $1.duration } / Double(list.count)
         return max(0, Int(round(avg / 60.0)))
     }
 
-    private func longestSessionMinutes(_ list: [FocusSession]) -> Int {
+    private func longestSessionMinutes(_ list: [ProgressSession]) -> Int {
         let maxSec = list.map { $0.duration }.max() ?? 0
         return Int(round(maxSec / 60.0))
     }
@@ -1192,7 +1192,7 @@ struct ProgressViewV2: View {
         _ = goalVersion
         return PV2GoalHistory.goalMinutes(
             for: date,
-            fallback: max(0, stats.dailyGoalMinutes),
+            fallback: max(0, progressStore.dailyGoalMinutes),
             calendar: cal
         )
     }
@@ -1223,7 +1223,7 @@ struct ProgressViewV2: View {
     
     private var currentStreak: Int {
         let today = cal.startOfDay(for: Date())
-        let focusDays = Set(stats.sessions.filter { $0.duration >= 60 }.map { cal.startOfDay(for: $0.date) })
+        let focusDays = Set(progressStore.sessions.filter { $0.duration >= 60 }.map { cal.startOfDay(for: $0.date) })
         
         guard !focusDays.isEmpty else { return 0 }
         
@@ -1322,7 +1322,7 @@ struct ProgressViewV2: View {
     private func activeFocusDays(lastNDays n: Int) -> Int {
         guard n > 0 else { return 0 }
         let today = cal.startOfDay(for: Date())
-        let set = Set(stats.sessions.filter { $0.duration > 0 }.map { cal.startOfDay(for: $0.date) })
+        let set = Set(progressStore.sessions.filter { $0.duration > 0 }.map { cal.startOfDay(for: $0.date) })
         var count = 0
         for i in 0..<n {
             if let d = cal.date(byAdding: .day, value: -i, to: today), set.contains(d) {

@@ -25,8 +25,8 @@ struct JourneyView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var journeyManager = JourneyManager.shared
     @ObservedObject private var appSettings = AppSettings.shared
-    @ObservedObject private var stats = StatsManager.shared
-    
+    @ObservedObject private var progressStore = ProgressStore.shared
+
     @State private var appearedCards: Set<UUID> = []
     @State private var filterMode: FilterMode = .all
     
@@ -307,7 +307,7 @@ struct JourneyView: View {
     private var currentStreak: Int {
         let cal = Calendar.autoupdatingCurrent
         let today = cal.startOfDay(for: Date())
-        let days = Set(stats.sessions.filter { $0.duration > 0 }.map { cal.startOfDay(for: $0.date) })
+        let days = Set(progressStore.sessions.filter { $0.duration > 0 }.map { cal.startOfDay(for: $0.date) })
         guard !days.isEmpty else { return 0 }
         var streak = 0
         var cursor = today
@@ -329,7 +329,7 @@ struct JourneyView: View {
     private var thisWeekFocusSeconds: TimeInterval {
         let cal = Calendar.autoupdatingCurrent
         guard let weekStart = cal.dateInterval(of: .weekOfYear, for: Date())?.start else { return 0 }
-        return stats.sessions.filter { $0.date >= weekStart }.reduce(0) { $0 + $1.duration }
+        return progressStore.sessions.filter { $0.date >= weekStart }.reduce(0) { $0 + $1.duration }
     }
     
     private var lastWeekFocusSeconds: TimeInterval {
@@ -337,7 +337,7 @@ struct JourneyView: View {
         guard let thisWeekStart = cal.dateInterval(of: .weekOfYear, for: Date())?.start,
               let lastWeekStart = cal.date(byAdding: .weekOfYear, value: -1, to: thisWeekStart),
               let lastWeekEnd = cal.date(byAdding: .day, value: 7, to: lastWeekStart) else { return 0 }
-        return stats.sessions.filter { $0.date >= lastWeekStart && $0.date < lastWeekEnd }.reduce(0) { $0 + $1.duration }
+        return progressStore.sessions.filter { $0.date >= lastWeekStart && $0.date < lastWeekEnd }.reduce(0) { $0 + $1.duration }
     }
     
     private var weekComparison: String? {
