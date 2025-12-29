@@ -18,6 +18,10 @@ struct FocusPreset: Identifiable, Codable, Equatable {
     /// If nil, this preset does not launch a music app.
     var externalMusicAppRaw: String?    // "spotify", "appleMusic", "youtubeMusic", or nil
 
+    /// Optional raw ambiance mode value (AmbientMode.rawValue).
+    /// If nil, the preset uses the default ambiance mode.
+    var ambianceModeRaw: String?
+
     // MARK: - Typed accessors
 
     /// Typed access to the preset's theme, if any.
@@ -35,6 +39,12 @@ struct FocusPreset: Identifiable, Codable, Equatable {
         return AppSettings.ExternalMusicApp(rawValue: raw)
     }
 
+    /// Typed access to the preset's ambiance mode, if any.
+    var ambianceMode: AmbientMode? {
+        guard let raw = ambianceModeRaw else { return nil }
+        return AmbientMode(rawValue: raw)
+    }
+
     // MARK: - Init
 
     init(
@@ -45,7 +55,8 @@ struct FocusPreset: Identifiable, Codable, Equatable {
         emoji: String? = nil,
         isSystemDefault: Bool = false,
         themeRaw: String? = nil,
-        externalMusicAppRaw: String? = nil
+        externalMusicAppRaw: String? = nil,
+        ambianceModeRaw: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -55,6 +66,7 @@ struct FocusPreset: Identifiable, Codable, Equatable {
         self.isSystemDefault = isSystemDefault
         self.themeRaw = themeRaw
         self.externalMusicAppRaw = externalMusicAppRaw
+        self.ambianceModeRaw = ambianceModeRaw
     }
 }
 

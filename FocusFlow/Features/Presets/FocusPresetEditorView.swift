@@ -23,6 +23,12 @@ struct FocusPresetEditorView: View {
     /// If true, preset does NOT override theme and just uses the app's current theme.
     @State private var useDefaultTheme: Bool
 
+    /// Ambiance mode for this preset (only used when `useDefaultAmbiance == false`)
+    @State private var presetAmbianceMode: AmbientMode
+
+    /// If true, preset does NOT override ambiance and just uses the app's current ambiance.
+    @State private var useDefaultAmbiance: Bool
+
     // Duration sheet state
     @State private var showingDurationSheet = false
     @State private var selectedHours: Int = 0
@@ -55,6 +61,14 @@ struct FocusPresetEditorView: View {
             _presetTheme = State(initialValue: fallback)
             _useDefaultTheme = State(initialValue: true)
         }
+
+        if let raw = preset.ambianceModeRaw, let mode = AmbientMode(rawValue: raw) {
+            _presetAmbianceMode = State(initialValue: mode)
+            _useDefaultAmbiance = State(initialValue: false)
+        } else {
+            _presetAmbianceMode = State(initialValue: .minimal)
+            _useDefaultAmbiance = State(initialValue: true)
+        }
     }
 
     // MARK: - Body
@@ -82,6 +96,10 @@ struct FocusPresetEditorView: View {
 
                     sectionCard {
                         themeSettings
+                    }
+
+                    sectionCard {
+                        ambianceSettings
                     }
                 }
                 .padding(.horizontal, 18)
@@ -383,6 +401,102 @@ struct FocusPresetEditorView: View {
         }
     }
 
+    // MARK: - Ambiance
+
+    private var ambianceSettings: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Ambiance for this preset")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.70))
+
+            Text("Use the app ambiance, or pick a custom atmosphere for this mode.")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white.opacity(0.58))
+
+            presetAmbianceChips
+        }
+    }
+
+    private var presetAmbianceChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                let isUsingDefault = useDefaultAmbiance
+                Button {
+                    Haptics.impact(.light)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        useDefaultAmbiance = true
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Use app ambiance")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(isUsingDefault ? .black : .white.opacity(0.85))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        Group {
+                            if isUsingDefault {
+                                LinearGradient(
+                                    colors: [appSettings.profileTheme.accentPrimary, appSettings.profileTheme.accentSecondary],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            } else {
+                                Color.white.opacity(0.04)
+                            }
+                        }
+                    )
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(Color.white.opacity(isUsingDefault ? 0.0 : 0.10), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+
+                ForEach(AmbientMode.allCases) { mode in
+                    let isSelected = !useDefaultAmbiance && presetAmbianceMode == mode
+                    Button {
+                        Haptics.impact(.light)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            useDefaultAmbiance = false
+                            presetAmbianceMode = mode
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: mode.icon)
+                                .font(.system(size: 12, weight: .semibold))
+                                .frame(width: 16, height: 16)
+
+                            Text(mode.rawValue)
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundColor(isSelected ? .black : .white.opacity(0.85))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            Group {
+                                if isSelected {
+                                    LinearGradient(
+                                        colors: [appSettings.profileTheme.accentPrimary, appSettings.profileTheme.accentSecondary],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                } else {
+                                    Color.white.opacity(0.04)
+                                }
+                            }
+                        )
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Color.white.opacity(isSelected ? 0.0 : 0.10), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
     // MARK: - Duration sheet (same vibe as FocusView time picker)
 
     private var durationPickerSheet: some View {
@@ -554,6 +668,12 @@ struct FocusPresetEditorView: View {
             updated.themeRaw = nil
         } else {
             updated.themeRaw = presetTheme.rawValue
+        }
+
+        if useDefaultAmbiance {
+            updated.ambianceModeRaw = nil
+        } else {
+            updated.ambianceModeRaw = presetAmbianceMode.rawValue
         }
 
         onSave(updated)

@@ -552,6 +552,11 @@ struct FocusView: View {
             appSettings.selectedTheme = presetTheme
         }
 
+        // Apply ambiance mode from preset
+        if let presetAmbiance = preset.ambianceMode {
+            ambientMode = presetAmbiance
+        }
+
         let minutes = max(1, preset.durationSeconds / 60)
         viewModel.updateMinutes(minutes)
 

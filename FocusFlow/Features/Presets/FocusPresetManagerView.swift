@@ -359,6 +359,23 @@ struct FocusPresetManagerView: View {
                         .foregroundColor(.white.opacity(0.62))
                         .lineLimit(1)
                     }
+
+                    if let ambiance = preset.ambianceMode {
+                        Text("•")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white.opacity(0.45))
+
+                        HStack(spacing: 6) {
+                            Image(systemName: ambiance.icon)
+                                .font(.system(size: 10, weight: .semibold))
+                                .frame(width: 12, height: 12)
+
+                            Text(ambiance.rawValue)
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundColor(.white.opacity(0.62))
+                        .lineLimit(1)
+                    }
                 }
             }
 
