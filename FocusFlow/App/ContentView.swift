@@ -66,11 +66,17 @@ struct ContentView: View {
             handleNotificationNavigation(to: destination)
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
-            // Force push pending changes when app goes to background
-            // This is more reliable than AppDelegate methods, especially for force-kills
+            // ✅ Push pending changes when app goes to background
             if newPhase == .background || newPhase == .inactive {
                 Task { @MainActor in
                     await SyncCoordinator.shared.forcePushAllPending()
+                }
+            }
+            
+            // ✅ Pull latest changes when app becomes active (detects changes from other devices)
+            if newPhase == .active && oldPhase != .active {
+                Task { @MainActor in
+                    await SyncCoordinator.shared.pullFromRemote()
                 }
             }
         }

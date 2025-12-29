@@ -181,6 +181,32 @@ final class SyncQueue: ObservableObject {
         addOperation(syncOp)
     }
     
+    /// Queue a task change for sync
+    func enqueueTaskChange(operation: SyncOperationType, task: FFTaskItem, localTimestamp: Date = Date()) {
+        guard let data = try? JSONEncoder().encode(task) else { return }
+        
+        let syncOp = SyncOperation(
+            type: .task,
+            operation: operation,
+            data: data,
+            localTimestamp: localTimestamp
+        )
+        addOperation(syncOp)
+    }
+    
+    /// Queue a session change for sync
+    func enqueueSessionChange(operation: SyncOperationType, session: ProgressSession, localTimestamp: Date = Date()) {
+        guard let data = try? JSONEncoder().encode(session) else { return }
+        
+        let syncOp = SyncOperation(
+            type: .session,
+            operation: operation,
+            data: data,
+            localTimestamp: localTimestamp
+        )
+        addOperation(syncOp)
+    }
+    
     /// Add operation to queue
     private func addOperation(_ operation: SyncOperation) {
         // Remove any existing pending operation of the same type for the same item
@@ -252,8 +278,9 @@ final class SyncQueue: ObservableObject {
             case .preset:
                 try await processPresetOperation(operation)
             case .task:
-                // TODO: Implement task sync
-                break
+                try await processTaskOperation(operation)
+            case .session:
+                try await processSessionOperation(operation)
             case .session:
                 // TODO: Implement session sync
                 break
@@ -302,9 +329,21 @@ final class SyncQueue: ObservableObject {
     }
     
     private func processPresetOperation(_ operation: SyncOperation) async throws {
-        // Delegate to PresetsSyncEngine
+        // ✅ FIX: Only push, don't pull - pulling causes sync loops
         guard let userId = AuthManagerV2.shared.state.userId else { return }
-        await SyncCoordinator.shared.syncPresets()
+        await SyncCoordinator.shared.pushPresetsOnly()
+    }
+    
+    private func processTaskOperation(_ operation: SyncOperation) async throws {
+        // ✅ NEW: Push tasks only (no pull to avoid loops)
+        guard let userId = AuthManagerV2.shared.state.userId else { return }
+        await SyncCoordinator.shared.pushTasksOnly()
+    }
+    
+    private func processSessionOperation(_ operation: SyncOperation) async throws {
+        // ✅ NEW: Push sessions only (no pull to avoid loops)
+        guard let userId = AuthManagerV2.shared.state.userId else { return }
+        await SyncCoordinator.shared.pushSessionsOnly()
     }
     
     // MARK: - Manual Retry

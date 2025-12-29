@@ -78,6 +78,11 @@ final class ProgressStore: ObservableObject {
         // Isolation is guaranteed by namespacing + race-safe switching.
         if newNamespace == activeNamespace, lastNamespace != nil { return }
 
+        // ✅ Clear timestamps when switching accounts (except guest)
+        if newNamespace != "guest" {
+            LocalTimestampTracker.shared.clearAllTimestamps(namespace: newNamespace)
+        }
+
         lastNamespace = activeNamespace
         activeNamespace = newNamespace
 
@@ -122,6 +127,13 @@ final class ProgressStore: ObservableObject {
         let s = ProgressSession(date: date, duration: safeDuration, sessionName: nameToStore)
 
         sessions.insert(s, at: 0)
+        
+        // ✅ Record timestamp for new session
+        let namespace = activeNamespace
+        if namespace != "guest" {
+            LocalTimestampTracker.shared.recordLocalChange(field: "session_\(s.id.uuidString)", namespace: namespace)
+        }
+        
         persist()
 
         AppSyncManager.shared.sessionDidComplete(
@@ -226,6 +238,14 @@ extension ProgressStore {
         defer { isLoading = false }
 
         sessions = allSessions
+        persist()
+    }
+    
+    /// Apply merged sessions with conflict resolution (used by sync engine)
+    func applyMergedSessions(_ mergedSessions: [ProgressSession]) {
+        isLoading = true
+        defer { isLoading = false }
+        sessions = mergedSessions
         persist()
     }
 

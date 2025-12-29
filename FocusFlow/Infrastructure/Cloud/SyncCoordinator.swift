@@ -33,11 +33,53 @@ final class SyncCoordinator: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     private var isRunning = false
+    private var periodicSyncTask: Task<Void, Never>?
+    
+    // ✅ Track last push time to prevent immediate pulls after push
+    private var lastPushTime: Date = Date.distantPast
     
     // MARK: - Init
     
     private init() {
         observeAuthState()
+        // Don't start periodic sync here - it will start when engines start
+    }
+    
+    // MARK: - Periodic Sync
+    
+    /// Start periodic sync to detect changes from other devices
+    /// Syncs every 60 seconds when app is active and user is signed in
+    /// Has cooldown to prevent loops after pushes
+    private func startPeriodicSync() {
+        // Cancel any existing periodic sync
+        periodicSyncTask?.cancel()
+        
+        // Start new periodic sync
+        periodicSyncTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 60_000_000_000) // ✅ Increased to 60 seconds
+                
+                // Only sync if app is running and user is signed in
+                guard isRunning, AuthManagerV2.shared.state.userId != nil else { continue }
+                
+                // ✅ Don't pull if we just pushed in the last 15 seconds (cooldown)
+                let timeSinceLastPush = Date().timeIntervalSince(lastPushTime)
+                guard timeSinceLastPush > 15 else {
+                    #if DEBUG
+                    print("[SyncCoordinator] Skipping periodic pull - cooldown active (pushed \(Int(timeSinceLastPush))s ago)")
+                    #endif
+                    continue
+                }
+                
+                // Pull latest changes from remote
+                await pullFromRemote()
+            }
+        }
+    }
+    
+    private func stopPeriodicSync() {
+        periodicSyncTask?.cancel()
+        periodicSyncTask = nil
     }
     
     // MARK: - Auth State Observation
@@ -97,6 +139,7 @@ final class SyncCoordinator: ObservableObject {
     
     private func stopAllEngines() {
         isRunning = false
+        stopPeriodicSync()
         settingsEngine.stop()
         tasksEngine.stop()
         sessionsEngine.stop()
@@ -183,7 +226,47 @@ final class SyncCoordinator: ObservableObject {
     
     /// Push settings to remote (without pulling) - used by sync queue
     func pushSettingsOnly() async {
+        lastPushTime = Date() // ✅ Record push time
         await settingsEngine.forcePushNow()
+    }
+    
+    /// Push presets to remote (without pulling) - used by sync queue
+    func pushPresetsOnly() async {
+        lastPushTime = Date() // ✅ Record push time
+        await presetsEngine.forcePushNow()
+    }
+    
+    /// Pull all data types from remote (for detecting changes from other devices)
+    /// Call this when app becomes active to get latest changes
+    func pullFromRemote() async {
+        guard let userId = AuthManagerV2.shared.state.userId else { return }
+        guard isRunning else { return }
+        
+        // ✅ Don't pull if we just pushed in the last 10 seconds (cooldown)
+        let timeSinceLastPush = Date().timeIntervalSince(lastPushTime)
+        guard timeSinceLastPush > 10 else {
+            #if DEBUG
+            print("[SyncCoordinator] Skipping pull - cooldown active (pushed \(Int(timeSinceLastPush))s ago)")
+            #endif
+            return
+        }
+        
+        // Pull all data types to get latest changes from other devices
+        // This is lightweight - only pulls, doesn't push
+        do {
+            try await settingsEngine.pullFromRemote(userId: userId)
+            try await presetsEngine.pullFromRemote(userId: userId)
+            try await tasksEngine.pullFromRemote(userId: userId)
+            try await sessionsEngine.pullFromRemote(userId: userId)
+            
+            #if DEBUG
+            print("[SyncCoordinator] Pulled latest changes from remote")
+            #endif
+        } catch {
+            #if DEBUG
+            print("[SyncCoordinator] Pull from remote error: \(error)")
+            #endif
+        }
     }
     
     func syncTasks() async {
@@ -196,6 +279,18 @@ final class SyncCoordinator: ObservableObject {
             print("[SyncCoordinator] Tasks sync error: \(error)")
             #endif
         }
+    }
+    
+    /// Push tasks to remote (without pulling) - used by sync queue
+    func pushTasksOnly() async {
+        lastPushTime = Date() // ✅ Record push time
+        await tasksEngine.forcePushNow()
+    }
+    
+    /// Push sessions to remote (without pulling) - used by sync queue
+    func pushSessionsOnly() async {
+        lastPushTime = Date() // ✅ Record push time
+        await sessionsEngine.forcePushNow()
     }
     
     func syncSessions() async {
@@ -228,6 +323,9 @@ final class SyncCoordinator: ObservableObject {
     /// Call this when app enters background or is about to terminate
     func forcePushAllPending() async {
         guard AuthManagerV2.shared.state.userId != nil else { return }
+        
+        // ✅ Record push time to prevent immediate pulls
+        lastPushTime = Date()
         
         // Push settings and presets immediately (they use debounce)
         await settingsEngine.forcePushNow()

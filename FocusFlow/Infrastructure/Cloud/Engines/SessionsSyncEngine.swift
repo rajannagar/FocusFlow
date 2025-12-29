@@ -151,6 +151,10 @@ final class SessionsSyncEngine {
                 .execute()
 
             syncedSessionIds.insert(session.id)
+            
+            // ✅ Clear local timestamp after successful push
+            let namespace = userId.uuidString
+            LocalTimestampTracker.shared.clearLocalTimestamp(field: "session_\(session.id.uuidString)", namespace: namespace)
 
             // Update stats after adding session
             await updateRemoteStats()
@@ -256,42 +260,138 @@ final class SessionsSyncEngine {
         defer { isApplyingRemote = false }
 
         let store = ProgressStore.shared
+        guard let userId = userId else { return }
+        let namespace = userId.uuidString
 
-        // Convert DTOs to local models
-        let remoteSessions = sessions.map { dto in
-            ProgressSession(
+        // ✅ NEW: Merge remote sessions with local, preserving newer local changes
+        var mergedSessions: [ProgressSession] = []
+        
+        // Start with local sessions
+        var localSessionsMap: [UUID: ProgressSession] = Dictionary(uniqueKeysWithValues: store.sessions.map { ($0.id, $0) })
+        
+        // Process remote sessions
+        for dto in sessions {
+            let remoteSession = ProgressSession(
                 id: dto.id,
                 date: dto.startedAt,
                 duration: TimeInterval(dto.durationSeconds),
                 sessionName: dto.sessionName
             )
+            
+            // Check if local version is newer
+            let fieldKey = "session_\(dto.id.uuidString)"
+            let remoteTimestamp = dto.updatedAt ?? dto.createdAt
+            
+            if let localSession = localSessionsMap[dto.id] {
+                // Session exists locally - check if local is newer
+                if LocalTimestampTracker.shared.isLocalNewer(field: fieldKey, namespace: namespace, remoteTimestamp: remoteTimestamp) {
+                    // Local is newer - keep local version
+                    mergedSessions.append(localSession)
+                    #if DEBUG
+                    print("[SessionsSyncEngine] Keeping local session \(localSession.id) (local is newer)")
+                    #endif
+                } else {
+                    // Remote is newer or same - use remote
+                    mergedSessions.append(remoteSession)
+                    LocalTimestampTracker.shared.clearLocalTimestamp(field: fieldKey, namespace: namespace)
+                    #if DEBUG
+                    print("[SessionsSyncEngine] Using remote session \(remoteSession.id) (remote is newer)")
+                    #endif
+                }
+            } else {
+                // New session from remote - add it
+                mergedSessions.append(remoteSession)
+                #if DEBUG
+                print("[SessionsSyncEngine] Adding new remote session \(remoteSession.id)")
+                #endif
+            }
+            
+            // Remove from local map (so we know which local sessions weren't in remote)
+            localSessionsMap.removeValue(forKey: dto.id)
         }
-
-        // Merge: add remote sessions that don't exist locally
-        store.mergeRemoteSessions(remoteSessions)
+        
+        // Add any local sessions that weren't in remote (if they're newer)
+        for (_, localSession) in localSessionsMap {
+            let fieldKey = "session_\(localSession.id.uuidString)"
+            // If local session has a timestamp, it means it was created locally
+            // Keep it even if not in remote (it will be pushed on next sync)
+            if LocalTimestampTracker.shared.getLocalTimestamp(field: fieldKey, namespace: namespace) != nil {
+                mergedSessions.append(localSession)
+                #if DEBUG
+                print("[SessionsSyncEngine] Keeping local-only session \(localSession.id) (will be pushed)")
+                #endif
+            }
+        }
+        
+        // Sort by date (newest first)
+        mergedSessions.sort { $0.date > $1.date }
+        
+        // Apply merged state using public method
+        store.applyMergedSessions(mergedSessions)
 
         #if DEBUG
-        print("[SessionsSyncEngine] Applied remote sessions to local")
+        print("[SessionsSyncEngine] Applied \(mergedSessions.count) sessions to local (with conflict resolution)")
         #endif
     }
 
+    // MARK: - Push to Remote
+    
+    /// Force push immediately (bypasses debounce) - used by sync queue
+    func forcePushNow() async {
+        await pushToRemote()
+    }
+    
+    private func pushToRemote() async {
+        guard isRunning, let userId = userId else { return }
+        guard !isApplyingRemote else { return }
+        
+        let store = ProgressStore.shared
+        
+        // Push all local sessions that haven't been synced
+        let unsyncedSessions = store.sessions.filter { !syncedSessionIds.contains($0.id) }
+        
+        for session in unsyncedSessions {
+            await pushSession(session)
+        }
+        
+        // Update stats
+        await updateRemoteStats()
+    }
+    
     // MARK: - Observe Local Changes
-
+    
     private func observeLocalChanges() {
         let store = ProgressStore.shared
 
         // Observe sessions array changes
         store.$sessions
             .dropFirst()
+            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main) // Reduced to 0.5s for faster sync
             .sink { [weak self] sessions in
                 guard let self = self, self.isRunning, !self.isApplyingRemote else { return }
 
-                // Find new sessions
-                let newSessions = sessions.filter { !self.syncedSessionIds.contains($0.id) }
-                for session in newSessions {
-                    Task {
-                        await self.pushSession(session)
+                // ✅ NEW: Enqueue new sessions in sync queue
+                Task { @MainActor in
+                    guard let userId = AuthManagerV2.shared.state.userId else { return }
+                    let namespace = userId.uuidString
+                    
+                    // Find new sessions
+                    let newSessions = sessions.filter { !self.syncedSessionIds.contains($0.id) }
+                    for session in newSessions {
+                        if let timestamp = LocalTimestampTracker.shared.getLocalTimestamp(
+                            field: "session_\(session.id.uuidString)",
+                            namespace: namespace
+                        ) {
+                            SyncQueue.shared.enqueueSessionChange(
+                                operation: .create,
+                                session: session,
+                                localTimestamp: timestamp
+                            )
+                        }
                     }
+                    
+                    // Process queue (will push if online)
+                    await SyncQueue.shared.processQueue()
                 }
             }
             .store(in: &cancellables)

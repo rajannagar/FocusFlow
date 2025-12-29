@@ -78,10 +78,16 @@ final class TasksStore: ObservableObject {
         if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
             if incoming.sortIndex == 0 { incoming.sortIndex = tasks[idx].sortIndex }
             tasks[idx] = incoming
+            // ✅ Record timestamp for updated task
+            let namespace = getActiveNamespace()
+            LocalTimestampTracker.shared.recordLocalChange(field: "task_\(task.id.uuidString)", namespace: namespace)
         } else {
             let minIndex = tasks.map { $0.sortIndex }.min() ?? 0
             incoming.sortIndex = minIndex - 1
             tasks.append(incoming)
+            // ✅ Record timestamp for new task
+            let namespace = getActiveNamespace()
+            LocalTimestampTracker.shared.recordLocalChange(field: "task_\(task.id.uuidString)", namespace: namespace)
         }
 
         var ordered = orderedTasks()
@@ -95,6 +101,10 @@ final class TasksStore: ObservableObject {
         tasks.removeAll { $0.id == taskID }
         let prefix = "\(taskID.uuidString)|"
         completedOccurrenceKeys = Set(completedOccurrenceKeys.filter { !$0.hasPrefix(prefix) })
+
+        // ✅ Record timestamp for deleted task (for conflict resolution)
+        let namespace = getActiveNamespace()
+        LocalTimestampTracker.shared.recordLocalChange(field: "task_\(taskID.uuidString)", namespace: namespace)
 
         var ordered = orderedTasks()
         for i in ordered.indices { ordered[i].sortIndex = i }
@@ -120,9 +130,15 @@ final class TasksStore: ObservableObject {
 
         if completedOccurrenceKeys.contains(key) {
             completedOccurrenceKeys.remove(key)
+            // ✅ Record timestamp for completion change
+            let namespace = getActiveNamespace()
+            LocalTimestampTracker.shared.recordLocalChange(field: "task_completion_\(taskID.uuidString)", namespace: namespace)
             save()
         } else {
             completedOccurrenceKeys.insert(key)
+            // ✅ Record timestamp for completion change
+            let namespace = getActiveNamespace()
+            LocalTimestampTracker.shared.recordLocalChange(field: "task_completion_\(taskID.uuidString)", namespace: namespace)
             save()
 
             if let task = tasks.first(where: { $0.id == taskID }) {
@@ -163,19 +179,36 @@ final class TasksStore: ObservableObject {
 
     private func applyAuthState(_ state: CloudAuthState) {
         let nextKey: String
+        let namespace: String
         switch state {
         case .signedIn(let userId):
             nextKey = Keys.cloud(userId: userId)
+            namespace = userId.uuidString
         case .guest, .unknown, .signedOut:
             nextKey = Keys.guest
+            namespace = "guest"
         }
 
         isApplyingState = true
         defer { isApplyingState = false }
 
+        // ✅ Clear timestamps when switching accounts (except guest)
+        if namespace != "guest" {
+            LocalTimestampTracker.shared.clearAllTimestamps(namespace: namespace)
+        }
+
         // lock key first
         activeStorageKey = nextKey
         load(storageKey: nextKey)
+    }
+    
+    private func getActiveNamespace() -> String {
+        switch AuthManagerV2.shared.state {
+        case .signedIn(let userId):
+            return userId.uuidString
+        case .guest, .unknown, .signedOut:
+            return "guest"
+        }
     }
 
     private func save() {

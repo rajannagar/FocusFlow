@@ -53,6 +53,9 @@ struct FocusView: View {
     // Prevent duplicate completion side-effects
     @State private var didFireCompletionSideEffectsForThisSession: Bool = false
     
+    // ✅ Track original theme before preset is applied (for reset restoration)
+    @State private var originalThemeBeforePreset: AppTheme? = nil
+    
     // ✅ Premium in-app completion overlay
     @State private var showingCompletionOverlay: Bool = false
     @State private var completionOverlaySessionName: String = ""
@@ -304,9 +307,12 @@ struct FocusView: View {
                     )
 
                 case .resetConfirm:
+                    let message = isPaused 
+                        ? "Reset will clear the paused session and return everything to default."
+                        : "Reset will stop the current session and return everything to default."
                     return Alert(
                         title: Text("Reset session?"),
-                        message: Text("Reset will stop the current session and return everything to default."),
+                        message: Text(message),
                         primaryButton: .destructive(Text("Reset")) {
                             resetAllToDefault()
                         },
@@ -547,6 +553,11 @@ struct FocusView: View {
 
         if let themeRaw = preset.themeRaw,
            let presetTheme = AppTheme(rawValue: themeRaw) {
+            // ✅ Save original theme before applying preset (only on first preset application)
+            if originalThemeBeforePreset == nil {
+                originalThemeBeforePreset = appSettings.profileTheme
+            }
+            
             // ✅ Keep new + old theme paths in sync
             appSettings.profileTheme = presetTheme
             appSettings.selectedTheme = presetTheme
@@ -781,7 +792,7 @@ struct FocusView: View {
         HStack(spacing: 10) {
             Button {
                 simpleTap()
-                if isRunning {
+                if isRunning || isPaused {
                     activeAlert = .resetConfirm
                 } else {
                     resetAllToDefault()
@@ -1264,8 +1275,20 @@ struct FocusView: View {
 
         presetStore.activePresetID = nil
 
-        // Keep the old path synced (some other views still rely on it)
-        appSettings.selectedTheme = appSettings.profileTheme
+        // ✅ Restore original theme from settings (before preset was applied)
+        // If no preset was applied, restore to profileTheme (user's chosen theme)
+        if let originalTheme = originalThemeBeforePreset {
+            appSettings.profileTheme = originalTheme
+            appSettings.selectedTheme = originalTheme
+            originalThemeBeforePreset = nil
+        } else {
+            // No preset was applied, just sync selectedTheme to profileTheme
+            appSettings.selectedTheme = appSettings.profileTheme
+        }
+
+        // ✅ Reset ambiance to default
+        ambientMode = .minimal
+        ambientIntensity = 0.7
 
         appSettings.selectedFocusSound = nil
         appSettings.selectedExternalMusicApp = nil

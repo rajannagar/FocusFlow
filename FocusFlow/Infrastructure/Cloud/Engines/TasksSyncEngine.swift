@@ -130,6 +130,11 @@ final class TasksSyncEngine {
     
     // MARK: - Push to Remote
     
+    /// Force push immediately (bypasses debounce) - used by sync queue
+    func forcePushNow() async {
+        await pushToRemote()
+    }
+    
     private func pushToRemote() async {
         guard isRunning, let userId = userId else { return }
         guard !isApplyingRemote else { return }
@@ -217,6 +222,13 @@ final class TasksSyncEngine {
                     .execute()
             }
             
+            // ✅ Clear local timestamps after successful push
+            let namespace = userId.uuidString
+            for task in store.tasks {
+                LocalTimestampTracker.shared.clearLocalTimestamp(field: "task_\(task.id.uuidString)", namespace: namespace)
+                LocalTimestampTracker.shared.clearLocalTimestamp(field: "task_completion_\(task.id.uuidString)", namespace: namespace)
+            }
+            
             #if DEBUG
             print("[TasksSyncEngine] Pushed tasks and completions to remote")
             #endif
@@ -258,14 +270,20 @@ final class TasksSyncEngine {
         defer { isApplyingRemote = false }
         
         let store = TasksStore.shared
+        guard let userId = userId else { return }
+        let namespace = userId.uuidString
         
-        // Convert DTOs to local models
-        var localTasks: [FFTaskItem] = []
+        // ✅ NEW: Merge remote tasks with local, preserving newer local changes
+        var mergedTasks: [FFTaskItem] = []
+        
+        // Start with local tasks
+        var localTasksMap: [UUID: FFTaskItem] = Dictionary(uniqueKeysWithValues: store.tasks.map { ($0.id, $0) })
+        
+        // Process remote tasks
         for dto in tasks {
-            // Use FFTaskRepeatRule (the actual enum name in your project)
             let repeatRule = FFTaskRepeatRule(rawValue: dto.repeatRule) ?? .none
             
-            let task = FFTaskItem(
+            let remoteTask = FFTaskItem(
                 id: dto.id,
                 sortIndex: dto.sortIndex,
                 title: dto.title,
@@ -279,21 +297,78 @@ final class TasksSyncEngine {
                 excludedDayKeys: Set(dto.excludedDayKeys),
                 createdAt: dto.createdAt ?? Date()
             )
-            localTasks.append(task)
+            
+            // Check if local version is newer
+            let fieldKey = "task_\(dto.id.uuidString)"
+            let remoteTimestamp = dto.updatedAt ?? dto.createdAt
+            
+            if let localTask = localTasksMap[dto.id] {
+                // Task exists locally - check if local is newer
+                if LocalTimestampTracker.shared.isLocalNewer(field: fieldKey, namespace: namespace, remoteTimestamp: remoteTimestamp) {
+                    // Local is newer - keep local version
+                    mergedTasks.append(localTask)
+                    #if DEBUG
+                    print("[TasksSyncEngine] Keeping local task '\(localTask.title)' (local is newer)")
+                    #endif
+                } else {
+                    // Remote is newer or same - use remote
+                    mergedTasks.append(remoteTask)
+                    LocalTimestampTracker.shared.clearLocalTimestamp(field: fieldKey, namespace: namespace)
+                    #if DEBUG
+                    print("[TasksSyncEngine] Using remote task '\(remoteTask.title)' (remote is newer)")
+                    #endif
+                }
+            } else {
+                // New task from remote - add it
+                mergedTasks.append(remoteTask)
+                #if DEBUG
+                print("[TasksSyncEngine] Adding new remote task '\(remoteTask.title)'")
+                #endif
+            }
+            
+            // Remove from local map (so we know which local tasks weren't in remote)
+            localTasksMap.removeValue(forKey: dto.id)
         }
         
-        // Build completion keys
+        // Add any local tasks that weren't in remote (if they're newer)
+        for (_, localTask) in localTasksMap {
+            let fieldKey = "task_\(localTask.id.uuidString)"
+            // If local task has a timestamp, it means it was modified locally
+            // Keep it even if not in remote (it will be pushed on next sync)
+            if LocalTimestampTracker.shared.getLocalTimestamp(field: fieldKey, namespace: namespace) != nil {
+                mergedTasks.append(localTask)
+                #if DEBUG
+                print("[TasksSyncEngine] Keeping local-only task '\(localTask.title)' (will be pushed)")
+                #endif
+            }
+        }
+        
+        // Build completion keys - merge local and remote completions
         var completionKeys = Set<String>()
         for dto in completions {
             let key = "\(dto.taskId.uuidString)|\(dto.dayKey)"
             completionKeys.insert(key)
         }
         
-        // Merge strategy: remote wins for now (can be made smarter with timestamps)
-        store.applyRemoteState(tasks: localTasks, completionKeys: completionKeys)
+        // Merge completions: keep local completions that are newer
+        let localCompletions = store.completedOccurrenceKeys
+        for localKey in localCompletions {
+            let parts = localKey.split(separator: "|")
+            guard parts.count == 2,
+                  let taskId = UUID(uuidString: String(parts[0])) else { continue }
+            
+            let completionFieldKey = "task_completion_\(taskId.uuidString)"
+            // If local completion has a timestamp, keep it
+            if LocalTimestampTracker.shared.getLocalTimestamp(field: completionFieldKey, namespace: namespace) != nil {
+                completionKeys.insert(localKey)
+            }
+        }
+        
+        // Apply merged state
+        store.applyRemoteState(tasks: mergedTasks, completionKeys: completionKeys)
         
         #if DEBUG
-        print("[TasksSyncEngine] Applied \(localTasks.count) tasks, \(completionKeys.count) completions to local")
+        print("[TasksSyncEngine] Applied \(mergedTasks.count) tasks, \(completionKeys.count) completions to local (with conflict resolution)")
         #endif
     }
     
@@ -305,11 +380,30 @@ final class TasksSyncEngine {
         // Observe task list changes
         store.$tasks
             .dropFirst()
-            .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
+            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main) // Reduced from 1s to 0.5s for faster sync
             .sink { [weak self] _ in
                 guard let self = self, self.isRunning, !self.isApplyingRemote else { return }
-                Task {
-                    await self.pushToRemote()
+                
+                // ✅ NEW: Enqueue task changes in sync queue (queue handles pushing)
+                Task { @MainActor in
+                    guard let userId = AuthManagerV2.shared.state.userId else { return }
+                    let namespace = userId.uuidString
+                    
+                    for task in store.tasks {
+                        if let timestamp = LocalTimestampTracker.shared.getLocalTimestamp(
+                            field: "task_\(task.id.uuidString)",
+                            namespace: namespace
+                        ) {
+                            SyncQueue.shared.enqueueTaskChange(
+                                operation: .update,
+                                task: task,
+                                localTimestamp: timestamp
+                            )
+                        }
+                    }
+                    
+                    // Process queue (will push if online)
+                    await SyncQueue.shared.processQueue()
                 }
             }
             .store(in: &cancellables)
@@ -317,11 +411,42 @@ final class TasksSyncEngine {
         // Observe completion changes
         store.$completedOccurrenceKeys
             .dropFirst()
-            .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
+            .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main) // Reduced from 1s to 0.5s for faster sync
             .sink { [weak self] _ in
                 guard let self = self, self.isRunning, !self.isApplyingRemote else { return }
-                Task {
-                    await self.pushToRemote()
+                
+                // ✅ NEW: Enqueue completion changes in sync queue (queue handles pushing)
+                Task { @MainActor in
+                    guard let userId = AuthManagerV2.shared.state.userId else { return }
+                    let namespace = userId.uuidString
+                    
+                    // Track completion changes per task
+                    var taskIds = Set<UUID>()
+                    for key in store.completedOccurrenceKeys {
+                        let parts = key.split(separator: "|")
+                        if let taskId = UUID(uuidString: String(parts[0])) {
+                            taskIds.insert(taskId)
+                        }
+                    }
+                    
+                    for taskId in taskIds {
+                        if let timestamp = LocalTimestampTracker.shared.getLocalTimestamp(
+                            field: "task_completion_\(taskId.uuidString)",
+                            namespace: namespace
+                        ) {
+                            // Enqueue completion change
+                            if let task = store.tasks.first(where: { $0.id == taskId }) {
+                                SyncQueue.shared.enqueueTaskChange(
+                                    operation: .update,
+                                    task: task,
+                                    localTimestamp: timestamp
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Process queue (will push if online)
+                    await SyncQueue.shared.processQueue()
                 }
             }
             .store(in: &cancellables)
