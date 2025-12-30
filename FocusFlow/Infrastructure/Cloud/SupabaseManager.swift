@@ -41,10 +41,13 @@ final class SupabaseManager {
         
         // Configure client with PKCE auth flow
         // Parameter order: redirectToURL first, then flowType (Supabase Swift SDK v2)
+        // Set emitLocalSessionAsInitialSession to opt-in to new behavior that ensures
+        // locally stored session is always emitted, regardless of validity or expiration
         let config = SupabaseClientOptions(
             auth: SupabaseClientOptions.AuthOptions(
                 redirectToURL: Self.redirectURL,
-                flowType: .pkce
+                flowType: .pkce,
+                emitLocalSessionAsInitialSession: true
             )
         )
         
@@ -67,6 +70,9 @@ final class SupabaseManager {
     }
     
     /// Quick access to database
+    /// Note: Direct database access is deprecated in favor of client.from(_:), client.rpc(_:params:), or client.schema(_:)
+    /// This property is kept for backward compatibility with existing code
+    @available(*, deprecated, message: "Use client.from(_:), client.rpc(_:params:), or client.schema(_:) instead")
     var database: PostgrestClient {
         client.database
     }

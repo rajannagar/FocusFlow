@@ -24,7 +24,7 @@ final class ProgressStore: ObservableObject {
     static let shared = ProgressStore()
 
     // MARK: - Published
-    @Published internal(set) var sessions: [ProgressSession] = []
+    @Published private(set) var sessions: [ProgressSession] = []
     @Published var dailyGoalMinutes: Int = 60 {
         didSet {
             guard !isLoading else { return }

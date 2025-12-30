@@ -336,12 +336,12 @@ final class SyncQueue: ObservableObject {
     private func processSettingsOperation(_ operation: SyncOperation) async throws {
         // ✅ FIX: Only push, don't pull - pulling causes sync loops
         // The queue is for pushing local changes, not pulling remote changes
-        guard let userId = AuthManagerV2.shared.state.userId else { return }
+        guard AuthManagerV2.shared.state.userId != nil else { return }
         await SyncCoordinator.shared.pushSettingsOnly()
     }
     
     private func processPresetOperation(_ operation: SyncOperation) async throws {
-        guard let userId = AuthManagerV2.shared.state.userId else { return }
+        guard AuthManagerV2.shared.state.userId != nil else { return }
         
         if operation.operation == .delete {
             // Handle deletion
@@ -356,7 +356,7 @@ final class SyncQueue: ObservableObject {
     }
     
     private func processTaskOperation(_ operation: SyncOperation) async throws {
-        guard let userId = AuthManagerV2.shared.state.userId else { return }
+        guard AuthManagerV2.shared.state.userId != nil else { return }
         
         if operation.operation == .delete {
             // Handle deletion
@@ -372,7 +372,7 @@ final class SyncQueue: ObservableObject {
     
     private func processSessionOperation(_ operation: SyncOperation) async throws {
         // ✅ NEW: Push sessions only (no pull to avoid loops)
-        guard let userId = AuthManagerV2.shared.state.userId else { return }
+        guard AuthManagerV2.shared.state.userId != nil else { return }
         await SyncCoordinator.shared.pushSessionsOnly()
     }
     

@@ -62,22 +62,28 @@ final class FocusPresetStore: ObservableObject {
     // API expected by your views
     func upsert(_ preset: FocusPreset) {
         if let index = presets.firstIndex(where: { $0.id == preset.id }) {
+            let oldPreset = presets[index]
             presets[index] = preset
+            
             // Record timestamp for updated preset
             LocalTimestampTracker.shared.recordLocalChange(field: "preset_\(preset.id.uuidString)", namespace: activeNamespace)
+            
+            // ✅ If name changed, also record timestamp for name field specifically (for field-level conflict resolution)
+            if oldPreset.name != preset.name {
+                LocalTimestampTracker.shared.recordLocalChange(field: "preset_\(preset.id.uuidString)_name", namespace: activeNamespace)
+            }
         } else {
             presets.append(preset)
             // Record timestamp for new preset
             LocalTimestampTracker.shared.recordLocalChange(field: "preset_\(preset.id.uuidString)", namespace: activeNamespace)
+            // Also record timestamp for name field for new presets
+            LocalTimestampTracker.shared.recordLocalChange(field: "preset_\(preset.id.uuidString)_name", namespace: activeNamespace)
         }
     }
 
     func save(_ preset: FocusPreset) {
-        let isNew = !presets.contains(where: { $0.id == preset.id })
         upsert(preset)
-        if isNew && activePresetID == nil {
-            activePresetID = preset.id
-        }
+        // ✅ Removed auto-activation - presets should only be active when user explicitly selects them
     }
 
     func delete(_ preset: FocusPreset) {
@@ -120,7 +126,8 @@ final class FocusPresetStore: ObservableObject {
         ]
 
         presets = defaults
-        activePresetID = defaults.first?.id
+        // ✅ Removed auto-activation - presets should only be active when user explicitly selects them
+        activePresetID = nil
         return defaults
     }
 
@@ -144,10 +151,16 @@ final class FocusPresetStore: ObservableObject {
         defer { isApplyingNamespaceOrRemote = false }
 
         presets = []
-        activePresetID = nil
 
         loadPresets()
-        loadActivePresetID()
+        // ✅ Don't load active preset from storage - presets should only be active when:
+        // 1. User explicitly selects one in the current session
+        // 2. A focus session is running with that preset
+        // Active preset selection should NOT persist across app launches
+        
+        // ✅ Check if there's a running session with a preset - if so, restore it
+        // This ensures the preset stays active when the app relaunches during a session
+        restoreActivePresetIfSessionRunning()
 
         if newNamespace == "guest" {
             _ = seedDefaultsIfNeeded()
@@ -186,12 +199,49 @@ final class FocusPresetStore: ObservableObject {
     private func loadActivePresetID() {
         guard let idString = UserDefaults.standard.string(forKey: key(Keys.activePresetID)),
               let id = UUID(uuidString: idString) else {
-            activePresetID = presets.first?.id
+            // ✅ Removed auto-activation - only load if explicitly saved, otherwise nil
+            activePresetID = nil
             return
         }
-        activePresetID = id
+        // Only set if the preset still exists
+        if presets.contains(where: { $0.id == id }) {
+            activePresetID = id
+        } else {
+            activePresetID = nil
+        }
     }
 
+    /// ✅ Restore active preset if there's a running session
+    /// This is called after namespace changes to ensure the preset stays active
+    /// when the app relaunches during a focus session
+    private func restoreActivePresetIfSessionRunning() {
+        let defaults = UserDefaults.standard
+        let isSessionActive = defaults.bool(forKey: "FocusFlow.focusSession.isActive")
+        guard isSessionActive else {
+            // No running session - clear preset
+            activePresetID = nil
+            return
+        }
+        
+        // There's a running session - check if it has a preset
+        guard let presetIDString = defaults.string(forKey: "FocusFlow.focusSession.activePresetID"),
+              let presetID = UUID(uuidString: presetIDString) else {
+            // Session exists but no preset was used - clear it
+            activePresetID = nil
+            return
+        }
+        
+        // Verify the preset still exists in the current namespace
+        guard presets.contains(where: { $0.id == presetID }) else {
+            // Preset doesn't exist anymore - clear it
+            activePresetID = nil
+            return
+        }
+        
+        // There's a running session with this preset - keep it active
+        activePresetID = presetID
+    }
+    
     private func saveActivePresetID() {
         if let id = activePresetID {
             UserDefaults.standard.set(id.uuidString, forKey: key(Keys.activePresetID))
@@ -207,6 +257,14 @@ extension FocusPresetStore {
         defer { isApplyingNamespaceOrRemote = false }
 
         presets = remotePresets
-        activePresetID = activePresetId ?? remotePresets.first?.id
+        
+        // ✅ Check if there's a running session with a preset - if so, preserve it
+        // This ensures the preset stays active when syncing during a session
+        restoreActivePresetIfSessionRunning()
+        
+        // If no session is running, clear the preset (don't use remote activePresetId)
+        if activePresetID == nil {
+            // No session running - clear preset
+        }
     }
 }

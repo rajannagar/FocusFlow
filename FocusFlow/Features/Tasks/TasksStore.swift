@@ -4,8 +4,8 @@ import Combine
 final class TasksStore: ObservableObject {
     static let shared = TasksStore()
 
-    @Published internal(set) var tasks: [FFTaskItem] = []
-    @Published internal(set) var completedOccurrenceKeys: Set<String> = []
+    @Published private(set) var tasks: [FFTaskItem] = []
+    @Published private(set) var completedOccurrenceKeys: Set<String> = []
 
     private struct Keys {
         static let guest = "focusflow_tasks_state_guest"
@@ -209,14 +209,11 @@ final class TasksStore: ObservableObject {
 
     private func applyAuthState(_ state: CloudAuthState) {
         let nextKey: String
-        let namespace: String
         switch state {
         case .signedIn(let userId):
             nextKey = Keys.cloud(userId: userId)
-            namespace = userId.uuidString
         case .guest, .unknown, .signedOut:
             nextKey = Keys.guest
-            namespace = "guest"
         }
 
         isApplyingState = true

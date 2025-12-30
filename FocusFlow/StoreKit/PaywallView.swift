@@ -34,9 +34,7 @@ struct PaywallView: View {
     private var isYearlySelected: Bool { selectedID == ProEntitlementManager.yearlyID }
 
     var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size
-            
+        GeometryReader { _ in
             ZStack {
                 // Premium animated background
                 PremiumAppBackground(theme: theme)
@@ -85,7 +83,7 @@ struct PaywallView: View {
                                 let status = await Transaction.latest(for: transaction.productID)
                                 if case .verified(let latestTransaction) = status {
                                     // If there's a newer transaction, use that
-                                    if let renewal = try? await latestTransaction.subscriptionStatus {
+                                    if await latestTransaction.subscriptionStatus != nil {
                                         // Subscription is active
                                         subscriptionStatus = .active
                                     } else {

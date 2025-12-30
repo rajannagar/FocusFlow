@@ -200,7 +200,7 @@ struct JourneyView: View {
                             .onAppear {
                                 if !appearedCards.contains(summary.id) {
                                     Haptics.impact(.soft)
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    _ = withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                         appearedCards.insert(summary.id)
                                     }
                                 }

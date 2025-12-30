@@ -738,7 +738,9 @@ struct TasksView: View {
         guard draft.convertToPreset, !draft.presetCreated else { return }
         
         let minutes = max(1, draft.durationMinutes)
-        let soundID = appSettings.selectedFocusSound?.rawValue ?? FocusSound.lightRainAmbient.rawValue
+        // ✅ Presets created from tasks should always have no sound by default
+        // User can modify the preset later to add sound if desired
+        let soundID = "" // Empty string = no sound
         
         let preset = FocusPreset(
             name: draft.title,

@@ -30,7 +30,7 @@ final class FocusLocalNotificationManager {
 
     // MARK: - Authorization Helpers
 
-    enum Authorization {
+    nonisolated enum Authorization: Equatable {
         case authorized
         case provisional
         case denied

@@ -164,6 +164,7 @@ final class AppSettings: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var isApplyingNamespace = false
     private var didSetupNotificationObservers = false
+    private var isUpdatingMutualExclusivity = false // ✅ Prevent recursive updates when enforcing mutual exclusivity
 
     // ✅ Updated to use CloudAuthState from AuthManagerV2
     private func namespace(for state: CloudAuthState) -> String {
@@ -252,8 +253,8 @@ final class AppSettings: ObservableObject {
 
         profileImageData = nil
 
-        selectedFocusSound = .lightRainAmbient
-        selectedExternalMusicApp = nil
+        selectedFocusSound = nil // ✅ Default to no sound
+        selectedExternalMusicApp = nil // ✅ Default to no external app
 
         // Load from namespace
         loadAll()
@@ -418,6 +419,14 @@ final class AppSettings: ObservableObject {
     @Published var selectedFocusSound: FocusSound? {
         didSet {
             guard !isApplyingNamespace else { return }
+            
+            // ✅ If a built-in sound is selected, clear external music app
+            if !isUpdatingMutualExclusivity, selectedFocusSound != nil {
+                isUpdatingMutualExclusivity = true
+                defer { isUpdatingMutualExclusivity = false }
+                selectedExternalMusicApp = nil
+            }
+            
             UserDefaults.standard.set(selectedFocusSound?.rawValue, forKey: key(Keys.selectedFocusSound))
             if selectedFocusSound != oldValue {
                 LocalTimestampTracker.shared.recordLocalChange(field: "selectedFocusSound", namespace: activeNamespace)
@@ -469,6 +478,14 @@ final class AppSettings: ObservableObject {
     @Published var selectedExternalMusicApp: ExternalMusicApp? {
         didSet {
             guard !isApplyingNamespace else { return }
+            
+            // ✅ If an external app is selected, clear built-in sound (set to nil = "no sound")
+            if !isUpdatingMutualExclusivity, selectedExternalMusicApp != nil {
+                isUpdatingMutualExclusivity = true
+                defer { isUpdatingMutualExclusivity = false }
+                selectedFocusSound = nil
+            }
+            
             let defaults = UserDefaults.standard
             if let value = selectedExternalMusicApp?.rawValue {
                 defaults.set(value, forKey: key(Keys.externalMusicApp))
@@ -507,9 +524,9 @@ final class AppSettings: ObservableObject {
         self.askToRecordIncompleteSessions = false
 
         self.profileImageData = nil
-        self.selectedFocusSound = .lightRainAmbient
+        self.selectedFocusSound = nil // ✅ Default to no sound
 
-        self.selectedExternalMusicApp = nil
+        self.selectedExternalMusicApp = nil // ✅ Default to no external app
 
         observeAuthChanges()
         applyNamespace(for: AuthManagerV2.shared.state)
@@ -576,17 +593,27 @@ final class AppSettings: ObservableObject {
 
         self.profileImageData = defaults.data(forKey: key(Keys.profileImageData))
 
-        if let rawSound = defaults.string(forKey: key(Keys.selectedFocusSound)),
-           let sound = FocusSound(rawValue: rawSound) {
-            self.selectedFocusSound = sound
+        // ✅ Check if there's an active session - if not, don't load sound/app from UserDefaults
+        let isSessionActive = defaults.bool(forKey: "FocusFlow.focusSession.isActive")
+        
+        if isSessionActive {
+            // Session is active - restore from session persistence
+            if let soundRaw = defaults.string(forKey: "FocusFlow.focusSession.selectedFocusSound"),
+               let sound = FocusSound(rawValue: soundRaw) {
+                self.selectedFocusSound = sound
+            } else {
+                self.selectedFocusSound = nil
+            }
+            
+            if let appRaw = defaults.string(forKey: "FocusFlow.focusSession.selectedExternalMusicApp"),
+               let app = ExternalMusicApp(rawValue: appRaw) {
+                self.selectedExternalMusicApp = app
+            } else {
+                self.selectedExternalMusicApp = nil
+            }
         } else {
-            self.selectedFocusSound = .lightRainAmbient
-        }
-
-        if let rawExternal = defaults.string(forKey: key(Keys.externalMusicApp)),
-           let savedExternal = ExternalMusicApp(rawValue: rawExternal) {
-            self.selectedExternalMusicApp = savedExternal
-        } else {
+            // No session active - default to no sound and no external app
+            self.selectedFocusSound = nil
             self.selectedExternalMusicApp = nil
         }
     }
@@ -618,20 +645,36 @@ final class AppSettings: ObservableObject {
             
             // Try to get display name from user metadata
             // Check userMetadata first (OAuth providers often put name here)
-            let userMetadata = session.user.userMetadata ?? [:]
-            let appMetadata = session.user.appMetadata ?? [:]
+            let userMetadata = session.user.userMetadata
+            let appMetadata = session.user.appMetadata
+            
+            // Helper to extract string from AnyJSON
+            func extractString(from json: AnyJSON?) -> String? {
+                guard let json = json else { return nil }
+                // AnyJSON can be decoded/encoded to extract underlying values
+                // Try to get string representation
+                if case .string(let value) = json {
+                    return value
+                }
+                // Fallback: try to decode as string via JSON
+                if let data = try? JSONEncoder().encode(json),
+                   let decoded = try? JSONDecoder().decode(String.self, from: data) {
+                    return decoded
+                }
+                return nil
+            }
             
             // Common metadata keys for name: full_name, name, display_name
             var nameFromMetadata: String? = nil
-            if let fullName = userMetadata["full_name"] as? String, !fullName.isEmpty {
+            if let fullName = extractString(from: userMetadata["full_name"]), !fullName.isEmpty {
                 nameFromMetadata = fullName
-            } else if let name = userMetadata["name"] as? String, !name.isEmpty {
+            } else if let name = extractString(from: userMetadata["name"]), !name.isEmpty {
                 nameFromMetadata = name
-            } else if let displayName = userMetadata["display_name"] as? String, !displayName.isEmpty {
+            } else if let displayName = extractString(from: userMetadata["display_name"]), !displayName.isEmpty {
                 nameFromMetadata = displayName
-            } else if let fullName = appMetadata["full_name"] as? String, !fullName.isEmpty {
+            } else if let fullName = extractString(from: appMetadata["full_name"]), !fullName.isEmpty {
                 nameFromMetadata = fullName
-            } else if let name = appMetadata["name"] as? String, !name.isEmpty {
+            } else if let name = extractString(from: appMetadata["name"]), !name.isEmpty {
                 nameFromMetadata = name
             }
             

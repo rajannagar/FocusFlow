@@ -101,10 +101,10 @@ final class TasksSyncEngine {
     // MARK: - Pull from Remote
     
     func pullFromRemote(userId: UUID) async throws {
-        let db = SupabaseManager.shared.database
+        let client = SupabaseManager.shared.client
         
         // Fetch tasks
-        let remoteTasks: [TaskDTO] = try await db
+        let remoteTasks: [TaskDTO] = try await client
             .from("tasks")
             .select()
             .eq("user_id", value: userId.uuidString)
@@ -114,7 +114,7 @@ final class TasksSyncEngine {
             .value
         
         // Fetch completions
-        let remoteCompletions: [TaskCompletionDTO] = try await db
+        let remoteCompletions: [TaskCompletionDTO] = try await client
             .from("task_completions")
             .select()
             .eq("user_id", value: userId.uuidString)
@@ -140,7 +140,7 @@ final class TasksSyncEngine {
         guard !isApplyingRemote else { return }
         
         let store = TasksStore.shared
-        let db = SupabaseManager.shared.database
+        let client = SupabaseManager.shared.client
         
         // Convert local tasks to DTOs
         let taskDTOs = store.tasks.map { task -> TaskDTO in
@@ -164,7 +164,7 @@ final class TasksSyncEngine {
         do {
             // Upsert tasks
             if !taskDTOs.isEmpty {
-                try await db
+                try await client
                     .from("tasks")
                     .upsert(taskDTOs, onConflict: "id")
                     .execute()
@@ -172,7 +172,7 @@ final class TasksSyncEngine {
             
             // For completions, we need to handle adds/removes
             // First, get existing remote completions
-            let existingRemote: [TaskCompletionDTO] = try await db
+            let existingRemote: [TaskCompletionDTO] = try await client
                 .from("task_completions")
                 .select()
                 .eq("user_id", value: userId.uuidString)
@@ -198,7 +198,7 @@ final class TasksSyncEngine {
                     ))
                 }
                 if !newCompletions.isEmpty {
-                    try await db
+                    try await client
                         .from("task_completions")
                         .insert(newCompletions)
                         .execute()
@@ -213,7 +213,7 @@ final class TasksSyncEngine {
                       let taskId = UUID(uuidString: String(parts[0])) else { continue }
                 let dayKey = String(parts[1])
                 
-                try await db
+                try await client
                     .from("task_completions")
                     .delete()
                     .eq("user_id", value: userId.uuidString)
@@ -246,7 +246,7 @@ final class TasksSyncEngine {
         
         do {
             // Archive instead of hard delete (preserves data)
-            try await SupabaseManager.shared.database
+            try await SupabaseManager.shared.client
                 .from("tasks")
                 .update(["is_archived": true])
                 .eq("id", value: taskId.uuidString)

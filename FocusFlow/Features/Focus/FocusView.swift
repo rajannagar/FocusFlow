@@ -192,6 +192,25 @@ struct FocusView: View {
                 viewModel.sessionName = currentSessionDisplayName
                 syncFromLiveActivityIfPossible()
                 if isIdle { showingCompletionOverlay = false }
+                
+                // ✅ If there's a running/paused session with an active preset, apply its settings
+                if let preset = activePreset, (isRunning || isPaused) {
+                    applyPresetSettingsOnly(preset)
+                }
+                
+                // ✅ If there's a running session, ensure sound is playing if it should be
+                // This handles the case where the session was restored from app launch
+                if isRunning, appSettings.soundEnabled, let selected = appSettings.selectedFocusSound {
+                    if activeSessionSound != selected {
+                        // Sound changed or wasn't set - start it
+                        activeSessionSound = selected
+                        soundChangedWhilePaused = false
+                        FocusSoundManager.shared.play(sound: selected)
+                    } else {
+                        // Sound is already set - make sure it's playing (might have stopped when app was killed)
+                        FocusSoundManager.shared.play(sound: selected)
+                    }
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .focusSessionExternalToggle)) { notification in
                 guard
@@ -255,6 +274,15 @@ struct FocusView: View {
                 }
                 if isIntentionFocused {
                     hasEditedIntention = true
+                }
+            }
+            .onChange(of: presetStore.activePresetID) { _, newPresetID in
+                // ✅ When preset is restored during a running session, apply all its settings
+                if let presetID = newPresetID,
+                   let preset = presetStore.presets.first(where: { $0.id == presetID }),
+                   (isRunning || isPaused) {
+                    // Apply preset settings (theme, ambiance, sound) without changing duration
+                    applyPresetSettingsOnly(preset)
                 }
             }
             .sheet(isPresented: $showingTimePicker) { timePickerSheet }
@@ -611,6 +639,66 @@ struct FocusView: View {
     private func soundForPreset(_ preset: FocusPreset) -> FocusSound? {
         guard !preset.soundID.isEmpty else { return nil }
         return FocusSound(rawValue: preset.soundID)
+    }
+    
+    /// ✅ Apply preset settings (theme, ambiance, sound) without changing duration or session name
+    /// This is used when restoring a preset during a running session
+    private func applyPresetSettingsOnly(_ preset: FocusPreset) {
+        // Apply theme
+        if let themeRaw = preset.themeRaw,
+           let presetTheme = AppTheme(rawValue: themeRaw) {
+            // Save original theme before applying preset (only on first preset application)
+            if originalThemeBeforePreset == nil {
+                originalThemeBeforePreset = appSettings.profileTheme
+            }
+            
+            // Keep new + old theme paths in sync
+            appSettings.profileTheme = presetTheme
+            appSettings.selectedTheme = presetTheme
+        }
+        
+        // Apply ambiance mode from preset
+        if let presetAmbiance = preset.ambianceMode {
+            ambientMode = presetAmbiance
+        }
+        
+        // Apply sound settings from preset
+        if let app = preset.externalMusicApp {
+            appSettings.selectedExternalMusicApp = app
+            appSettings.selectedFocusSound = nil
+            
+            // Only stop sound if session is paused (don't interrupt running session)
+            if isPaused {
+                FocusSoundManager.shared.stop()
+                activeSessionSound = nil
+                soundChangedWhilePaused = false
+            }
+        } else if let sound = soundForPreset(preset) {
+            appSettings.selectedExternalMusicApp = nil
+            appSettings.selectedFocusSound = sound
+            
+            // If session is running, start the sound
+            if isRunning {
+                activeSessionSound = sound
+                soundChangedWhilePaused = false
+                if appSettings.soundEnabled {
+                    FocusSoundManager.shared.play(sound: sound)
+                }
+            } else if isPaused {
+                activeSessionSound = sound
+                soundChangedWhilePaused = false
+            }
+        } else {
+            appSettings.selectedExternalMusicApp = nil
+            appSettings.selectedFocusSound = nil
+            
+            // Only stop sound if session is paused (don't interrupt running session)
+            if isPaused {
+                FocusSoundManager.shared.stop()
+                activeSessionSound = nil
+                soundChangedWhilePaused = false
+            }
+        }
     }
 
     // MARK: - Orb

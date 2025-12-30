@@ -1492,7 +1492,7 @@ private struct SettingsSheet: View {
 
     private var feedbackSection: some View {
         SettingsSectionView(title: "FEEDBACK") {
-            Toggle("Sounds", isOn: $settings.soundEnabled).tint(theme.accentPrimary)
+            Toggle("Focus Sounds", isOn: $settings.soundEnabled).tint(theme.accentPrimary)
             Toggle("Haptics", isOn: $settings.hapticsEnabled).tint(theme.accentPrimary)
         }
     }

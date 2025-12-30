@@ -188,7 +188,11 @@ final class AuthManagerV2: ObservableObject {
             // MFA verified
             break
             
-        @unknown default:
+        default:
+            // Handle any other cases (including future cases from Supabase SDK)
+            #if DEBUG
+            print("[AuthManagerV2] Unhandled auth event: \(event)")
+            #endif
             break
         }
         
@@ -328,20 +332,36 @@ final class AuthManagerV2: ObservableObject {
     
     /// Extracts and sets display name from session user metadata if available
     private func setDisplayNameFromSession(_ session: Session) {
-        let userMetadata = session.user.userMetadata ?? [:]
-        let appMetadata = session.user.appMetadata ?? [:]
+        let userMetadata = session.user.userMetadata
+        let appMetadata = session.user.appMetadata
+        
+        // Helper to extract string from AnyJSON
+        func extractString(from json: AnyJSON?) -> String? {
+            guard let json = json else { return nil }
+            // AnyJSON can be decoded/encoded to extract underlying values
+            // Try to get string representation
+            if case .string(let value) = json {
+                return value
+            }
+            // Fallback: try to decode as string via JSON
+            if let data = try? JSONEncoder().encode(json),
+               let decoded = try? JSONDecoder().decode(String.self, from: data) {
+                return decoded
+            }
+            return nil
+        }
         
         // Common metadata keys for name: full_name, name, display_name
         var nameFromMetadata: String? = nil
-        if let fullName = userMetadata["full_name"] as? String, !fullName.isEmpty {
+        if let fullName = extractString(from: userMetadata["full_name"]), !fullName.isEmpty {
             nameFromMetadata = fullName
-        } else if let name = userMetadata["name"] as? String, !name.isEmpty {
+        } else if let name = extractString(from: userMetadata["name"]), !name.isEmpty {
             nameFromMetadata = name
-        } else if let displayName = userMetadata["display_name"] as? String, !displayName.isEmpty {
+        } else if let displayName = extractString(from: userMetadata["display_name"]), !displayName.isEmpty {
             nameFromMetadata = displayName
-        } else if let fullName = appMetadata["full_name"] as? String, !fullName.isEmpty {
+        } else if let fullName = extractString(from: appMetadata["full_name"]), !fullName.isEmpty {
             nameFromMetadata = fullName
-        } else if let name = appMetadata["name"] as? String, !name.isEmpty {
+        } else if let name = extractString(from: appMetadata["name"]), !name.isEmpty {
             nameFromMetadata = name
         }
         

@@ -98,10 +98,10 @@ final class PresetsSyncEngine {
     // MARK: - Pull from Remote
 
     func pullFromRemote(userId: UUID) async throws {
-        let db = SupabaseManager.shared.database
+        let client = SupabaseManager.shared.client
 
         // Fetch presets
-        let remotePresets: [FocusPresetDTO] = try await db
+        let remotePresets: [FocusPresetDTO] = try await client
             .from("focus_presets")
             .select()
             .eq("user_id", value: userId.uuidString)
@@ -109,16 +109,12 @@ final class PresetsSyncEngine {
             .execute()
             .value
 
-        // Fetch active preset setting (optional)
-        let activePresetSetting: FocusPresetSettingsDTO? = try? await db
-            .from("focus_preset_settings")
-            .select()
-            .eq("user_id", value: userId.uuidString)
-            .single()
-            .execute()
-            .value
-
-        applyRemoteToLocal(presets: remotePresets, activePresetId: activePresetSetting?.activePresetId)
+        // ✅ Don't restore active preset from remote - presets should only be active when:
+        // 1. User explicitly selects one in the current session
+        // 2. A focus session is running with that preset
+        // Active preset selection should NOT persist across app launches
+        // Always pass nil to ensure no preset is active by default on app launch
+        applyRemoteToLocal(presets: remotePresets, activePresetId: nil)
 
         #if DEBUG
         print("[PresetsSyncEngine] Pulled \(remotePresets.count) presets")
@@ -138,7 +134,7 @@ final class PresetsSyncEngine {
         guard !isApplyingRemote else { return }
 
         let store = FocusPresetStore.shared
-        let db = SupabaseManager.shared.database
+        let client = SupabaseManager.shared.client
 
         // Convert local presets to DTOs
         let presetDTOs: [FocusPresetDTO] = store.presets.enumerated().map { index, preset in
@@ -160,7 +156,7 @@ final class PresetsSyncEngine {
         do {
             if !presetDTOs.isEmpty {
                 do {
-                    try await db
+                    try await client
                         .from("focus_presets")
                         .upsert(presetDTOs, onConflict: "id")
                         .execute()
@@ -176,7 +172,7 @@ final class PresetsSyncEngine {
                             dtoCopy.ambianceModeRaw = nil // Exclude ambiance field
                             return dtoCopy
                         }
-                        try await db
+                        try await client
                             .from("focus_presets")
                             .upsert(dtosWithoutAmbiance, onConflict: "id")
                             .execute()
@@ -192,7 +188,7 @@ final class PresetsSyncEngine {
                 activePresetId: store.activePresetID
             )
 
-            try await db
+            try await client
                 .from("focus_preset_settings")
                 .upsert(settingsDTO, onConflict: "user_id")
                 .execute()
@@ -221,7 +217,7 @@ final class PresetsSyncEngine {
         guard let userId = userId else { return }
 
         let store = FocusPresetStore.shared
-        let db = SupabaseManager.shared.database
+        let client = SupabaseManager.shared.client
 
         // ✅ Fetch remote IDs - use lightweight struct for ID-only query
         struct PresetIdOnly: Codable {
@@ -229,7 +225,7 @@ final class PresetsSyncEngine {
         }
         
         let remoteIds: Set<UUID> = Set(
-            ((try? await db
+            ((try? await client
                 .from("focus_presets")
                 .select("id")
                 .eq("user_id", value: userId.uuidString)
@@ -260,7 +256,7 @@ final class PresetsSyncEngine {
             // ✅ Use upsert instead of insert to handle case where preset was already pushed
             // This prevents duplicate key errors if pushToRemote() already upserted these presets
             do {
-                try await db
+                try await client
                     .from("focus_presets")
                     .upsert(dtos, onConflict: "id")
                     .execute()
@@ -276,7 +272,7 @@ final class PresetsSyncEngine {
                             dtoCopy.ambianceModeRaw = nil // Exclude ambiance field
                             return dtoCopy
                         }
-                        try await db
+                        try await client
                             .from("focus_presets")
                             .upsert(dtosWithoutAmbiance, onConflict: "id")
                             .execute()
@@ -308,7 +304,7 @@ final class PresetsSyncEngine {
         guard isRunning, let userId = userId else { return }
 
         do {
-            try await SupabaseManager.shared.database
+            try await SupabaseManager.shared.client
                 .from("focus_presets")
                 .delete()
                 .eq("id", value: presetId.uuidString)
@@ -360,21 +356,61 @@ final class PresetsSyncEngine {
             let remoteTimestamp = dto.updatedAt ?? dto.createdAt
             
             if let localPreset = localPresetsMap[dto.id] {
-                // Preset exists locally - check if local is newer
-                if LocalTimestampTracker.shared.isLocalNewer(field: fieldKey, namespace: namespace, remoteTimestamp: remoteTimestamp) {
-                    // Local is newer - keep local version
-                    mergedPresets.append(localPreset)
+                // Preset exists locally - use field-level conflict resolution for name
+                let nameFieldKey = "preset_\(dto.id.uuidString)_name"
+                let localNameIsNewer = LocalTimestampTracker.shared.isLocalNewer(field: nameFieldKey, namespace: namespace, remoteTimestamp: remoteTimestamp)
+                let localOverallIsNewer = LocalTimestampTracker.shared.isLocalNewer(field: fieldKey, namespace: namespace, remoteTimestamp: remoteTimestamp)
+                
+                var mergedPreset: FocusPreset
+                
+                if localOverallIsNewer {
+                    // Local is newer overall - keep local, but use remote name if remote name is newer
+                    if localNameIsNewer {
+                        // Local name is also newer - keep full local preset
+                        mergedPreset = localPreset
+                    } else {
+                        // Remote name is newer - merge: local preset with remote name
+                        mergedPreset = FocusPreset(
+                            id: localPreset.id,
+                            name: remotePreset.name,
+                            durationSeconds: localPreset.durationSeconds,
+                            soundID: localPreset.soundID,
+                            emoji: localPreset.emoji,
+                            isSystemDefault: localPreset.isSystemDefault,
+                            themeRaw: localPreset.themeRaw,
+                            externalMusicAppRaw: localPreset.externalMusicAppRaw,
+                            ambianceModeRaw: localPreset.ambianceModeRaw
+                        )
+                    }
                     #if DEBUG
-                    print("[PresetsSyncEngine] Keeping local preset '\(localPreset.name)' (local is newer)")
+                    print("[PresetsSyncEngine] Keeping local preset '\(mergedPreset.name)' (local is newer)")
                     #endif
                 } else {
-                    // Remote is newer or same - use remote
-                    mergedPresets.append(remotePreset)
+                    // Remote is newer overall - use remote, but keep local name if local name is newer
+                    if localNameIsNewer {
+                        // Local name is newer - merge: remote preset with local name
+                        mergedPreset = FocusPreset(
+                            id: remotePreset.id,
+                            name: localPreset.name, // Keep local name
+                            durationSeconds: remotePreset.durationSeconds,
+                            soundID: remotePreset.soundID,
+                            emoji: remotePreset.emoji,
+                            isSystemDefault: remotePreset.isSystemDefault,
+                            themeRaw: remotePreset.themeRaw,
+                            externalMusicAppRaw: remotePreset.externalMusicAppRaw,
+                            ambianceModeRaw: remotePreset.ambianceModeRaw
+                        )
+                    } else {
+                        // Remote is newer for all fields including name - use remote
+                        mergedPreset = remotePreset
+                    }
                     LocalTimestampTracker.shared.clearLocalTimestamp(field: fieldKey, namespace: namespace)
                     #if DEBUG
-                    print("[PresetsSyncEngine] Using remote preset '\(remotePreset.name)' (remote is newer)")
+                    print("[PresetsSyncEngine] Using remote preset '\(mergedPreset.name)' (remote is newer)")
                     #endif
                 }
+                
+                mergedPresets.append(mergedPreset)
             } else {
                 // New preset from remote - add it
                 mergedPresets.append(remotePreset)

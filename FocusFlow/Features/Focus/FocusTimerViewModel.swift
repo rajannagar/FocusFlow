@@ -46,6 +46,9 @@ final class FocusTimerViewModel: ObservableObject {
         static let startDate = "FocusFlow.focusSession.startDate" // TimeInterval since 1970
         static let pausedRemaining = "FocusFlow.focusSession.pausedRemaining"
         static let sessionName = "FocusFlow.focusSession.sessionName"
+        static let activePresetID = "FocusFlow.focusSession.activePresetID" // ✅ Preset ID used for this session
+        static let selectedFocusSound = "FocusFlow.focusSession.selectedFocusSound" // ✅ Sound used for this session
+        static let selectedExternalMusicApp = "FocusFlow.focusSession.selectedExternalMusicApp" // ✅ External app used for this session
     }
 
     private let defaults = UserDefaults.standard
@@ -96,6 +99,9 @@ final class FocusTimerViewModel: ObservableObject {
     /// End session and return to default length.
     func resetToDefault() {
         logEarlyEndIfMeaningful()
+        
+        // ✅ Clear active preset when session is manually ended
+        clearActivePresetIfSetBySession()
         clearPersistedSession()
 
         stopTimer()
@@ -110,6 +116,9 @@ final class FocusTimerViewModel: ObservableObject {
     /// End session and return to idle with same duration.
     func resetToIdleKeepDuration() {
         logEarlyEndIfMeaningful()
+        
+        // ✅ Clear active preset when session is manually ended
+        clearActivePresetIfSetBySession()
         clearPersistedSession()
 
         stopTimer()
@@ -259,6 +268,8 @@ final class FocusTimerViewModel: ObservableObject {
         let planned = plannedSessionTotalSeconds > 0 ? plannedSessionTotalSeconds : max(totalSeconds, 1)
         logSessionIfNeeded(durationSeconds: planned)
 
+        // ✅ Clear active preset when session completes
+        clearActivePresetIfSetBySession()
         clearPersistedSession()
     }
 
@@ -334,6 +345,26 @@ final class FocusTimerViewModel: ObservableObject {
         defaults.set(0, forKey: PersistKey.pausedRemaining)
 
         defaults.set(sessionName, forKey: PersistKey.sessionName)
+        
+        // ✅ Persist active preset ID so it can be restored when app relaunches
+        if let presetID = FocusPresetStore.shared.activePresetID {
+            defaults.set(presetID.uuidString, forKey: PersistKey.activePresetID)
+        } else {
+            defaults.removeObject(forKey: PersistKey.activePresetID)
+        }
+        
+        // ✅ Persist sound and external app so they can be restored when app relaunches
+        if let sound = AppSettings.shared.selectedFocusSound {
+            defaults.set(sound.rawValue, forKey: PersistKey.selectedFocusSound)
+        } else {
+            defaults.removeObject(forKey: PersistKey.selectedFocusSound)
+        }
+        
+        if let app = AppSettings.shared.selectedExternalMusicApp {
+            defaults.set(app.rawValue, forKey: PersistKey.selectedExternalMusicApp)
+        } else {
+            defaults.removeObject(forKey: PersistKey.selectedExternalMusicApp)
+        }
     }
 
     private func persistPaused(remainingSeconds: Int) {
@@ -346,6 +377,26 @@ final class FocusTimerViewModel: ObservableObject {
         defaults.set(remainingSeconds, forKey: PersistKey.pausedRemaining)
 
         defaults.set(sessionName, forKey: PersistKey.sessionName)
+        
+        // ✅ Persist active preset ID so it can be restored when app relaunches
+        if let presetID = FocusPresetStore.shared.activePresetID {
+            defaults.set(presetID.uuidString, forKey: PersistKey.activePresetID)
+        } else {
+            defaults.removeObject(forKey: PersistKey.activePresetID)
+        }
+        
+        // ✅ Persist sound and external app so they can be restored when app relaunches
+        if let sound = AppSettings.shared.selectedFocusSound {
+            defaults.set(sound.rawValue, forKey: PersistKey.selectedFocusSound)
+        } else {
+            defaults.removeObject(forKey: PersistKey.selectedFocusSound)
+        }
+        
+        if let app = AppSettings.shared.selectedExternalMusicApp {
+            defaults.set(app.rawValue, forKey: PersistKey.selectedExternalMusicApp)
+        } else {
+            defaults.removeObject(forKey: PersistKey.selectedExternalMusicApp)
+        }
     }
 
     private func clearPersistedSession() {
@@ -355,6 +406,29 @@ final class FocusTimerViewModel: ObservableObject {
         defaults.removeObject(forKey: PersistKey.startDate)
         defaults.removeObject(forKey: PersistKey.pausedRemaining)
         defaults.removeObject(forKey: PersistKey.sessionName)
+        defaults.removeObject(forKey: PersistKey.activePresetID)
+        defaults.removeObject(forKey: PersistKey.selectedFocusSound)
+        defaults.removeObject(forKey: PersistKey.selectedExternalMusicApp)
+    }
+    
+    /// ✅ Clear active preset if it was set by the current session
+    private func clearActivePresetIfSetBySession() {
+        // Only clear if there's a persisted preset ID (meaning this session started with a preset)
+        if let presetIDString = defaults.string(forKey: PersistKey.activePresetID),
+           let presetID = UUID(uuidString: presetIDString),
+           FocusPresetStore.shared.activePresetID == presetID {
+            // Only clear if it matches the persisted one (to avoid clearing manually selected presets)
+            FocusPresetStore.shared.activePresetID = nil
+        }
+        
+        // ✅ Clear sound and external app if they were set by this session
+        // Check if they match what was persisted for this session
+        if defaults.string(forKey: PersistKey.selectedFocusSound) != nil {
+            AppSettings.shared.selectedFocusSound = nil
+        }
+        if defaults.string(forKey: PersistKey.selectedExternalMusicApp) != nil {
+            AppSettings.shared.selectedExternalMusicApp = nil
+        }
     }
 
     private func restoreIfNeeded() {
@@ -380,6 +454,29 @@ final class FocusTimerViewModel: ObservableObject {
             self.remainingSeconds = max(0, min(planned, pausedRemaining))
             self.phase = .paused
             self.sessionStartDate = Date(timeIntervalSince1970: defaults.double(forKey: PersistKey.startDate))
+            
+            // ✅ Restore active preset ID if session was started with a preset
+            if let presetIDString = defaults.string(forKey: PersistKey.activePresetID),
+               let presetID = UUID(uuidString: presetIDString),
+               FocusPresetStore.shared.presets.contains(where: { $0.id == presetID }) {
+                FocusPresetStore.shared.activePresetID = presetID
+            }
+            
+            // ✅ Restore sound and external app if they were used for this session
+            if let soundRaw = defaults.string(forKey: PersistKey.selectedFocusSound),
+               let sound = FocusSound(rawValue: soundRaw) {
+                AppSettings.shared.selectedFocusSound = sound
+            } else {
+                AppSettings.shared.selectedFocusSound = nil
+            }
+            
+            if let appRaw = defaults.string(forKey: PersistKey.selectedExternalMusicApp),
+               let app = AppSettings.ExternalMusicApp(rawValue: appRaw) {
+                AppSettings.shared.selectedExternalMusicApp = app
+            } else {
+                AppSettings.shared.selectedExternalMusicApp = nil
+            }
+            
             return
         }
 
@@ -401,12 +498,38 @@ final class FocusTimerViewModel: ObservableObject {
             self.remainingSeconds = 0
             self.phase = .completed
             logSessionIfNeeded(durationSeconds: planned)
+            
+            // ✅ Clear active preset when session completed while app was away
+            clearActivePresetIfSetBySession()
             clearPersistedSession()
             return
         }
 
         self.remainingSeconds = remaining
-        // Resume ticking
+        
+        // ✅ Restore active preset ID if session was started with a preset
+        if let presetIDString = defaults.string(forKey: PersistKey.activePresetID),
+           let presetID = UUID(uuidString: presetIDString),
+           FocusPresetStore.shared.presets.contains(where: { $0.id == presetID }) {
+            FocusPresetStore.shared.activePresetID = presetID
+        }
+        
+        // ✅ Restore sound and external app BEFORE changing phase so the phase transition handler can start playback
+        if let soundRaw = defaults.string(forKey: PersistKey.selectedFocusSound),
+           let sound = FocusSound(rawValue: soundRaw) {
+            AppSettings.shared.selectedFocusSound = sound
+        } else {
+            AppSettings.shared.selectedFocusSound = nil
+        }
+        
+        if let appRaw = defaults.string(forKey: PersistKey.selectedExternalMusicApp),
+           let app = AppSettings.ExternalMusicApp(rawValue: appRaw) {
+            AppSettings.shared.selectedExternalMusicApp = app
+        } else {
+            AppSettings.shared.selectedExternalMusicApp = nil
+        }
+        
+        // Resume ticking (this will trigger phase change to .running, and sound will be ready)
         startInternal(isFresh: false)
     }
 }

@@ -53,7 +53,7 @@ final class NetworkMonitor: ObservableObject {
     
     private func startMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 
                 let wasConnected = self.isConnected

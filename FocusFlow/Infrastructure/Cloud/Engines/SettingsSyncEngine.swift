@@ -80,10 +80,10 @@ final class SettingsSyncEngine {
     // MARK: - Pull
 
     func pullFromRemote(userId: UUID) async throws {
-        let db = SupabaseManager.shared.database
+        let client = SupabaseManager.shared.client
 
         // ✅ Avoid .single() so first-time users (0 rows) don't throw PGRST116
-        let rows: [UserSettingsDTO] = try await db
+        let rows: [UserSettingsDTO] = try await client
             .from("user_settings")
             .select()
             .eq("user_id", value: userId.uuidString)
@@ -137,7 +137,7 @@ final class SettingsSyncEngine {
         )
 
         do {
-            try await SupabaseManager.shared.database
+            try await SupabaseManager.shared.client
                 .from("user_settings")
                 .upsert(dto, onConflict: "user_id")
                 .execute()
@@ -259,25 +259,20 @@ final class SettingsSyncEngine {
             }
         }
 
-        if let soundRaw = remote.selectedFocusSound,
-           let sound = FocusSound(rawValue: soundRaw) {
-            if !LocalTimestampTracker.shared.isLocalNewer(field: "selectedFocusSound", namespace: namespace, remoteTimestamp: remoteTimestamp) {
-                if settings.selectedFocusSound != sound {
-                    settings.selectedFocusSound = sound
-                }
-                LocalTimestampTracker.shared.clearLocalTimestamp(field: "selectedFocusSound", namespace: namespace)
-            }
-        }
+        // ✅ Sound should only be restored from session persistence, not from remote sync
+        // Skip applying sound from remote - it will be restored by timer restoration if session is active
 
-        if let appRaw = remote.externalMusicApp {
-            if !LocalTimestampTracker.shared.isLocalNewer(field: "selectedExternalMusicApp", namespace: namespace, remoteTimestamp: remoteTimestamp) {
-                let newApp = AppSettings.ExternalMusicApp(rawValue: appRaw)
-                if settings.selectedExternalMusicApp != newApp {
-                    settings.selectedExternalMusicApp = newApp
-                }
-                LocalTimestampTracker.shared.clearLocalTimestamp(field: "selectedExternalMusicApp", namespace: namespace)
-            }
+        // ✅ Sound and external app should only be restored from session persistence, not from remote sync
+        // Check if there's an active session - if not, don't apply sound/app from remote
+        let defaults = UserDefaults.standard
+        let isSessionActive = defaults.bool(forKey: "FocusFlow.focusSession.isActive")
+        
+        if !isSessionActive {
+            // No session active - clear sound/app (they should only exist during sessions)
+            settings.selectedFocusSound = nil
+            settings.selectedExternalMusicApp = nil
         }
+        // If session is active, sound/app will be restored by timer restoration, not from remote sync
 
         if let goal = remote.dailyGoalMinutes {
             // ✅ Check if local is newer before applying remote daily goal
@@ -325,8 +320,7 @@ final class SettingsSyncEngine {
                 // This ensures changes are never lost, even if app is killed
                 // The queue will process and push automatically
                 Task { @MainActor in
-                    let settings = AppSettings.shared
-                    guard let userId = AuthManagerV2.shared.state.userId else { return }
+                    guard AuthManagerV2.shared.state.userId != nil else { return }
                     
                     // Create a simple marker data (just to track that settings changed)
                     // The actual sync will read from AppSettings directly

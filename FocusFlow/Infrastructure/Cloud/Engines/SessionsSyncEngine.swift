@@ -99,10 +99,10 @@ final class SessionsSyncEngine {
     // MARK: - Pull from Remote
 
     func pullFromRemote(userId: UUID) async throws {
-        let db = SupabaseManager.shared.database
+        let client = SupabaseManager.shared.client
 
         // Fetch all sessions
-        let remoteSessions: [FocusSessionDTO] = try await db
+        let remoteSessions: [FocusSessionDTO] = try await client
             .from("focus_sessions")
             .select()
             .eq("user_id", value: userId.uuidString)
@@ -111,7 +111,7 @@ final class SessionsSyncEngine {
             .value
 
         // Fetch user stats (optional - may not exist yet)
-        let remoteStats: UserStatsDTO? = try? await db
+        let remoteStats: UserStatsDTO? = try? await client
             .from("user_stats")
             .select()
             .eq("user_id", value: userId.uuidString)
@@ -145,7 +145,7 @@ final class SessionsSyncEngine {
         )
 
         do {
-            try await SupabaseManager.shared.database
+            try await SupabaseManager.shared.client
                 .from("focus_sessions")
                 .insert(dto)
                 .execute()
@@ -189,7 +189,7 @@ final class SessionsSyncEngine {
         )
 
         do {
-            try await SupabaseManager.shared.database
+            try await SupabaseManager.shared.client
                 .from("user_stats")
                 .upsert(dto, onConflict: "user_id")
                 .execute()
@@ -235,7 +235,7 @@ final class SessionsSyncEngine {
         }
 
         do {
-            try await SupabaseManager.shared.database
+            try await SupabaseManager.shared.client
                 .from("focus_sessions")
                 .upsert(dtos, onConflict: "id")
                 .execute()
@@ -342,7 +342,7 @@ final class SessionsSyncEngine {
     }
     
     private func pushToRemote() async {
-        guard isRunning, let userId = userId else { return }
+        guard isRunning, userId != nil else { return }
         guard !isApplyingRemote else { return }
         
         let store = ProgressStore.shared

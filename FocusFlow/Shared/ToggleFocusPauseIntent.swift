@@ -8,6 +8,7 @@ struct ToggleFocusPauseIntent: LiveActivityIntent {
     static var openAppWhenRun: Bool = false
     static var isDiscoverable: Bool = false
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         guard let activity = Activity<FocusSessionAttributes>.activities.first else {
             return .result()

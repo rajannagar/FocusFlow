@@ -92,8 +92,14 @@ struct ProgressViewV2: View {
                 goalMinutes: Binding(
                     get: { goalMinutes(for: selectedDate) },
                     set: { newValue in
-                        PV2GoalHistory.set(goalMinutes: max(0, newValue), for: selectedDate, calendar: cal)
-                        progressStore.dailyGoalMinutes = max(0, newValue)
+                        let goalValue = max(0, newValue)
+                        PV2GoalHistory.set(goalMinutes: goalValue, for: selectedDate, calendar: cal)
+                        // Only update global goal if setting for today or future dates
+                        let today = cal.startOfDay(for: Date())
+                        let selectedDay = cal.startOfDay(for: selectedDate)
+                        if selectedDay >= today {
+                            progressStore.dailyGoalMinutes = goalValue
+                        }
                         goalVersion &+= 1
                     }
                 )
@@ -751,7 +757,6 @@ struct ProgressViewV2: View {
 
     private func weekBarsView(for weekStart: Date) -> some View {
         let bars = weekBars(for: weekStart)
-        let maxGoal = bars.map { goalMinutes(for: $0.2) }.max() ?? 60
 
         return HStack(alignment: .bottom, spacing: 8) {
             ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
@@ -1453,7 +1458,36 @@ private enum PV2GoalHistory {
     static func goalMinutes(for date: Date, fallback: Int, calendar: Calendar) -> Int {
         let dict = load()
         let k = key(for: date, calendar: calendar)
-        return max(0, dict[k] ?? fallback)
+        
+        // If goal exists for this date, return it
+        if let goal = dict[k] {
+            return max(0, goal)
+        }
+        
+        // For past dates, look backwards to find the most recent goal that was set
+        let targetDay = calendar.startOfDay(for: date)
+        let today = calendar.startOfDay(for: Date())
+        
+        if targetDay < today {
+            // Look backwards through history to find the most recent goal
+            var checkDate = calendar.date(byAdding: .day, value: -1, to: targetDay) ?? targetDay
+            var daysBack = 0
+            let maxDaysBack = 365 // Limit search to 1 year
+            let oneYearAgo = calendar.date(byAdding: .day, value: -365, to: today) ?? today
+            
+            while daysBack < maxDaysBack && checkDate >= oneYearAgo {
+                let checkKey = key(for: checkDate, calendar: calendar)
+                if let pastGoal = dict[checkKey] {
+                    return max(0, pastGoal)
+                }
+                guard let prevDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+                checkDate = prevDay
+                daysBack += 1
+            }
+        }
+        
+        // Fallback to current goal only if no history found
+        return max(0, fallback)
     }
 
     static func set(goalMinutes: Int, for date: Date, calendar: Calendar) {
