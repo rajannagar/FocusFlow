@@ -350,9 +350,9 @@ struct AuthLandingView: View {
 
             AppSettings.shared.accountEmail = session.user.email
             
-            // Save name if provided and not already set
+            // Save name if provided and not already set (or only default "You")
             if let name = fullName, !name.isEmpty {
-                if AppSettings.shared.displayName.isEmpty {
+                if AppSettings.shared.displayName.isEmpty || AppSettings.shared.displayName == "You" {
                     AppSettings.shared.displayName = name
                 }
             }
@@ -441,9 +441,9 @@ struct AuthLandingView: View {
             
             AppSettings.shared.accountEmail = session.user.email
             
-            // Save name if provided and not already set
+            // Save name if provided and not already set (or only default "You")
             if let name = displayName, !name.isEmpty {
-                if AppSettings.shared.displayName.isEmpty {
+                if AppSettings.shared.displayName.isEmpty || AppSettings.shared.displayName == "You" {
                     AppSettings.shared.displayName = name
                 }
             }

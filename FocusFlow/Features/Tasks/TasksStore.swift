@@ -46,8 +46,26 @@ final class TasksStore: ObservableObject {
 
     func orderedTasks() -> [FFTaskItem] {
         tasks.sorted { a, b in
-            if a.sortIndex != b.sortIndex { return a.sortIndex < b.sortIndex }
-            return a.createdAt < b.createdAt
+            // ✅ Sort by reminder date (early to late), then by sortIndex, then by createdAt
+            // Tasks with no reminder (nil) go to the end
+            switch (a.reminderDate, b.reminderDate) {
+            case (nil, nil):
+                // Both have no reminder - sort by sortIndex, then createdAt
+                if a.sortIndex != b.sortIndex { return a.sortIndex < b.sortIndex }
+                return a.createdAt < b.createdAt
+            case (nil, _):
+                // a has no reminder, b has reminder - b comes first
+                return false
+            case (_, nil):
+                // a has reminder, b has no reminder - a comes first
+                return true
+            case (let aDate?, let bDate?):
+                // Both have reminders - sort by date (early to late)
+                if aDate != bDate { return aDate < bDate }
+                // Same reminder date - sort by sortIndex, then createdAt
+                if a.sortIndex != b.sortIndex { return a.sortIndex < b.sortIndex }
+                return a.createdAt < b.createdAt
+            }
         }
     }
 
@@ -99,6 +117,8 @@ final class TasksStore: ObservableObject {
     }
 
     func delete(taskID: UUID) {
+        guard let task = tasks.first(where: { $0.id == taskID }) else { return }
+        
         tasks.removeAll { $0.id == taskID }
         let prefix = "\(taskID.uuidString)|"
         completedOccurrenceKeys = Set(completedOccurrenceKeys.filter { !$0.hasPrefix(prefix) })
@@ -112,6 +132,15 @@ final class TasksStore: ObservableObject {
         tasks = ordered
 
         save()
+        
+        // ✅ Enqueue deletion for sync
+        if AuthManagerV2.shared.state.userId != nil {
+            SyncQueue.shared.enqueueTaskChange(
+                operation: .delete,
+                task: task,
+                localTimestamp: Date()
+            )
+        }
     }
 
     func deleteOccurrence(taskID: UUID, on day: Date, calendar: Calendar = .autoupdatingCurrent) {

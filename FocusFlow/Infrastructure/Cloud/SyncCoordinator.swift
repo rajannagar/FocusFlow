@@ -296,6 +296,16 @@ final class SyncCoordinator: ObservableObject {
         await sessionsEngine.forcePushNow()
     }
     
+    /// Delete preset from remote - used by sync queue
+    func deletePresetRemote(presetId: UUID) async {
+        await presetsEngine.deletePresetRemote(presetId: presetId)
+    }
+    
+    /// Delete task from remote - used by sync queue
+    func deleteTaskRemote(taskId: UUID) async {
+        await tasksEngine.deleteTaskRemote(taskId: taskId)
+    }
+    
     func syncSessions() async {
         guard let userId = AuthManagerV2.shared.state.userId else { return }
         

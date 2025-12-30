@@ -789,7 +789,7 @@ struct ProfileView: View {
                     Button {
                         Haptics.impact(.light)
                         let current = todayGoal
-                        let newVal = min(240, current + 5)
+                        let newVal = min(1440, current + 5) // ✅ Allow up to 24 hours (1440 minutes)
                         GoalHistory.set(goalMinutes: newVal, for: today, calendar: cal)
                         progressStore.dailyGoalMinutes = newVal
                         AppSyncManager.shared.goalDidUpdate(minutes: newVal)

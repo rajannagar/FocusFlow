@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import Supabase
 
 // MARK: - Theme model
 
@@ -257,8 +258,15 @@ final class AppSettings: ObservableObject {
         // Load from namespace
         loadAll()
 
-        // ✅ Updated: If signed in, we could fetch email from Supabase user if needed
-        // The new SettingsSyncEngine handles cloud sync automatically
+        // ✅ If signed in and email is not set, fetch it from Supabase session
+        // Use a small delay to ensure session is fully established after OAuth sign-in
+        if case .signedIn = state, accountEmail == nil {
+            Task { @MainActor in
+                // Small delay to allow OAuth session to be fully established
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                await fetchEmailFromSession()
+            }
+        }
 
         // ✅ Trigger notification reconcile for this namespace after switching
         Task { @MainActor in
@@ -592,6 +600,55 @@ final class AppSettings: ObservableObject {
         comps.minute = minute
         comps.second = 0
         return cal.date(from: comps) ?? now
+    }
+    
+    /// Fetches email and display name from current Supabase session if available
+    private func fetchEmailFromSession() async {
+        do {
+            let session = try await SupabaseManager.shared.auth.session
+            if let email = session.user.email, !email.isEmpty {
+                // Only set if not already set (don't overwrite)
+                if accountEmail == nil || accountEmail?.isEmpty == true {
+                    accountEmail = email
+                    #if DEBUG
+                    print("[AppSettings] Fetched email from session: \(email)")
+                    #endif
+                }
+            }
+            
+            // Try to get display name from user metadata
+            // Check userMetadata first (OAuth providers often put name here)
+            let userMetadata = session.user.userMetadata ?? [:]
+            let appMetadata = session.user.appMetadata ?? [:]
+            
+            // Common metadata keys for name: full_name, name, display_name
+            var nameFromMetadata: String? = nil
+            if let fullName = userMetadata["full_name"] as? String, !fullName.isEmpty {
+                nameFromMetadata = fullName
+            } else if let name = userMetadata["name"] as? String, !name.isEmpty {
+                nameFromMetadata = name
+            } else if let displayName = userMetadata["display_name"] as? String, !displayName.isEmpty {
+                nameFromMetadata = displayName
+            } else if let fullName = appMetadata["full_name"] as? String, !fullName.isEmpty {
+                nameFromMetadata = fullName
+            } else if let name = appMetadata["name"] as? String, !name.isEmpty {
+                nameFromMetadata = name
+            }
+            
+            // Set display name if found and not already set (or only default "You")
+            if let name = nameFromMetadata, !name.isEmpty {
+                if displayName.isEmpty || displayName == "You" {
+                    displayName = name
+                    #if DEBUG
+                    print("[AppSettings] Fetched display name from session: \(name)")
+                    #endif
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("[AppSettings] Could not fetch email/name from session: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Keys (base)

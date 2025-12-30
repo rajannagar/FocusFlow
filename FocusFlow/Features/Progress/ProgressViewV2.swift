@@ -1498,14 +1498,18 @@ private struct GoalSheet: View {
     init(theme: AppTheme, goalMinutes: Binding<Int>) {
         self.theme = theme
         self._goalMinutes = goalMinutes
-        let safe = max(0, goalMinutes.wrappedValue)
-        _hours = State(initialValue: safe / 60)
+        let safe = max(0, min(1440, goalMinutes.wrappedValue)) // ✅ Cap at 24 hours
+        _hours = State(initialValue: min(24, safe / 60)) // ✅ Cap hours at 24
         let m = safe % 60
         let snapped = Int(round(Double(m) / 5.0) * 5.0)
         _minutes = State(initialValue: min(55, max(0, snapped)))
     }
 
-    private var totalMinutes: Int { max(0, hours * 60 + minutes) }
+    private var totalMinutes: Int { 
+        let total = max(0, hours * 60 + minutes)
+        // ✅ Cap at 24 hours (1440 minutes)
+        return min(1440, total)
+    }
     
     private var formattedGoal: String {
         if hours > 0 && minutes > 0 {
@@ -1558,7 +1562,7 @@ private struct GoalSheet: View {
                         .tracking(1)
                     
                     Picker("Hours", selection: $hours) {
-                        ForEach(0..<9, id: \.self) { h in
+                        ForEach(0..<25, id: \.self) { h in
                             Text("\(h)").tag(h)
                         }
                     }
@@ -1605,7 +1609,8 @@ private struct GoalSheet: View {
 
                 Button {
                     Haptics.impact(.medium)
-                    goalMinutes = totalMinutes
+                    // ✅ Ensure goal doesn't exceed 24 hours (1440 minutes)
+                    goalMinutes = min(1440, totalMinutes)
                     dismiss()
                 } label: {
                     Text("Set Goal")

@@ -87,6 +87,15 @@ final class FocusPresetStore: ObservableObject {
         }
         // Record timestamp for deleted preset (for conflict resolution)
         LocalTimestampTracker.shared.recordLocalChange(field: "preset_\(preset.id.uuidString)", namespace: activeNamespace)
+        
+        // ✅ Enqueue deletion for sync
+        if AuthManagerV2.shared.state.userId != nil {
+            SyncQueue.shared.enqueuePresetChange(
+                operation: .delete,
+                preset: preset,
+                localTimestamp: Date()
+            )
+        }
     }
 
     func move(fromOffsets source: IndexSet, toOffset destination: Int) {

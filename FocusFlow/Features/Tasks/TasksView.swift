@@ -177,13 +177,13 @@ struct TasksView: View {
                     sortIndex: vm.orderedTasks().count,
                     title: title,
                     notes: nil,
-                    reminderDate: day,
-                    repeatRule: .none,
+                    reminderDate: nil, // ✅ Quick add tasks have no reminder
+                    repeatRule: .none, // ✅ Quick add tasks have no repeat
                     customWeekdays: [],
                     durationMinutes: duration,
                     convertToPreset: false,
                     presetCreated: false,
-                    createdAt: day
+                    createdAt: Date()
                 )
                 vm.upsert(task)
                 showingQuickAdd = false

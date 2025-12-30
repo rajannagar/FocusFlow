@@ -108,8 +108,16 @@ final class AuthManagerV2: ObservableObject {
             let session = try await supabase.auth.session
             await MainActor.run {
                 self.state = .signedIn(userId: session.user.id)
+                // Set email from session if available and not already set
+                if let email = session.user.email, !email.isEmpty {
+                    if AppSettings.shared.accountEmail == nil || AppSettings.shared.accountEmail?.isEmpty == true {
+                        AppSettings.shared.accountEmail = email
+                    }
+                }
+                // Set display name from session metadata if available and not already set
+                setDisplayNameFromSession(session)
                 #if DEBUG
-                print("[AuthManagerV2] Restored session for user: \(session.user.id)")
+                print("[AuthManagerV2] Restored session for user: \(session.user.id), email: \(session.user.email ?? "no email")")
                 #endif
             }
         } catch {
@@ -132,6 +140,14 @@ final class AuthManagerV2: ObservableObject {
         case .initialSession:
             if let session = session {
                 state = .signedIn(userId: session.user.id)
+                // Set email from session if available and not already set
+                if let email = session.user.email, !email.isEmpty {
+                    if AppSettings.shared.accountEmail == nil || AppSettings.shared.accountEmail?.isEmpty == true {
+                        AppSettings.shared.accountEmail = email
+                    }
+                }
+                // Set display name from session metadata if available and not already set
+                setDisplayNameFromSession(session)
             } else if UserDefaults.standard.bool(forKey: guestModeKey) {
                 state = .guest
             } else {
@@ -143,6 +159,14 @@ final class AuthManagerV2: ObservableObject {
                 // Clear guest mode when signing in
                 UserDefaults.standard.set(false, forKey: guestModeKey)
                 state = .signedIn(userId: session.user.id)
+                // Set email from session if available and not already set
+                if let email = session.user.email, !email.isEmpty {
+                    if AppSettings.shared.accountEmail == nil || AppSettings.shared.accountEmail?.isEmpty == true {
+                        AppSettings.shared.accountEmail = email
+                    }
+                }
+                // Set display name from session metadata if available and not already set
+                setDisplayNameFromSession(session)
             }
             
         case .signedOut:
@@ -300,6 +324,36 @@ final class AuthManagerV2: ObservableObject {
     func upgradeFromGuest() {
         UserDefaults.standard.set(false, forKey: guestModeKey)
         // State will be updated by auth listener when sign in completes
+    }
+    
+    /// Extracts and sets display name from session user metadata if available
+    private func setDisplayNameFromSession(_ session: Session) {
+        let userMetadata = session.user.userMetadata ?? [:]
+        let appMetadata = session.user.appMetadata ?? [:]
+        
+        // Common metadata keys for name: full_name, name, display_name
+        var nameFromMetadata: String? = nil
+        if let fullName = userMetadata["full_name"] as? String, !fullName.isEmpty {
+            nameFromMetadata = fullName
+        } else if let name = userMetadata["name"] as? String, !name.isEmpty {
+            nameFromMetadata = name
+        } else if let displayName = userMetadata["display_name"] as? String, !displayName.isEmpty {
+            nameFromMetadata = displayName
+        } else if let fullName = appMetadata["full_name"] as? String, !fullName.isEmpty {
+            nameFromMetadata = fullName
+        } else if let name = appMetadata["name"] as? String, !name.isEmpty {
+            nameFromMetadata = name
+        }
+        
+        // Set display name if found and not already set (or only default "You")
+        if let name = nameFromMetadata, !name.isEmpty {
+            if AppSettings.shared.displayName.isEmpty || AppSettings.shared.displayName == "You" {
+                AppSettings.shared.displayName = name
+                #if DEBUG
+                print("[AuthManagerV2] Set display name from session: \(name)")
+                #endif
+            }
+        }
     }
 }
 

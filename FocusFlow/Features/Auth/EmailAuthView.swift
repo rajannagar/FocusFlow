@@ -222,14 +222,17 @@ struct EmailAuthView: View {
 
         do {
             if isLoginMode {
-                _ = try await supabase.auth.signIn(email: trimmedEmail, password: password)
+                let session = try await supabase.auth.signIn(email: trimmedEmail, password: password)
 
                 await MainActor.run {
+                    // Set email from session
+                    AppSettings.shared.accountEmail = session.user.email
                     isLoading = false
                     dismiss()
                 }
             } else {
-                _ = try await supabase.auth.signUp(email: trimmedEmail, password: password)
+                let trimmedFullName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+                let session = try await supabase.auth.signUp(email: trimmedEmail, password: password)
 
                 // If confirmations are ON, Supabase may not create a session immediately.
                 let hasSession = (try? await supabase.auth.session) != nil
@@ -237,6 +240,14 @@ struct EmailAuthView: View {
                 await MainActor.run {
                     isLoading = false
                     if hasSession {
+                        // Set email from session
+                        AppSettings.shared.accountEmail = session.user.email
+                        // Set display name from full name if provided and not already set
+                        if !trimmedFullName.isEmpty {
+                            if AppSettings.shared.displayName.isEmpty || AppSettings.shared.displayName == "You" {
+                                AppSettings.shared.displayName = trimmedFullName
+                            }
+                        }
                         dismiss()
                     } else {
                         // Email confirmation required - show as success, not error

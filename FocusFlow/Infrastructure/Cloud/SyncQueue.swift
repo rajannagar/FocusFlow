@@ -341,15 +341,33 @@ final class SyncQueue: ObservableObject {
     }
     
     private func processPresetOperation(_ operation: SyncOperation) async throws {
-        // ✅ FIX: Only push, don't pull - pulling causes sync loops
         guard let userId = AuthManagerV2.shared.state.userId else { return }
-        await SyncCoordinator.shared.pushPresetsOnly()
+        
+        if operation.operation == .delete {
+            // Handle deletion
+            guard let preset = try? JSONDecoder().decode(FocusPreset.self, from: operation.data) else {
+                throw NSError(domain: "SyncQueue", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to decode preset for deletion"])
+            }
+            await SyncCoordinator.shared.deletePresetRemote(presetId: preset.id)
+        } else {
+            // Handle create/update - push all presets
+            await SyncCoordinator.shared.pushPresetsOnly()
+        }
     }
     
     private func processTaskOperation(_ operation: SyncOperation) async throws {
-        // ✅ NEW: Push tasks only (no pull to avoid loops)
         guard let userId = AuthManagerV2.shared.state.userId else { return }
-        await SyncCoordinator.shared.pushTasksOnly()
+        
+        if operation.operation == .delete {
+            // Handle deletion
+            guard let task = try? JSONDecoder().decode(FFTaskItem.self, from: operation.data) else {
+                throw NSError(domain: "SyncQueue", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to decode task for deletion"])
+            }
+            await SyncCoordinator.shared.deleteTaskRemote(taskId: task.id)
+        } else {
+            // Handle create/update - push all tasks
+            await SyncCoordinator.shared.pushTasksOnly()
+        }
     }
     
     private func processSessionOperation(_ operation: SyncOperation) async throws {
