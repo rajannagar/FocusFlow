@@ -21,13 +21,15 @@ final class FocusSessionStore {
 
         print("FocusSessionStore: applying external toggle from island (paused=\(isPaused), remaining=\(remaining)s)")
 
-        // TODO: adapt to your own timer implementation:
-        if isPaused {
-            // e.g.
-            pauseFromExternal(remainingSeconds: remaining)
-        } else {
-            resumeFromExternal(remainingSeconds: remaining)
-        }
+        // ✅ Post notification so FocusView can handle it (including sound pause/resume)
+        NotificationCenter.default.post(
+            name: .focusSessionExternalToggle,
+            object: nil,
+            userInfo: [
+                "isPaused": isPaused,
+                "remainingSeconds": remaining
+            ]
+        )
     }
 
     // MARK: - Example handlers (replace with your real ones)

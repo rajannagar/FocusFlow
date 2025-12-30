@@ -423,11 +423,14 @@ final class FocusTimerViewModel: ObservableObject {
         
         // ✅ Clear sound and external app if they were set by this session
         // Check if they match what was persisted for this session
-        if defaults.string(forKey: PersistKey.selectedFocusSound) != nil {
-            AppSettings.shared.selectedFocusSound = nil
-        }
-        if defaults.string(forKey: PersistKey.selectedExternalMusicApp) != nil {
-            AppSettings.shared.selectedExternalMusicApp = nil
+        // Defer to next run loop to avoid publishing during view updates
+        Task { @MainActor in
+            if defaults.string(forKey: PersistKey.selectedFocusSound) != nil {
+                AppSettings.shared.selectedFocusSound = nil
+            }
+            if defaults.string(forKey: PersistKey.selectedExternalMusicApp) != nil {
+                AppSettings.shared.selectedExternalMusicApp = nil
+            }
         }
     }
 
@@ -463,18 +466,21 @@ final class FocusTimerViewModel: ObservableObject {
             }
             
             // ✅ Restore sound and external app if they were used for this session
-            if let soundRaw = defaults.string(forKey: PersistKey.selectedFocusSound),
-               let sound = FocusSound(rawValue: soundRaw) {
-                AppSettings.shared.selectedFocusSound = sound
-            } else {
-                AppSettings.shared.selectedFocusSound = nil
-            }
-            
-            if let appRaw = defaults.string(forKey: PersistKey.selectedExternalMusicApp),
-               let app = AppSettings.ExternalMusicApp(rawValue: appRaw) {
-                AppSettings.shared.selectedExternalMusicApp = app
-            } else {
-                AppSettings.shared.selectedExternalMusicApp = nil
+            // Defer to next run loop to avoid publishing during view updates
+            Task { @MainActor in
+                if let soundRaw = defaults.string(forKey: PersistKey.selectedFocusSound),
+                   let sound = FocusSound(rawValue: soundRaw) {
+                    AppSettings.shared.selectedFocusSound = sound
+                } else {
+                    AppSettings.shared.selectedFocusSound = nil
+                }
+                
+                if let appRaw = defaults.string(forKey: PersistKey.selectedExternalMusicApp),
+                   let app = AppSettings.ExternalMusicApp(rawValue: appRaw) {
+                    AppSettings.shared.selectedExternalMusicApp = app
+                } else {
+                    AppSettings.shared.selectedExternalMusicApp = nil
+                }
             }
             
             return
@@ -515,18 +521,21 @@ final class FocusTimerViewModel: ObservableObject {
         }
         
         // ✅ Restore sound and external app BEFORE changing phase so the phase transition handler can start playback
-        if let soundRaw = defaults.string(forKey: PersistKey.selectedFocusSound),
-           let sound = FocusSound(rawValue: soundRaw) {
-            AppSettings.shared.selectedFocusSound = sound
-        } else {
-            AppSettings.shared.selectedFocusSound = nil
-        }
-        
-        if let appRaw = defaults.string(forKey: PersistKey.selectedExternalMusicApp),
-           let app = AppSettings.ExternalMusicApp(rawValue: appRaw) {
-            AppSettings.shared.selectedExternalMusicApp = app
-        } else {
-            AppSettings.shared.selectedExternalMusicApp = nil
+        // Defer to next run loop to avoid publishing during view updates
+        Task { @MainActor in
+            if let soundRaw = defaults.string(forKey: PersistKey.selectedFocusSound),
+               let sound = FocusSound(rawValue: soundRaw) {
+                AppSettings.shared.selectedFocusSound = sound
+            } else {
+                AppSettings.shared.selectedFocusSound = nil
+            }
+            
+            if let appRaw = defaults.string(forKey: PersistKey.selectedExternalMusicApp),
+               let app = AppSettings.ExternalMusicApp(rawValue: appRaw) {
+                AppSettings.shared.selectedExternalMusicApp = app
+            } else {
+                AppSettings.shared.selectedExternalMusicApp = nil
+            }
         }
         
         // Resume ticking (this will trigger phase change to .running, and sound will be ready)

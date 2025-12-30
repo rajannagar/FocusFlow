@@ -47,6 +47,28 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Premium cleanup:
         // When the user is back inside the app, don't leave "session complete" in Notification Center.
         FocusLocalNotificationManager.shared.clearDeliveredSessionCompletionNotifications()
+        
+        // ✅ Check bridge state and handle sound pause/resume immediately when app becomes active
+        if #available(iOS 18.0, *) {
+            checkBridgeAndHandleSound()
+        }
+    }
+    
+    // MARK: - Bridge Sound Handling
+    
+    @available(iOS 18.0, *)
+    private func checkBridgeAndHandleSound() {
+        guard let bridgeState = FocusSessionBridge.peekState() else { return }
+        
+        // Post notification to handle sound pause/resume
+        NotificationCenter.default.post(
+            name: .focusSessionExternalToggle,
+            object: nil,
+            userInfo: [
+                "isPaused": bridgeState.isPaused,
+                "remainingSeconds": bridgeState.remainingSeconds
+            ]
+        )
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -54,12 +76,22 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         Task { @MainActor in
             await SyncCoordinator.shared.forcePushAllPending()
         }
+        
+        // ✅ Check bridge and handle sound before going to background
+        if #available(iOS 18.0, *) {
+            checkBridgeAndHandleSound()
+        }
     }
     
     func applicationDidEnterBackground(_ application: UIApplication) {
         // Force push any pending changes when app enters background
         Task { @MainActor in
             await SyncCoordinator.shared.forcePushAllPending()
+        }
+        
+        // ✅ Check bridge and handle sound when entering background
+        if #available(iOS 18.0, *) {
+            checkBridgeAndHandleSound()
         }
     }
     

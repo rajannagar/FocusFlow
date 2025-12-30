@@ -65,6 +65,10 @@ struct FocusView: View {
     
     @State private var activeAlert: ActiveAlert? = nil
     
+    // ✅ Background bridge monitoring for sound control
+    @State private var bridgeMonitorTimer: Timer?
+    @State private var lastBridgeCheckTime: TimeInterval = 0
+    
     private let calendar = Calendar.current
     
     private var activePreset: FocusPreset? { presetStore.activePreset }
@@ -187,7 +191,7 @@ struct FocusView: View {
             }
         )
 
-        return root
+        let viewWithAppear = root
             .onAppear {
                 viewModel.sessionName = currentSessionDisplayName
                 syncFromLiveActivityIfPossible()
@@ -211,7 +215,19 @@ struct FocusView: View {
                         FocusSoundManager.shared.play(sound: selected)
                     }
                 }
+                
+                // ✅ Start monitoring bridge for sound control when session is active
+                if #available(iOS 18.0, *) {
+                    startBridgeMonitoring()
+                }
             }
+            .onDisappear {
+                if #available(iOS 18.0, *) {
+                    stopBridgeMonitoring()
+                }
+            }
+        
+        return viewWithAppear
             .onReceive(NotificationCenter.default.publisher(for: .focusSessionExternalToggle)) { notification in
                 guard
                     let userInfo = notification.userInfo,
@@ -250,6 +266,15 @@ struct FocusView: View {
             }
             .onChange(of: viewModel.phase) { oldPhase, newPhase in
                 handlePhaseTransition(from: oldPhase, to: newPhase)
+                
+                // ✅ Restart bridge monitoring when phase changes (session starts/stops)
+                if #available(iOS 18.0, *) {
+                    if newPhase == .running || newPhase == .paused {
+                        startBridgeMonitoring()
+                    } else {
+                        stopBridgeMonitoring()
+                    }
+                }
             }
             .onChange(of: appSettings.soundEnabled) { _, enabled in
                 if enabled {
@@ -1323,6 +1348,28 @@ struct FocusView: View {
 
         if clamped > 0 { lastKnownRemainingSeconds = clamped }
 
+        // ✅ Handle sound pause/resume when toggling from Live Activity
+        let wasPaused = viewModel.phase == .paused
+        let willBePaused = isPaused
+        
+        // If state is changing (paused <-> running), handle sound immediately
+        if wasPaused != willBePaused {
+            if willBePaused {
+                // Pausing from Live Activity - pause the sound
+                FocusSoundManager.shared.pause()
+            } else {
+                // Resuming from Live Activity - resume the sound if it was playing
+                if let selected = appSettings.selectedFocusSound, appSettings.soundEnabled {
+                    if activeSessionSound == selected {
+                        FocusSoundManager.shared.resume()
+                    } else {
+                        activeSessionSound = selected
+                        FocusSoundManager.shared.play(sound: selected)
+                    }
+                }
+            }
+        }
+
         viewModel.applyExternalState(
             isPaused: isPaused,
             remaining: clamped,
@@ -1441,6 +1488,54 @@ struct FocusView: View {
             soundChangedWhilePaused = false
             FocusSoundManager.shared.play(sound: selected)
         }
+    }
+    
+    // MARK: - Bridge Monitoring for Sound Control
+    
+    @available(iOS 18.0, *)
+    private func startBridgeMonitoring() {
+        stopBridgeMonitoring() // Stop any existing timer
+        
+        // Only monitor when session is active
+        guard isRunning || isPaused else { return }
+        
+        // Check immediately
+        checkBridgeAndHandleSound()
+        
+        // Set up periodic checking (every 1 second when app is active)
+        // Note: No need for weak capture since FocusView is a struct (value type)
+        bridgeMonitorTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            // Only check if session is still active
+            if isRunning || isPaused {
+                checkBridgeAndHandleSound()
+            } else {
+                stopBridgeMonitoring()
+            }
+        }
+    }
+    
+    private func stopBridgeMonitoring() {
+        bridgeMonitorTimer?.invalidate()
+        bridgeMonitorTimer = nil
+    }
+    
+    @available(iOS 18.0, *)
+    private func checkBridgeAndHandleSound() {
+        guard let bridgeState = FocusSessionBridge.peekState() else { return }
+        
+        // Only process if this is a new update (timestamp changed)
+        guard bridgeState.lastUpdateTime > lastBridgeCheckTime else { return }
+        lastBridgeCheckTime = bridgeState.lastUpdateTime
+        
+        // Post notification to trigger applyExternalSessionState which handles both state and sound
+        NotificationCenter.default.post(
+            name: .focusSessionExternalToggle,
+            object: nil,
+            userInfo: [
+                "isPaused": bridgeState.isPaused,
+                "remainingSeconds": bridgeState.remainingSeconds
+            ]
+        )
     }
 }
 

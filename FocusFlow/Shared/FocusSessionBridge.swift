@@ -35,6 +35,21 @@ enum FocusSessionBridge {
         print("FocusSessionBridge: ✅ wrote isPaused=\(isPaused), remaining=\(remainingSeconds)")
     }
 
+    /// Peek at the bridge state without consuming it (for background monitoring)
+    static func peekState() -> (isPaused: Bool, remainingSeconds: Int, lastUpdateTime: TimeInterval)? {
+        guard let defaults else { return nil }
+        
+        let lastUpdate = defaults.double(forKey: keyLastUpdateTime)
+        if lastUpdate == 0 {
+            return nil
+        }
+        
+        let isPaused = defaults.bool(forKey: keyIsPaused)
+        let remaining = defaults.integer(forKey: keyRemainingSecs)
+        
+        return (isPaused, remaining, lastUpdate)
+    }
+
     /// Called from the app when it comes into foreground / timer view opens.
     /// Returns the latest toggle info once and then clears it.
     static func consumeInApp() -> (isPaused: Bool, remainingSeconds: Int)? {

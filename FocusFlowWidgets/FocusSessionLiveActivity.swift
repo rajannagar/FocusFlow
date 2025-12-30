@@ -126,52 +126,88 @@ struct LockScreenMasterpiece: View {
         let now = Date()
         let derivedCompleted = context.state.isCompleted || (!isPaused && now >= context.state.endDate)
 
-        HStack(alignment: .center, spacing: 0) {
+        HStack(alignment: .center, spacing: 16) {
+            // Session info
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Image(systemName: derivedCompleted ? "checkmark.circle.fill" : (isPaused ? "pause.circle.fill" : "record.circle"))
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(theme.accent)
-                        .symbolEffect(.pulse, options: .repeating, isActive: !isPaused && !derivedCompleted)
-
-                    Text(derivedCompleted ? "SESSION COMPLETE" : "FOCUS SESSION")
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(1.5)
-                        .foregroundStyle(theme.accent.opacity(0.9))
-                }
+                Text(context.state.sessionName)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 if derivedCompleted {
-                    Text("\(context.state.sessionName) - Completed")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(2)
-                        .foregroundStyle(.white)
-                        .shadow(color: theme.textShadow, radius: 10)
+                    Text("Session Complete")
+                        .font(.caption2)
+                        .foregroundStyle(theme.accent)
                 } else {
                     timeText(
                         for: context,
-                        font: .system(size: 44, weight: .light, design: .rounded),
-                        color: .white
+                        font: .system(size: 44, weight: .bold, design: .rounded),
+                        color: .white,
+                        dimIfPaused: true
                     )
-                    .shadow(
-                        color: theme.textShadow.opacity(isPaused ? 0.0 : 0.7),
-                        radius: isPaused ? 0 : 10,
-                        x: 0, y: 0
-                    )
+                    .shadow(color: theme.textShadow.opacity(isPaused ? 0.0 : 0.7), radius: 10, x: 0, y: 0)
+
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(isPaused ? Color.orange : theme.accent)
+                            .frame(width: 6, height: 6)
+                            .shadow(color: (isPaused ? Color.orange : theme.accent).opacity(0.8), radius: 4)
+
+                        Text(isPaused ? "Paused" : "In progress")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
                 }
             }
 
             Spacer()
 
-            ZStack {
-                Circle()
-                    .strokeBorder(theme.accent.opacity(isPaused || derivedCompleted ? 0.45 : 0.7), lineWidth: 2)
-                    .background(Circle().fill(theme.accent.opacity(0.12)))
-                    .frame(width: 40, height: 40)
+            // Functional Play/Pause Button
+            if !derivedCompleted {
+                Button(intent: ToggleFocusPauseIntent()) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        theme.accent,
+                                        theme.accent.opacity(0.7)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 40, height: 40)
+                            .shadow(color: theme.accent.opacity(0.4), radius: 8, x: 0, y: 2)
 
-                Image(systemName: derivedCompleted ? "checkmark" : (isPaused ? "pause.fill" : "play.fill"))
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(theme.accent)
+                        Circle()
+                            .stroke(theme.accent.opacity(0.3), lineWidth: 2)
+                            .frame(width: 44, height: 44)
+
+                        Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPaused)
+            } else {
+                // Completed state - show checkmark
+                ZStack {
+                    Circle()
+                        .fill(theme.accent.opacity(0.2))
+                        .frame(width: 40, height: 40)
+
+                    Circle()
+                        .stroke(theme.accent.opacity(0.4), lineWidth: 2)
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(theme.accent)
+                }
             }
         }
         .padding(DesignSystem.contentPadding)
@@ -191,60 +227,96 @@ struct ExpandedMasterpiece: View {
         let derivedCompleted = context.state.isCompleted || (!isPaused && now >= context.state.endDate)
 
         ZStack {
+            // Simple black background
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.black.opacity(0.96))
 
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(theme.accent.opacity(0.16))
-                    Circle().stroke(theme.accent.opacity(0.5), lineWidth: 1)
-                    Image(systemName: derivedCompleted ? "checkmark" : "sparkles")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(theme.accent)
-                }
-                .frame(width: 32, height: 32)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(derivedCompleted ? "Session Complete" : "Focus Session")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.85))
+            HStack(spacing: 16) {
+                // Session info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(context.state.sessionName)
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
 
                     if derivedCompleted {
-                        Text(context.state.sessionName)
-                            .font(.system(size: 20, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .minimumScaleFactor(0.7)
-                            .lineLimit(1)
-
-                        Text("Completed")
+                        Text("Session Complete")
                             .font(.caption2)
                             .foregroundStyle(theme.accent)
                     } else {
                         timeText(
                             for: context,
-                            font: .system(size: 22, weight: .semibold, design: .rounded),
-                            color: .white
+                            font: .system(size: 28, weight: .bold, design: .rounded),
+                            color: .white,
+                            dimIfPaused: true
                         )
+                        .shadow(color: theme.textShadow.opacity(isPaused ? 0.0 : 0.5), radius: 8, x: 0, y: 2)
 
-                        Text(isPaused ? "Paused" : "In progress")
-                            .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.55))
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(isPaused ? Color.orange : theme.accent)
+                                .frame(width: 6, height: 6)
+                                .shadow(color: (isPaused ? Color.orange : theme.accent).opacity(0.8), radius: 4)
+
+                            Text(isPaused ? "Paused" : "In progress")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
                     }
                 }
 
                 Spacer()
 
-                ZStack {
-                    Circle().fill(.white).frame(width: 48, height: 48)
-                    Circle().stroke(theme.accent.opacity(0.3), lineWidth: 2).frame(width: 52, height: 52)
+                // Functional Play/Pause Button
+                if !derivedCompleted {
+                    Button(intent: ToggleFocusPauseIntent()) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            theme.accent,
+                                            theme.accent.opacity(0.7)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 56, height: 56)
+                                .shadow(color: theme.accent.opacity(0.4), radius: 12, x: 0, y: 4)
 
-                    Image(systemName: derivedCompleted ? "checkmark" : (isPaused ? "pause.fill" : "play.fill"))
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.black)
+                            Circle()
+                                .stroke(theme.accent.opacity(0.3), lineWidth: 2)
+                                .frame(width: 60, height: 60)
+
+                            Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(.white)
+                                .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPaused)
+                } else {
+                    // Completed state - show checkmark
+                    ZStack {
+                        Circle()
+                            .fill(theme.accent.opacity(0.2))
+                            .frame(width: 56, height: 56)
+
+                        Circle()
+                            .stroke(theme.accent.opacity(0.4), lineWidth: 2)
+                            .frame(width: 60, height: 60)
+
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(theme.accent)
+                    }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
         }
         .frame(maxWidth: .infinity)
     }

@@ -1,0 +1,388 @@
+//
+//  DataMigrationSheet.swift
+//  FocusFlow
+//
+//  Sheet for migrating guest data to a signed-in account
+//
+
+import SwiftUI
+
+struct DataMigrationSheet: View {
+    let theme: AppTheme
+    @Environment(\.dismiss) private var dismiss
+    
+    @ObservedObject private var auth = AuthManagerV2.shared
+    @ObservedObject private var migrationManager = GuestMigrationManager.shared
+    
+    @State private var migrationOptions = GuestMigrationManager.MigrationOptions()
+    @State private var migrationError: String?
+    @State private var migrationSuccess = false
+    @State private var showingAuth = false
+    
+    private var sessionsCount: Int { migrationManager.guestSessionsCount() }
+    private var tasksCount: Int { migrationManager.guestTasksCount() }
+    private var presetsCount: Int { migrationManager.guestPresetsCount() }
+    private var dailyGoal: Int? { migrationManager.guestDailyGoal() }
+    
+    private var hasAnyData: Bool {
+        sessionsCount > 0 || tasksCount > 0 || presetsCount > 0 || dailyGoal != nil
+    }
+    
+    private var hasAnySelection: Bool {
+        migrationOptions.migrateSessions ||
+        migrationOptions.migrateTasks ||
+        migrationOptions.migratePresets ||
+        migrationOptions.migrateDailyGoal
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PremiumAppBackground(theme: theme)
+                    .ignoresSafeArea()
+                
+                if migrationSuccess {
+                    successView
+                } else {
+                    // Always show data selection first
+                    dataSelectionView
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundColor(.white.opacity(0.7))
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showingAuth) {
+            AuthLandingView()
+        }
+        .onChange(of: auth.state) { oldState, newState in
+            // When user signs in, close auth and migrate
+            if showingAuth, case .signedIn(let userId) = newState {
+                #if DEBUG
+                print("[DataMigrationSheet] User signed in: \(userId), triggering migration")
+                #endif
+                showingAuth = false
+                
+                // IMPORTANT: Before migration, ensure guest data is persisted
+                // The stores will switch namespaces, so we need data in UserDefaults
+                if case .guest = oldState {
+                    #if DEBUG
+                    print("[DataMigrationSheet] Persisting guest data before namespace switch...")
+                    #endif
+                    // Force persist guest data
+                    ProgressStore.shared.persist()
+                    TasksStore.shared.save()
+                    FocusPresetStore.shared.savePresets()
+                }
+                
+                // Small delay to ensure persistence and auth state is fully set
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    performMigration()
+                }
+            }
+        }
+    }
+    
+    // MARK: - Data Selection View
+    
+    private var dataSelectionView: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 48))
+                        .foregroundColor(theme.accentPrimary)
+                    
+                    Text("Migrate Your Data")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    if hasAnyData {
+                        Text("Select the data you want to migrate to your account. Your existing account data will be preserved.")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.6))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    } else {
+                        Text("You don't have any guest data to migrate. You can still create an account and start fresh.")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.6))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                }
+                .padding(.top, 20)
+                
+                // Data summary (if has data)
+                if hasAnyData {
+                    VStack(spacing: 12) {
+                        if sessionsCount > 0 {
+                            dataRow(icon: "timer", text: "\(sessionsCount) Focus Session\(sessionsCount == 1 ? "" : "s")", color: theme.accentPrimary)
+                        }
+                        if tasksCount > 0 {
+                            dataRow(icon: "checklist", text: "\(tasksCount) Task\(tasksCount == 1 ? "" : "s")", color: theme.accentSecondary)
+                        }
+                        if presetsCount > 0 {
+                            dataRow(icon: "slider.horizontal.3", text: "\(presetsCount) Custom Preset\(presetsCount == 1 ? "" : "s")", color: .orange)
+                        }
+                        if let goal = dailyGoal {
+                            dataRow(icon: "target", text: "Daily Goal: \(goal) min", color: .blue)
+                        }
+                    }
+                    .padding(.vertical, 20)
+                }
+                
+                // Migration checkboxes (only show if has data)
+                if hasAnyData {
+                    VStack(spacing: 16) {
+                        if sessionsCount > 0 {
+                            migrationCheckbox(
+                                title: "Focus Sessions",
+                                subtitle: "\(sessionsCount) session\(sessionsCount == 1 ? "" : "s")",
+                                icon: "timer",
+                                isSelected: $migrationOptions.migrateSessions,
+                                color: theme.accentPrimary
+                            )
+                        }
+                        
+                        if tasksCount > 0 {
+                            migrationCheckbox(
+                                title: "Tasks",
+                                subtitle: "\(tasksCount) task\(tasksCount == 1 ? "" : "s")",
+                                icon: "checklist",
+                                isSelected: $migrationOptions.migrateTasks,
+                                color: theme.accentSecondary
+                            )
+                        }
+                        
+                        if presetsCount > 0 {
+                            migrationCheckbox(
+                                title: "Custom Presets",
+                                subtitle: "\(presetsCount) preset\(presetsCount == 1 ? "" : "s")",
+                                icon: "slider.horizontal.3",
+                                isSelected: $migrationOptions.migratePresets,
+                                color: .orange
+                            )
+                        }
+                        
+                        if let goal = dailyGoal {
+                            migrationCheckbox(
+                                title: "Daily Goal",
+                                subtitle: "\(goal) minutes per day",
+                                icon: "target",
+                                isSelected: $migrationOptions.migrateDailyGoal,
+                                color: .blue
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                }
+                
+                // Continue button
+                Button {
+                    showingAuth = true
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text(hasAnyData ? "Continue to Sign In" : "Create Account or Sign In")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(theme.accentPrimary)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                
+                if let error = migrationError {
+                    Text(error)
+                        .font(.system(size: 13))
+                        .foregroundColor(.red.opacity(0.8))
+                        .padding(.horizontal, 24)
+                        .padding(.top, 8)
+                }
+            }
+            .padding(.bottom, 40)
+        }
+    }
+    
+    // MARK: - Success View
+    
+    private var successView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 64))
+                .foregroundColor(.green)
+            
+            Text("Migration Complete!")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(.white)
+            
+            Text("Your data has been successfully migrated to your account.")
+                .font(.system(size: 15))
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            Spacer()
+            
+            Button {
+                dismiss()
+            } label: {
+                Text("Done")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(theme.accentPrimary)
+                    .cornerRadius(12)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 40)
+        }
+    }
+    
+    // MARK: - Helper Views
+    
+    private func dataRow(icon: String, text: String, color: Color) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(color)
+                .frame(width: 24)
+            Text(text)
+                .font(.system(size: 15))
+                .foregroundColor(.white.opacity(0.8))
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(12)
+    }
+    
+    private func migrationCheckbox(
+        title: String,
+        subtitle: String,
+        icon: String,
+        isSelected: Binding<Bool>,
+        color: Color
+    ) -> some View {
+        Button {
+            Haptics.impact(.light)
+            isSelected.wrappedValue.toggle()
+        } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected.wrappedValue ? color : Color.clear)
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Circle()
+                                .stroke(isSelected.wrappedValue ? color : Color.white.opacity(0.3), lineWidth: 2)
+                        )
+                    
+                    if isSelected.wrappedValue {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(color)
+                    .frame(width: 28)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                
+                Spacer()
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected.wrappedValue ? color.opacity(0.5) : Color.clear, lineWidth: 1)
+            )
+            .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    // MARK: - Migration
+    
+    private func performMigration() {
+        guard case .signedIn(let userId) = auth.state else {
+            #if DEBUG
+            print("[DataMigrationSheet] performMigration called but user not signed in")
+            #endif
+            migrationError = "You must be signed in to migrate data"
+            return
+        }
+        
+        #if DEBUG
+        print("[DataMigrationSheet] performMigration - userId: \(userId)")
+        print("[DataMigrationSheet] hasAnyData: \(hasAnyData), hasAnySelection: \(hasAnySelection)")
+        print("[DataMigrationSheet] Options: sessions=\(migrationOptions.migrateSessions), tasks=\(migrationOptions.migrateTasks), presets=\(migrationOptions.migratePresets), goal=\(migrationOptions.migrateDailyGoal)")
+        #endif
+        
+        // If no data selected and no data available, just dismiss (user created account without migrating)
+        if !hasAnyData || !hasAnySelection {
+            if !hasAnyData {
+                // No data to migrate, just show success
+                #if DEBUG
+                print("[DataMigrationSheet] No data to migrate, showing success")
+                #endif
+                migrationSuccess = true
+            } else {
+                // Has data but nothing selected - show error
+                migrationError = "Please select at least one data type to migrate"
+            }
+            return
+        }
+        
+        migrationError = nil
+        
+        Task {
+            do {
+                #if DEBUG
+                print("[DataMigrationSheet] Starting migration...")
+                #endif
+                try await migrationManager.migrateSelectedData(to: userId, options: migrationOptions)
+                await MainActor.run {
+                    #if DEBUG
+                    print("[DataMigrationSheet] Migration completed successfully")
+                    #endif
+                    migrationSuccess = true
+                }
+            } catch {
+                await MainActor.run {
+                    #if DEBUG
+                    print("[DataMigrationSheet] Migration error: \(error)")
+                    #endif
+                    migrationError = error.localizedDescription
+                }
+            }
+        }
+    }
+}
