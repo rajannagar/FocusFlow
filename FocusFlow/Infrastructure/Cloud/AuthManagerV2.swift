@@ -16,6 +16,22 @@ import Foundation
 import Combine
 import Supabase
 
+// MARK: - Account Deletion Error
+
+enum AccountDeletionError: LocalizedError {
+    case notSignedIn
+    case deletionFailed(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .notSignedIn:
+            return "You must be signed in to delete your account."
+        case .deletionFailed(let error):
+            return "Failed to delete account: \(error.localizedDescription)"
+        }
+    }
+}
+
 // MARK: - Cloud Auth State
 
 /// Authentication state for cloud sync.
@@ -333,6 +349,127 @@ final class AuthManagerV2: ObservableObject {
     func upgradeFromGuest() {
         UserDefaults.standard.set(false, forKey: guestModeKey)
         // State will be updated by auth listener when sign in completes
+    }
+    
+    /// Delete account and all associated data via Edge Function
+    /// This permanently deletes:
+    /// - All focus sessions
+    /// - All tasks and task completions
+    /// - All focus presets and preset settings
+    /// - User settings
+    /// - User stats
+    /// - The Supabase auth account itself
+    func deleteAccount() async throws {
+        guard case .signedIn(let userId) = state else {
+            throw AccountDeletionError.notSignedIn
+        }
+        
+        isLoading = true
+        error = nil
+        
+        defer { isLoading = false }
+        
+        let userIdString = userId.uuidString
+        
+        #if DEBUG
+        print("[AuthManagerV2] Starting account deletion for user: \(userIdString)")
+        #endif
+        
+        do {
+            // Get the current session's access token for authorization
+            let session = try await supabase.auth.session
+            let accessToken = session.accessToken
+            
+            // Get Supabase URL and anon key from Info.plist
+            guard let supabaseURL = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
+                  let supabaseAnonKey = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String else {
+                throw AccountDeletionError.deletionFailed(NSError(domain: "AuthManagerV2", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing Supabase configuration"]))
+            }
+            
+            // Call the Edge Function
+            let functionURL = URL(string: "\(supabaseURL)/functions/v1/delete-user")!
+            var request = URLRequest(url: functionURL)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            request.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            #if DEBUG
+            print("[AuthManagerV2] Calling delete-user Edge Function...")
+            #endif
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw AccountDeletionError.deletionFailed(NSError(domain: "AuthManagerV2", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"]))
+            }
+            
+            // Parse the response
+            if let responseJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                #if DEBUG
+                print("[AuthManagerV2] Edge Function response: \(responseJSON)")
+                #endif
+                
+                if httpResponse.statusCode == 200 {
+                    // Success - account deleted on server
+                    #if DEBUG
+                    print("[AuthManagerV2] Server-side deletion successful")
+                    #endif
+                } else {
+                    // Error from server
+                    let errorMessage = responseJSON["error"] as? String ?? "Unknown error"
+                    let dataDeleted = responseJSON["dataDeleted"] as? Bool ?? false
+                    
+                    if !dataDeleted {
+                        throw AccountDeletionError.deletionFailed(NSError(domain: "AuthManagerV2", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
+                    }
+                    // If data was deleted but auth deletion failed, continue with local cleanup
+                    #if DEBUG
+                    print("[AuthManagerV2] Data deleted but auth deletion failed: \(errorMessage)")
+                    #endif
+                }
+            }
+            
+            // Clear local data for this user's namespace
+            await MainActor.run {
+                // Clear all stores
+                ProgressStore.shared.clearAll()
+                TasksStore.shared.clearAll()
+                
+                // Clear goal history (private enum, access via UserDefaults)
+                UserDefaults.standard.removeObject(forKey: "focusflow.pv2.dailyGoalHistory.v1")
+                
+                // Clear widget data
+                WidgetDataManager.shared.clearAllData()
+                
+                // Reset app settings to defaults
+                AppSettings.shared.displayName = "You"
+                AppSettings.shared.profileImageData = nil
+                AppSettings.shared.avatarID = "default"
+            }
+            
+            #if DEBUG
+            print("[AuthManagerV2] Successfully cleared local data")
+            #endif
+            
+            // Sign out locally (the server already invalidated the session)
+            UserDefaults.standard.set(false, forKey: guestModeKey)
+            state = .signedOut
+            
+            #if DEBUG
+            print("[AuthManagerV2] Account deletion complete")
+            #endif
+            
+        } catch let deletionError as AccountDeletionError {
+            self.error = deletionError
+            throw deletionError
+        } catch {
+            self.error = error
+            #if DEBUG
+            print("[AuthManagerV2] Account deletion error: \(error)")
+            #endif
+            throw AccountDeletionError.deletionFailed(error)
+        }
     }
     
     /// Extracts and sets display name from session user metadata if available

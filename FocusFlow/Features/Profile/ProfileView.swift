@@ -1364,6 +1364,7 @@ private struct SettingsSheet: View {
     @State private var isCreatingBackup = false
     @State private var showingShareSheet = false
     @State private var shareURL: URL?
+    @State private var showingDeleteAccount = false
     @ObservedObject private var backupManager = DataBackupManager.shared
 
     var body: some View {
@@ -1432,6 +1433,28 @@ private struct SettingsSheet: View {
                     .presentationDetents([.medium])
             }
         }
+        .sheet(isPresented: $showingDeleteAccount) {
+            DeleteAccountConfirmationSheet(
+                onDelete: {
+                    Task {
+                        await deleteAccount()
+                    }
+                },
+                onCancel: {
+                    showingDeleteAccount = false
+                }
+            )
+        }
+    }
+    
+    private func deleteAccount() async {
+        do {
+            try await authManager.deleteAccount()
+            Haptics.impact(.heavy)
+            dismiss()
+        } catch {
+            resetError = error.localizedDescription
+        }
     }
 
     private var settingsContent: some View {
@@ -1443,11 +1466,57 @@ private struct SettingsSheet: View {
                 subscriptionSection
                 if authManager.state.isSignedIn {
                     syncSection
+                    accountSection
                 }
                 dataSection
                 aboutSection
             }
             .padding(20)
+        }
+    }
+    
+    private var accountSection: some View {
+        SettingsSectionView(title: "ACCOUNT") {
+            VStack(spacing: 12) {
+                // Account info
+                if let email = AppSettings.shared.accountEmail, !email.isEmpty {
+                    HStack {
+                        HStack(spacing: 8) {
+                            Image(systemName: "envelope.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(theme.accentPrimary.opacity(0.8))
+                            Text(email)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        Spacer()
+                    }
+                }
+                
+                Divider()
+                    .background(Color.white.opacity(0.1))
+                
+                // Delete Account Button
+                Button {
+                    Haptics.impact(.light)
+                    showingDeleteAccount = true
+                } label: {
+                    HStack {
+                        HStack(spacing: 8) {
+                            Image(systemName: "person.crop.circle.badge.minus")
+                                .font(.system(size: 14))
+                                .foregroundColor(.red.opacity(0.9))
+                            Text("Delete Account")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.red.opacity(0.9))
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.red.opacity(0.5))
+                    }
+                }
+            }
         }
     }
 
@@ -2527,6 +2596,207 @@ private struct DataLossRow: View {
                 .font(.system(size: 14, weight: .regular))
                 .foregroundColor(.white.opacity(0.8))
         }
+    }
+}
+
+// =========================================================
+// MARK: - Delete Account Confirmation Sheet
+// =========================================================
+
+private struct DeleteAccountConfirmationSheet: View {
+    let onDelete: () -> Void
+    let onCancel: () -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    @State private var confirmText = ""
+    @State private var isDeleting = false
+    @State private var deleteError: String?
+    @FocusState private var isTextFieldFocused: Bool
+    
+    private let theme = AppSettings.shared.profileTheme
+    private var isDeleteEnabled: Bool {
+        confirmText.uppercased() == "DELETE"
+    }
+    
+    var body: some View {
+        ZStack {
+            PremiumAppBackground(theme: theme, showParticles: false)
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Spacer()
+                    Button {
+                        Haptics.impact(.light)
+                        onCancel()
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white.opacity(0.85))
+                            .frame(width: 34, height: 34)
+                            .background(Color.white.opacity(0.10))
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 20)
+                
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        // Warning Icon
+                        ZStack {
+                            Circle()
+                                .fill(Color.red.opacity(0.15))
+                                .frame(width: 80, height: 80)
+                            
+                            Image(systemName: "person.crop.circle.badge.xmark")
+                                .font(.system(size: 36, weight: .semibold))
+                                .foregroundColor(.red.opacity(0.9))
+                        }
+                        .padding(.top, 8)
+                        
+                        // Title
+                        Text("Delete Account")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        // Warning Message
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("This will PERMANENTLY delete:")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.9))
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                DataLossRow(icon: "person.circle.fill", text: "Your FocusFlow account")
+                                DataLossRow(icon: "flame.fill", text: "All focus sessions & stats")
+                                DataLossRow(icon: "checkmark.circle.fill", text: "All tasks and completions")
+                                DataLossRow(icon: "slider.horizontal.3", text: "All presets and settings")
+                                DataLossRow(icon: "icloud.slash.fill", text: "All cloud synced data")
+                                DataLossRow(icon: "xmark.circle.fill", text: "This action CANNOT be undone")
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Pro subscription warning
+                        HStack(spacing: 12) {
+                            Image(systemName: "crown.fill")
+                                .foregroundColor(.yellow.opacity(0.9))
+                                .font(.system(size: 16))
+                            Text("If you have an active Pro subscription, you'll need to cancel it separately in your Apple ID settings.")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .background(Color.yellow.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal, 20)
+                        
+                        // Error Message
+                        if let error = deleteError {
+                            HStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundColor(.red.opacity(0.9))
+                                    .font(.system(size: 16))
+                                Text(error)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(.red.opacity(0.9))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .background(Color.red.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .padding(.horizontal, 20)
+                        }
+                        
+                        // Confirmation Text Field
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Type DELETE to confirm")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
+                            
+                            TextField("", text: $confirmText)
+                                .focused($isTextFieldFocused)
+                                .textInputAutocapitalization(.characters)
+                                .autocorrectionDisabled()
+                                .font(.system(size: 16, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .background(Color.white.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(isDeleteEnabled ? Color.red.opacity(0.5) : Color.white.opacity(0.2), lineWidth: 1.5)
+                                )
+                                .onAppear {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        isTextFieldFocused = true
+                                    }
+                                }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Action Buttons
+                        VStack(spacing: 12) {
+                            // Delete Account Button
+                            Button {
+                                Haptics.impact(.heavy)
+                                isDeleting = true
+                                onDelete()
+                            } label: {
+                                HStack {
+                                    if isDeleting {
+                                        ProgressView()
+                                            .tint(.white)
+                                    } else {
+                                        Image(systemName: "trash.fill")
+                                            .font(.system(size: 16, weight: .semibold))
+                                    }
+                                    Text(isDeleting ? "Deleting Account..." : "Delete My Account")
+                                        .font(.system(size: 16, weight: .bold))
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    LinearGradient(
+                                        colors: isDeleteEnabled && !isDeleting ? [Color.red.opacity(0.9), Color.red.opacity(0.7)] : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
+                            .disabled(!isDeleteEnabled || isDeleting)
+                            
+                            // Cancel Button
+                            Button {
+                                Haptics.impact(.light)
+                                onCancel()
+                                dismiss()
+                            } label: {
+                                Text("Cancel")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 32)
+                    }
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 }
 
