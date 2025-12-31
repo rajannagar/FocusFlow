@@ -279,6 +279,13 @@ final class SettingsSyncEngine {
             if !LocalTimestampTracker.shared.isLocalNewer(field: "dailyGoalMinutes", namespace: namespace, remoteTimestamp: remoteTimestamp) {
                 if settings.dailyGoalMinutes != goal {
                     settings.dailyGoalMinutes = goal
+                    
+                    // ✅ Store the remote goal in goal history for today
+                    // This ensures today's goal is preserved in the per-day goal history,
+                    // so past dates won't be affected if the user changes the goal later
+                    let calendar = Calendar.autoupdatingCurrent
+                    let today = calendar.startOfDay(for: Date())
+                    storeGoalInHistory(goalMinutes: goal, for: today, calendar: calendar)
                 }
                 LocalTimestampTracker.shared.clearLocalTimestamp(field: "dailyGoalMinutes", namespace: namespace)
             }
@@ -290,6 +297,37 @@ final class SettingsSyncEngine {
         #if DEBUG
         print("[SettingsSyncEngine] Applied remote settings to local (with conflict resolution)")
         #endif
+    }
+
+    // MARK: - Goal History Helper
+    
+    /// Stores a goal in the per-day goal history (same storage as PV2GoalHistory/GoalHistory)
+    /// This ensures that when a remote goal is applied, it's preserved in the goal history
+    /// so that past dates maintain their original goals even if the user changes the goal later
+    private func storeGoalInHistory(goalMinutes: Int, for date: Date, calendar: Calendar) {
+        let storeKey = "focusflow.pv2.dailyGoalHistory.v1"
+        let targetDay = calendar.startOfDay(for: date)
+        
+        // Create date key (same format as PV2GoalHistory/GoalHistory)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        let dateKey = formatter.string(from: targetDay)
+        
+        // Load existing history
+        var dict: [String: Int] = [:]
+        if let data = UserDefaults.standard.data(forKey: storeKey) {
+            dict = (try? JSONDecoder().decode([String: Int].self, from: data)) ?? [:]
+        }
+        
+        // Only store if this date doesn't already have a goal (preserve user's explicit goal settings)
+        if dict[dateKey] == nil {
+            dict[dateKey] = max(0, goalMinutes)
+            if let data = try? JSONEncoder().encode(dict) {
+                UserDefaults.standard.set(data, forKey: storeKey)
+            }
+        }
     }
 
     // MARK: - Observe Local Changes

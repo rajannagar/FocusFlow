@@ -1464,29 +1464,59 @@ private enum PV2GoalHistory {
             return max(0, goal)
         }
         
-        // For past dates, look backwards to find the most recent goal that was set
+        // For past dates, look backwards from the target date to find the most recent goal
+        // This ensures past dates use the goal that was active on that day, not the current goal
         let targetDay = calendar.startOfDay(for: date)
         let today = calendar.startOfDay(for: Date())
         
         if targetDay < today {
-            // Look backwards through history to find the most recent goal
+            // Look backwards from the target date to find the most recent goal that was set
+            // This preserves historical accuracy - past dates keep their original goals
             var checkDate = calendar.date(byAdding: .day, value: -1, to: targetDay) ?? targetDay
             var daysBack = 0
             let maxDaysBack = 365 // Limit search to 1 year
-            let oneYearAgo = calendar.date(byAdding: .day, value: -365, to: today) ?? today
+            let oneYearAgo = calendar.date(byAdding: .day, value: -365, to: targetDay) ?? targetDay
             
             while daysBack < maxDaysBack && checkDate >= oneYearAgo {
                 let checkKey = key(for: checkDate, calendar: calendar)
                 if let pastGoal = dict[checkKey] {
+                    // Found a goal that was set before this date - use it
                     return max(0, pastGoal)
                 }
                 guard let prevDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
                 checkDate = prevDay
                 daysBack += 1
             }
+            
+            // For past dates with no historical goal found, look backwards from TODAY
+            // to find the most recent goal that was set. If that goal was set before
+            // the target date, use it. This ensures past dates use the goal that was
+            // active when they occurred, not the current goal.
+            var checkFromToday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+            daysBack = 0
+            let oneYearAgoFromToday = calendar.date(byAdding: .day, value: -365, to: today) ?? today
+            
+            while daysBack < maxDaysBack && checkFromToday >= oneYearAgoFromToday {
+                let checkKey = key(for: checkFromToday, calendar: calendar)
+                if let recentGoal = dict[checkKey] {
+                    // Found a goal - check if it was set on or before the target date
+                    if checkFromToday <= targetDay {
+                        // This goal was active on or before the target date - use it
+                        return max(0, recentGoal)
+                    }
+                    // This goal was set after the target date - don't use it for past dates
+                    break
+                }
+                guard let prevDay = calendar.date(byAdding: .day, value: -1, to: checkFromToday) else { break }
+                checkFromToday = prevDay
+                daysBack += 1
+            }
+            
+            // If no historical goal found, use fallback (but this should be rare)
+            // The key is: past dates should preserve their original goals
         }
         
-        // Fallback to current goal only if no history found
+        // For future dates or dates with no history, use fallback (current/default goal)
         return max(0, fallback)
     }
 

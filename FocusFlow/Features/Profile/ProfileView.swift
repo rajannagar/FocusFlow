@@ -66,7 +66,62 @@ private enum GoalHistory {
     static func goalMinutes(for date: Date, fallback: Int, calendar: Calendar = .autoupdatingCurrent) -> Int {
         let dict = load()
         let k = key(for: date, calendar: calendar)
-        return max(0, dict[k] ?? fallback)
+        
+        // If goal exists for this date, return it
+        if let goal = dict[k] {
+            return max(0, goal)
+        }
+        
+        // For past dates, look backwards to find the most recent goal that was set
+        // This ensures past dates use the goal that was active on that day, not the current goal
+        let targetDay = calendar.startOfDay(for: date)
+        let today = calendar.startOfDay(for: Date())
+        
+        if targetDay < today {
+            // Look backwards from the target date to find the most recent goal that was set
+            var checkDate = calendar.date(byAdding: .day, value: -1, to: targetDay) ?? targetDay
+            var daysBack = 0
+            let maxDaysBack = 365 // Limit search to 1 year
+            let oneYearAgo = calendar.date(byAdding: .day, value: -365, to: targetDay) ?? targetDay
+            
+            while daysBack < maxDaysBack && checkDate >= oneYearAgo {
+                let checkKey = key(for: checkDate, calendar: calendar)
+                if let pastGoal = dict[checkKey] {
+                    // Found a goal that was set before this date - use it
+                    return max(0, pastGoal)
+                }
+                guard let prevDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+                checkDate = prevDay
+                daysBack += 1
+            }
+            
+            // For past dates with no historical goal found, look backwards from TODAY
+            // to find the most recent goal that was set. If that goal was set before
+            // the target date, use it. This ensures past dates use the goal that was
+            // active when they occurred, not the current goal.
+            var checkFromToday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+            daysBack = 0
+            let oneYearAgoFromToday = calendar.date(byAdding: .day, value: -365, to: today) ?? today
+            
+            while daysBack < maxDaysBack && checkFromToday >= oneYearAgoFromToday {
+                let checkKey = key(for: checkFromToday, calendar: calendar)
+                if let recentGoal = dict[checkKey] {
+                    // Found a goal - check if it was set on or before the target date
+                    if checkFromToday <= targetDay {
+                        // This goal was active on or before the target date - use it
+                        return max(0, recentGoal)
+                    }
+                    // This goal was set after the target date - don't use it for past dates
+                    break
+                }
+                guard let prevDay = calendar.date(byAdding: .day, value: -1, to: checkFromToday) else { break }
+                checkFromToday = prevDay
+                daysBack += 1
+            }
+        }
+        
+        // For future dates or dates with no history, use fallback (current/default goal)
+        return max(0, fallback)
     }
 
     static func set(goalMinutes: Int, for date: Date, calendar: Calendar = .autoupdatingCurrent) {
