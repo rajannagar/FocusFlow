@@ -1522,8 +1522,22 @@ private enum PV2GoalHistory {
 
     static func set(goalMinutes: Int, for date: Date, calendar: Calendar) {
         var dict = load()
-        dict[key(for: date, calendar: calendar)] = max(0, goalMinutes)
+        let dateKey = key(for: date, calendar: calendar)
+        let oldGoal = dict[dateKey]
+        dict[dateKey] = max(0, goalMinutes)
         save(dict)
+        
+        #if DEBUG
+        let dateStr = dateKey
+        if let old = oldGoal {
+            print("[GoalHistory] 📝 Updated goal for \(dateStr): \(old)m → \(goalMinutes)m")
+        } else {
+            print("[GoalHistory] 📝 Set goal for \(dateStr): \(goalMinutes)m (new)")
+        }
+        #endif
+        
+        // ✅ Notify that goal history changed (for cloud sync)
+        NotificationCenter.default.post(name: NSNotification.Name("GoalHistoryDidChange"), object: nil)
     }
 
     private static func key(for date: Date, calendar: Calendar) -> String {

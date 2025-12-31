@@ -13,6 +13,7 @@ final class NotificationPreferencesStore: ObservableObject {
     private var activeNamespace: String = "guest"
     private var cancellables = Set<AnyCancellable>()
     private var isApplyingNamespace = false
+    private var isApplyingRemote = false // Track when applying remote sync to avoid notification loops
     private var hasInitialized = false
 
     private init() {
@@ -83,15 +84,59 @@ final class NotificationPreferencesStore: ObservableObject {
         let defaults = UserDefaults.standard
         if let data = try? JSONEncoder().encode(preferences) {
             defaults.set(data, forKey: key(storageKey))
+            
+            // ✅ Notify that notification preferences changed (for cloud sync)
+            // Only notify if we're signed in (not guest mode) and not applying remote sync
+            if activeNamespace != "guest" && !isApplyingRemote {
+                NotificationCenter.default.post(name: NSNotification.Name("NotificationPreferencesDidChange"), object: nil)
+            }
         }
+    }
+    
+    /// Internal method to apply remote preferences without triggering sync notification
+    func applyRemotePreferences(_ prefs: NotificationPreferences) {
+        isApplyingRemote = true
+        defer { isApplyingRemote = false }
+        preferences = prefs
+        save() // Save but won't post notification due to isApplyingRemote flag
     }
 
     // MARK: - Public API
 
     func update(_ transform: (inout NotificationPreferences) -> Void) {
         var copy = preferences
+        let before = copy
         transform(&copy)
         guard copy != preferences else { return }
+
+        #if DEBUG
+        // Log what changed
+        var changes: [String] = []
+        if before.masterEnabled != copy.masterEnabled {
+            changes.append("masterEnabled: \(before.masterEnabled) → \(copy.masterEnabled)")
+        }
+        if before.dailyReminderEnabled != copy.dailyReminderEnabled {
+            changes.append("dailyReminder: \(before.dailyReminderEnabled) → \(copy.dailyReminderEnabled)")
+        }
+        if before.dailyNudgesEnabled != copy.dailyNudgesEnabled {
+            changes.append("dailyNudges: \(before.dailyNudgesEnabled) → \(copy.dailyNudgesEnabled)")
+        }
+        if before.taskRemindersEnabled != copy.taskRemindersEnabled {
+            changes.append("taskReminders: \(before.taskRemindersEnabled) → \(copy.taskRemindersEnabled)")
+        }
+        if before.dailyRecapEnabled != copy.dailyRecapEnabled {
+            changes.append("dailyRecap: \(before.dailyRecapEnabled) → \(copy.dailyRecapEnabled)")
+        }
+        if before.dailyReminderHour != copy.dailyReminderHour || before.dailyReminderMinute != copy.dailyReminderMinute {
+            changes.append("dailyReminderTime: \(before.dailyReminderHour):\(String(format: "%02d", before.dailyReminderMinute)) → \(copy.dailyReminderHour):\(String(format: "%02d", copy.dailyReminderMinute))")
+        }
+        if before.dailyRecapHour != copy.dailyRecapHour || before.dailyRecapMinute != copy.dailyRecapMinute {
+            changes.append("dailyRecapTime: \(before.dailyRecapHour):\(String(format: "%02d", before.dailyRecapMinute)) → \(copy.dailyRecapHour):\(String(format: "%02d", copy.dailyRecapMinute))")
+        }
+        if !changes.isEmpty {
+            print("[NotificationPreferences] 📝 Changed: \(changes.joined(separator: ", "))")
+        }
+        #endif
 
         preferences = copy
         save()

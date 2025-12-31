@@ -28,6 +28,8 @@ struct UserSettingsDTO: Codable {
     var selectedFocusSound: String?
     var externalMusicApp: String?
     var dailyGoalMinutes: Int?
+    var goalHistory: [String: Int]? // date string -> goal minutes
+    var notificationPreferences: NotificationPreferences?
     var createdAt: Date?
     var updatedAt: Date?
 
@@ -46,8 +48,105 @@ struct UserSettingsDTO: Codable {
         case selectedFocusSound = "selected_focus_sound"
         case externalMusicApp = "external_music_app"
         case dailyGoalMinutes = "daily_goal_minutes"
+        case goalHistory = "goal_history"
+        case notificationPreferences = "notification_preferences"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+    
+    // MARK: - Initializers
+    
+    /// Manual initializer for creating DTO when pushing to remote
+    init(
+        userId: UUID,
+        displayName: String? = nil,
+        tagline: String? = nil,
+        avatarId: String? = nil,
+        selectedTheme: String? = nil,
+        profileTheme: String? = nil,
+        soundEnabled: Bool? = nil,
+        hapticsEnabled: Bool? = nil,
+        dailyReminderEnabled: Bool? = nil,
+        dailyReminderHour: Int? = nil,
+        dailyReminderMinute: Int? = nil,
+        selectedFocusSound: String? = nil,
+        externalMusicApp: String? = nil,
+        dailyGoalMinutes: Int? = nil,
+        goalHistory: [String: Int]? = nil,
+        notificationPreferences: NotificationPreferences? = nil,
+        createdAt: Date? = nil,
+        updatedAt: Date? = nil
+    ) {
+        self.userId = userId
+        self.displayName = displayName
+        self.tagline = tagline
+        self.avatarId = avatarId
+        self.selectedTheme = selectedTheme
+        self.profileTheme = profileTheme
+        self.soundEnabled = soundEnabled
+        self.hapticsEnabled = hapticsEnabled
+        self.dailyReminderEnabled = dailyReminderEnabled
+        self.dailyReminderHour = dailyReminderHour
+        self.dailyReminderMinute = dailyReminderMinute
+        self.selectedFocusSound = selectedFocusSound
+        self.externalMusicApp = externalMusicApp
+        self.dailyGoalMinutes = dailyGoalMinutes
+        self.goalHistory = goalHistory
+        self.notificationPreferences = notificationPreferences
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+    
+    // MARK: - Custom Decoding
+    
+    /// Custom decoder to handle empty JSON objects for notification_preferences and goal_history
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Required field
+        userId = try container.decode(UUID.self, forKey: .userId)
+        
+        // Optional fields
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+        tagline = try container.decodeIfPresent(String.self, forKey: .tagline)
+        avatarId = try container.decodeIfPresent(String.self, forKey: .avatarId)
+        selectedTheme = try container.decodeIfPresent(String.self, forKey: .selectedTheme)
+        profileTheme = try container.decodeIfPresent(String.self, forKey: .profileTheme)
+        soundEnabled = try container.decodeIfPresent(Bool.self, forKey: .soundEnabled)
+        hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled)
+        dailyReminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .dailyReminderEnabled)
+        dailyReminderHour = try container.decodeIfPresent(Int.self, forKey: .dailyReminderHour)
+        dailyReminderMinute = try container.decodeIfPresent(Int.self, forKey: .dailyReminderMinute)
+        selectedFocusSound = try container.decodeIfPresent(String.self, forKey: .selectedFocusSound)
+        externalMusicApp = try container.decodeIfPresent(String.self, forKey: .externalMusicApp)
+        dailyGoalMinutes = try container.decodeIfPresent(Int.self, forKey: .dailyGoalMinutes)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
+        
+        // Handle goal_history - decode as dictionary, skip if empty
+        if let goalHistoryData = try container.decodeIfPresent([String: Int].self, forKey: .goalHistory),
+           !goalHistoryData.isEmpty {
+            goalHistory = goalHistoryData
+        } else {
+            goalHistory = nil
+        }
+        
+        // Handle notification_preferences - decode with fallback to nil if empty or invalid
+        // Empty JSON {} will fail to decode, so we catch and set to nil (will use local defaults)
+        do {
+            if let prefsData = try container.decodeIfPresent(NotificationPreferences.self, forKey: .notificationPreferences) {
+                notificationPreferences = prefsData
+            } else {
+                notificationPreferences = nil
+            }
+        } catch {
+            // If decoding fails (empty JSON {} or invalid), set to nil
+            // The app will use local defaults from NotificationPreferencesStore
+            #if DEBUG
+            print("[SettingsSyncEngine] Failed to decode notification_preferences: \(error). Using local defaults.")
+            #endif
+            notificationPreferences = nil
+        }
     }
 }
 
@@ -92,16 +191,25 @@ final class SettingsSyncEngine {
             .value
 
         if let remote = rows.first {
+            #if DEBUG
+            print("[SettingsSyncEngine] 📥 Pulling settings from cloud...")
+            if let goalHistory = remote.goalHistory, !goalHistory.isEmpty {
+                print("[SettingsSyncEngine]   - Goal history: \(goalHistory.count) entries")
+            }
+            if remote.notificationPreferences != nil {
+                print("[SettingsSyncEngine]   - Notification preferences: present")
+            }
+            #endif
             applyRemoteToLocal(remote)
         } else {
             // No settings row yet — totally fine. It will be created on first push.
             #if DEBUG
-            print("[SettingsSyncEngine] No remote user_settings row yet (first-time user).")
+            print("[SettingsSyncEngine] ℹ️ No remote user_settings row yet (first-time user)")
             #endif
         }
 
         #if DEBUG
-        print("[SettingsSyncEngine] Pulled settings from remote")
+        print("[SettingsSyncEngine] ✅ Pulled settings from remote")
         #endif
     }
 
@@ -118,6 +226,29 @@ final class SettingsSyncEngine {
         guard !isApplyingRemote else { return }
 
         let settings = AppSettings.shared
+        
+        // Get goal history from local storage
+        let goalHistory = loadGoalHistory()
+        
+        // Get notification preferences
+        let notificationPrefs = NotificationPreferencesStore.shared.preferences
+
+        #if DEBUG
+        // Log what we're pushing
+        var changes: [String] = []
+        if !goalHistory.isEmpty {
+            let goalCount = goalHistory.count
+            let recentGoals = goalHistory.sorted(by: { $0.key > $1.key }).prefix(3)
+            let recentStr = recentGoals.map { "\($0.key): \($0.value)m" }.joined(separator: ", ")
+            changes.append("goal_history: \(goalCount) entries (\(recentStr)\(goalCount > 3 ? "..." : ""))")
+        }
+        if notificationPrefs != NotificationPreferences.default {
+            changes.append("notification_preferences: customized")
+        }
+        if !changes.isEmpty {
+            print("[SettingsSyncEngine] 📤 Pushing to cloud: \(changes.joined(separator: ", "))")
+        }
+        #endif
 
         let dto = UserSettingsDTO(
             userId: userId,
@@ -133,7 +264,9 @@ final class SettingsSyncEngine {
             dailyReminderMinute: settings.dailyReminderMinute,
             selectedFocusSound: settings.selectedFocusSound?.rawValue,
             externalMusicApp: settings.externalMusicApp?.rawValue,
-            dailyGoalMinutes: settings.dailyGoalMinutes
+            dailyGoalMinutes: settings.dailyGoalMinutes,
+            goalHistory: goalHistory.isEmpty ? nil : goalHistory,
+            notificationPreferences: notificationPrefs
         )
 
         do {
@@ -143,11 +276,11 @@ final class SettingsSyncEngine {
                 .execute()
 
             #if DEBUG
-            print("[SettingsSyncEngine] Pushed settings to remote")
+            print("[SettingsSyncEngine] ✅ Pushed settings to remote successfully")
             #endif
         } catch {
             #if DEBUG
-            print("[SettingsSyncEngine] Push error: \(error)")
+            print("[SettingsSyncEngine] ❌ Push error: \(error)")
             #endif
         }
     }
@@ -290,6 +423,75 @@ final class SettingsSyncEngine {
                 LocalTimestampTracker.shared.clearLocalTimestamp(field: "dailyGoalMinutes", namespace: namespace)
             }
         }
+        
+        // ✅ Apply goal history from remote (merge with local)
+        if let remoteGoalHistory = remote.goalHistory, !remoteGoalHistory.isEmpty {
+            if !LocalTimestampTracker.shared.isLocalNewer(field: "goalHistory", namespace: namespace, remoteTimestamp: remoteTimestamp) {
+                let localBefore = loadGoalHistory()
+                mergeGoalHistory(remote: remoteGoalHistory)
+                let localAfter = loadGoalHistory()
+                
+                #if DEBUG
+                // Log what changed
+                let added = Set(remoteGoalHistory.keys).subtracting(Set(localBefore.keys))
+                let updated = remoteGoalHistory.filter { localBefore[$0.key] != $0.value && localBefore[$0.key] != nil }
+                if !added.isEmpty || !updated.isEmpty {
+                    var changes: [String] = []
+                    if !added.isEmpty {
+                        let addedStr = added.sorted().map { "\($0): \(remoteGoalHistory[$0] ?? 0)m" }.joined(separator: ", ")
+                        changes.append("added: \(addedStr)")
+                    }
+                    if !updated.isEmpty {
+                        let updatedStr = updated.map { "\($0.key): \(localBefore[$0.key] ?? 0)m → \($0.value)m" }.joined(separator: ", ")
+                        changes.append("updated: \(updatedStr)")
+                    }
+                    print("[SettingsSyncEngine] 📥 Applied goal history from cloud: \(changes.joined(separator: "; "))")
+                }
+                #endif
+                
+                LocalTimestampTracker.shared.clearLocalTimestamp(field: "goalHistory", namespace: namespace)
+            }
+        }
+        
+        // ✅ Apply notification preferences from remote
+        // Note: If remote.notificationPreferences is nil, it means the database has empty JSON {}
+        // In that case, we don't overwrite local preferences (they may have been set locally)
+        if let remotePrefs = remote.notificationPreferences {
+            if !LocalTimestampTracker.shared.isLocalNewer(field: "notificationPreferences", namespace: namespace, remoteTimestamp: remoteTimestamp) {
+                let prefsStore = NotificationPreferencesStore.shared
+                let localBefore = prefsStore.preferences
+                
+                // Use applyRemotePreferences to avoid triggering sync notification loop
+                prefsStore.applyRemotePreferences(remotePrefs)
+                
+                #if DEBUG
+                // Log what changed
+                var changes: [String] = []
+                if localBefore.masterEnabled != remotePrefs.masterEnabled {
+                    changes.append("masterEnabled: \(localBefore.masterEnabled) → \(remotePrefs.masterEnabled)")
+                }
+                if localBefore.dailyReminderEnabled != remotePrefs.dailyReminderEnabled {
+                    changes.append("dailyReminder: \(localBefore.dailyReminderEnabled) → \(remotePrefs.dailyReminderEnabled)")
+                }
+                if localBefore.dailyNudgesEnabled != remotePrefs.dailyNudgesEnabled {
+                    changes.append("dailyNudges: \(localBefore.dailyNudgesEnabled) → \(remotePrefs.dailyNudgesEnabled)")
+                }
+                if localBefore.taskRemindersEnabled != remotePrefs.taskRemindersEnabled {
+                    changes.append("taskReminders: \(localBefore.taskRemindersEnabled) → \(remotePrefs.taskRemindersEnabled)")
+                }
+                if localBefore.dailyRecapEnabled != remotePrefs.dailyRecapEnabled {
+                    changes.append("dailyRecap: \(localBefore.dailyRecapEnabled) → \(remotePrefs.dailyRecapEnabled)")
+                }
+                if !changes.isEmpty {
+                    print("[SettingsSyncEngine] 📥 Applied notification preferences from cloud: \(changes.joined(separator: ", "))")
+                }
+                #endif
+                
+                LocalTimestampTracker.shared.clearLocalTimestamp(field: "notificationPreferences", namespace: namespace)
+            }
+        }
+        // If remote.notificationPreferences is nil (empty JSON {}), we keep local preferences
+        // This is correct behavior - empty JSON means "not set yet", not "reset to defaults"
 
         // ✅ Sync to Home Screen widgets after applying remote settings
         WidgetDataManager.shared.syncAll()
@@ -299,7 +501,37 @@ final class SettingsSyncEngine {
         #endif
     }
 
-    // MARK: - Goal History Helper
+    // MARK: - Goal History Helpers
+    
+    /// Loads goal history from local storage
+    private func loadGoalHistory() -> [String: Int] {
+        let storeKey = "focusflow.pv2.dailyGoalHistory.v1"
+        guard let data = UserDefaults.standard.data(forKey: storeKey),
+              let dict = try? JSONDecoder().decode([String: Int].self, from: data) else {
+            return [:]
+        }
+        return dict
+    }
+    
+    /// Merges remote goal history with local (remote takes precedence for conflicts)
+    private func mergeGoalHistory(remote: [String: Int]) {
+        let storeKey = "focusflow.pv2.dailyGoalHistory.v1"
+        var local = loadGoalHistory()
+        
+        // Merge: remote values take precedence, but keep local values that aren't in remote
+        for (date, goal) in remote {
+            local[date] = max(0, goal)
+        }
+        
+        // Save merged history
+        if let data = try? JSONEncoder().encode(local) {
+            UserDefaults.standard.set(data, forKey: storeKey)
+        }
+        
+        #if DEBUG
+        print("[SettingsSyncEngine] 💾 Merged goal history: \(local.count) total entries")
+        #endif
+    }
     
     /// Stores a goal in the per-day goal history (same storage as PV2GoalHistory/GoalHistory)
     /// This ensures that when a remote goal is applied, it's preserved in the goal history
@@ -316,10 +548,7 @@ final class SettingsSyncEngine {
         let dateKey = formatter.string(from: targetDay)
         
         // Load existing history
-        var dict: [String: Int] = [:]
-        if let data = UserDefaults.standard.data(forKey: storeKey) {
-            dict = (try? JSONDecoder().decode([String: Int].self, from: data)) ?? [:]
-        }
+        var dict = loadGoalHistory()
         
         // Only store if this date doesn't already have a goal (preserve user's explicit goal settings)
         if dict[dateKey] == nil {
@@ -336,6 +565,8 @@ final class SettingsSyncEngine {
         let settings = AppSettings.shared
         let progress = ProgressStore.shared
 
+        let notificationPrefs = NotificationPreferencesStore.shared
+        
         let publishers: [AnyPublisher<Void, Never>] = [
             settings.$displayName.map { _ in () }.eraseToAnyPublisher(),
             settings.$tagline.map { _ in () }.eraseToAnyPublisher(),
@@ -348,7 +579,12 @@ final class SettingsSyncEngine {
             settings.$dailyReminderTime.map { _ in () }.eraseToAnyPublisher(),
             settings.$selectedFocusSound.map { _ in () }.eraseToAnyPublisher(),
             settings.$selectedExternalMusicApp.map { _ in () }.eraseToAnyPublisher(),
-            progress.$dailyGoalMinutes.map { _ in () }.eraseToAnyPublisher()
+            progress.$dailyGoalMinutes.map { _ in () }.eraseToAnyPublisher(),
+            notificationPrefs.$preferences.map { _ in () }.eraseToAnyPublisher(),
+            // Watch for goal history changes
+            NotificationCenter.default.publisher(for: NSNotification.Name("GoalHistoryDidChange"))
+                .map { _ in () }
+                .eraseToAnyPublisher()
         ]
 
         Publishers.MergeMany(publishers)
