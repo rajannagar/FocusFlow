@@ -21,7 +21,7 @@ export default function AboutPage() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-28 md:pt-40 pb-16 md:pb-24 overflow-hidden">
+      <section className="relative pt-20 md:pt-40 pb-12 md:pb-24 overflow-hidden">
         {/* Animated background */}
         <div className="absolute inset-0">
           <div 

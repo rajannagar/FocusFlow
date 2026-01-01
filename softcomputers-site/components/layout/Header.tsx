@@ -20,12 +20,12 @@ export default function Header() {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled 
-          ? 'bg-[var(--background)]/90 backdrop-blur-xl border-b border-[var(--border)]' 
-          : 'bg-transparent'
+          ? 'bg-[var(--background)]/95 backdrop-blur-xl border-b border-[var(--border)]' 
+          : 'bg-[var(--background)]/50 md:bg-transparent backdrop-blur-md md:backdrop-blur-none'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="flex h-16 md:h-20 items-center justify-between">
           {/* Logo - Text Only */}
           <Link 
             href="/" 
@@ -34,7 +34,7 @@ export default function Header() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
-            <span className="text-xl font-bold tracking-tight text-[var(--foreground)] transition-all duration-300 group-hover:text-gradient">
+            <span className="text-lg md:text-xl font-bold tracking-tight text-[var(--foreground)] transition-all duration-300 group-hover:text-gradient">
               Soft Computers
             </span>
             {/* Underline accent on hover */}
@@ -105,10 +105,10 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2.5 rounded-full hover:bg-[var(--background-subtle)] transition-colors text-[var(--foreground)]"
+            className="md:hidden p-2 rounded-lg hover:bg-[var(--background-subtle)] transition-colors text-[var(--foreground)]"
             aria-label="Menu"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -119,8 +119,8 @@ export default function Header() {
         </div>
 
         {/* Mobile Menu */}
-        <div className={`md:hidden overflow-hidden transition-all duration-500 ease-out ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-          <div className="pb-6 pt-4 border-t border-[var(--border)]">
+        <div className={`md:hidden overflow-hidden transition-all duration-500 ease-out ${isMenuOpen ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="pb-4 pt-3 border-t border-[var(--border)]">
             <div className="flex flex-col gap-1">
               <Link 
                 href="/" 
