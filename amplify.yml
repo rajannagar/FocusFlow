@@ -9,13 +9,29 @@ applications:
         build:
           commands:
             - npm run build
-            - echo '{"version":3,"routes":[]}' > out/required-server-files.json
-            - echo '[]' > out/server-trace.json
-            - echo '[]' > out/server-trace-manifest.json
-            - mkdir -p out/.next
-            - echo '{"version":3,"allRoutes":[],"dynamicRoutes":[],"staticRoutes":[],"dataRoutes":[],"i18n":null}' > out/.next/routes-manifest.json
-            - echo '{"pages":{},"version":3}' > out/.next/build-manifest.json
-            - echo '{"version":3,"routes":{}}' > out/.next/prerender-manifest.json
+            - |
+              cat > out/required-server-files.json << 'EOF'
+              {
+                "version": 3,
+                "routes": {
+                  "pages": {},
+                  "dataRoutes": {},
+                  "dynamicRoutes": []
+                },
+                "hasCustomAppGetInitialProps": false,
+                "hasMiddleware": false
+              }
+              EOF
+            - |
+              cat > out/server-trace.json << 'EOF'
+              []
+              EOF
+            - |
+              cat > out/server-trace-manifest.json << 'EOF'
+              []
+              EOF
+            - ls -la out/ | head -20
+            - ls -la out/.next/ 2>/dev/null || echo "No .next directory"
       artifacts:
         baseDirectory: out
         files:
