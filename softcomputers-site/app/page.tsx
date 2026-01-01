@@ -67,7 +67,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION - Swipeable Carousel
           ═══════════════════════════════════════════════════════════════ */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 md:pt-20">
+      <section ref={heroRef} className="relative min-h-screen flex items-start md:items-center justify-center overflow-hidden pt-20 md:pt-24">
         {/* Animated Aurora Background */}
         <div className="absolute inset-0 bg-aurora">
           <div 
@@ -146,8 +146,8 @@ export default function Home() {
                 ══════════════════════════════════════════════════════════ */}
             <div className="min-w-full">
               <Container>
-                <div className="max-w-6xl mx-auto py-8 md:py-20 px-4">
-                  <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                <div className="max-w-6xl mx-auto py-4 md:py-20 px-4">
+                  <div className="grid lg:grid-cols-2 gap-4 md:gap-8 lg:gap-16 items-center">
                     {/* Left - App Info */}
                     <div className="text-center lg:text-left order-2 lg:order-1">
                       {/* Badge */}
@@ -214,10 +214,10 @@ export default function Home() {
                     </div>
 
                     {/* Right - Phone Simulator */}
-                    <div className="flex justify-center order-1 lg:order-2">
-                      <div className="relative scale-[0.85] md:scale-100">
+                    <div className="flex justify-center order-1 lg:order-2 mt-4 md:mt-0">
+                      <div className="relative scale-[0.75] sm:scale-[0.85] md:scale-100 origin-top">
                         {/* Glow behind phone */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)]/30 to-[var(--accent-secondary)]/20 blur-[60px] md:blur-[80px] scale-125 md:scale-150" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 blur-[40px] md:blur-[80px] scale-100 md:scale-150" />
                         <PhoneSimulator 
                           screenshots={[
                             '/images/screen-focus.png',
