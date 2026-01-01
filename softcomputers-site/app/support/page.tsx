@@ -21,10 +21,10 @@ export default function SupportPage() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-40 pb-24 overflow-hidden">
+      <section className="relative pt-28 md:pt-40 pb-16 md:pb-24 overflow-hidden">
         <div className="absolute inset-0">
           <div 
-            className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 transition-all duration-[2000ms]"
+            className="absolute top-1/4 left-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] rounded-full blur-[80px] md:blur-[120px] opacity-20 transition-all duration-[2000ms]"
             style={{
               background: `radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)`,
               transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
@@ -35,16 +35,16 @@ export default function SupportPage() {
 
         <Container>
           <div className="max-w-4xl relative z-10 stagger-children">
-            <div className="inline-flex items-center gap-2 badge badge-primary mb-8">
+            <div className="inline-flex items-center gap-2 badge badge-primary mb-6 md:mb-8">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
               We're Here to Help
             </div>
-            <h1 className="mb-8">
+            <h1 className="mb-6 md:mb-8">
               Support & <span className="text-gradient">Contact</span>
             </h1>
-            <p className="text-xl md:text-2xl text-[var(--foreground-muted)] leading-relaxed max-w-3xl">
+            <p className="text-lg md:text-2xl text-[var(--foreground-muted)] leading-relaxed max-w-3xl">
               Get support, ask questions, or share feedback. We typically respond within 24 hours.
             </p>
           </div>

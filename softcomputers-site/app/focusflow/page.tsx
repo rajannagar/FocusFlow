@@ -25,18 +25,18 @@ export default function FocusFlowPage() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-32 pb-24 overflow-hidden">
+      <section className="relative pt-24 md:pt-32 pb-16 md:pb-24 overflow-hidden">
         {/* Animated background */}
         <div className="absolute inset-0">
           <div 
-            className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[120px] opacity-25 transition-all duration-[2000ms]"
+            className="absolute top-0 left-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] rounded-full blur-[80px] md:blur-[120px] opacity-25 transition-all duration-[2000ms]"
             style={{
               background: `radial-gradient(circle, rgba(139, 92, 246, 0.5) 0%, transparent 70%)`,
               transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
             }}
           />
           <div 
-            className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full blur-[100px] opacity-15 transition-all duration-[2000ms]"
+            className="absolute bottom-0 right-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] rounded-full blur-[60px] md:blur-[100px] opacity-15 transition-all duration-[2000ms]"
             style={{
               background: `radial-gradient(circle, rgba(212, 168, 83, 0.4) 0%, transparent 70%)`,
               transform: `translate(${-mousePosition.x * 0.015}px, ${-mousePosition.y * 0.015}px)`,
@@ -48,44 +48,44 @@ export default function FocusFlowPage() {
 
         <Container>
           <div className="max-w-6xl mx-auto relative z-10">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Left - Content */}
-              <div className="stagger-children">
+              <div className="stagger-children text-center lg:text-left">
                 {/* App Icon & Name */}
-                <div className="flex items-center gap-6 mb-10">
+                <div className="flex items-center gap-4 md:gap-6 mb-6 md:mb-10 justify-center lg:justify-start">
                   <div className="relative group flex-shrink-0">
                     {/* Glow effect behind icon */}
-                    <div className="absolute -inset-4 bg-gradient-to-br from-[var(--accent-primary)]/40 to-[var(--accent-secondary)]/30 rounded-[32px] blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+                    <div className="absolute -inset-3 md:-inset-4 bg-gradient-to-br from-[var(--accent-primary)]/40 to-[var(--accent-secondary)]/30 rounded-[24px] md:rounded-[32px] blur-xl md:blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
                     <Image
                       src="/focusflow_app_icon.jpg"
                       alt="FocusFlow - Be Present"
-                      width={140}
-                      height={140}
-                      className="relative rounded-[28px] shadow-2xl transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_20px_60px_rgba(139,92,246,0.3)]"
+                      width={100}
+                      height={100}
+                      className="relative rounded-[20px] md:rounded-[28px] shadow-2xl transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_20px_60px_rgba(139,92,246,0.3)] md:w-[140px] md:h-[140px]"
                       style={{ 
                         boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset'
                       }}
                     />
                   </div>
                   <div>
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-[var(--foreground)] mb-2">
+                    <h1 className="text-4xl md:text-7xl font-bold tracking-tight text-[var(--foreground)] mb-1 md:mb-2">
                       FocusFlow
                     </h1>
-                    <p className="text-xl text-[var(--foreground-muted)]">Be Present</p>
+                    <p className="text-lg md:text-xl text-[var(--foreground-muted)]">Be Present</p>
                   </div>
                 </div>
                 
                 {/* Tagline */}
-                <p className="text-2xl md:text-3xl text-[var(--foreground-muted)] leading-relaxed mb-6 max-w-xl">
+                <p className="text-xl md:text-3xl text-[var(--foreground-muted)] leading-relaxed mb-4 md:mb-6 max-w-xl mx-auto lg:mx-0">
                   The all-in-one app for focused work. Timer, tasks, and progress tracking in one beautiful experience.
                 </p>
 
-                <p className="text-lg text-[var(--foreground-subtle)] leading-relaxed mb-10 max-w-xl">
+                <p className="text-base md:text-lg text-[var(--foreground-subtle)] leading-relaxed mb-6 md:mb-10 max-w-xl mx-auto lg:mx-0">
                   Privacy-first. No ads. No tracking. Just pure focus.
                 </p>
                 
                 {/* CTAs */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-12">
+                <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-8 md:mb-12 justify-center lg:justify-start">
                   <a
                     href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
                     target="_blank"
@@ -103,34 +103,34 @@ export default function FocusFlowPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-2 md:gap-4">
                   {[
-                    { value: '14', label: 'Ambient Backgrounds' },
-                    { value: '10', label: 'Beautiful Themes' },
-                    { value: '50+', label: 'Levels & Badges' },
+                    { value: '14', label: 'Backgrounds' },
+                    { value: '10', label: 'Themes' },
+                    { value: '50+', label: 'Levels' },
                   ].map((stat, i) => (
-                    <div key={i} className="card p-4 text-center">
-                      <div className="text-2xl font-bold text-gradient mb-1">{stat.value}</div>
-                      <div className="text-xs text-[var(--foreground-subtle)]">{stat.label}</div>
-                    </div>
+                    <div key={i} className="card p-3 md:p-4 text-center">
+                      <div className="text-xl md:text-2xl font-bold text-gradient mb-0.5 md:mb-1">{stat.value}</div>
+                      <div className="text-[10px] md:text-xs text-[var(--foreground-subtle)]">{stat.label}</div>
+                  </div>
                   ))}
                 </div>
               </div>
 
               {/* Right - Phone Mockup */}
-              <div className="flex justify-center lg:justify-end">
-                <div className="relative">
+              <div className="flex justify-center lg:justify-end order-first lg:order-last mb-8 lg:mb-0">
+                <div className="relative scale-90 md:scale-100">
                   {/* Glow behind phone */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)]/30 to-[var(--accent-secondary)]/20 blur-[80px] scale-150" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)]/30 to-[var(--accent-secondary)]/20 blur-[60px] md:blur-[80px] scale-125 md:scale-150" />
                   
-                  <PhoneSimulator 
-                    screenshots={[
-                      '/images/screen-focus.png',
-                      '/images/screen-tasks.png',
-                      '/images/screen-progress.png',
-                      '/images/screen-profile.png',
-                    ]}
-                    screenData={[
+                <PhoneSimulator 
+                  screenshots={[
+                    '/images/screen-focus.png',
+                    '/images/screen-tasks.png',
+                    '/images/screen-progress.png',
+                    '/images/screen-profile.png',
+                  ]}
+                  screenData={[
                       { icon: '⏱️', title: 'Focus Timer', desc: 'Timed sessions', gradient: 'from-violet-500 to-purple-600' },
                       { icon: '✅', title: 'Tasks', desc: 'Smart management', gradient: 'from-emerald-500 to-teal-600' },
                       { icon: '📈', title: 'Progress', desc: 'Track growth', gradient: 'from-amber-500 to-orange-600' },
@@ -194,8 +194,8 @@ export default function FocusFlowPage() {
                   <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[var(--radius-lg)]`} />
                   <div className="relative z-10">
                     <div className="text-[var(--accent-primary)] mb-6 flex justify-center group-hover:scale-110 transition-transform duration-300">
-                      {item.icon}
-                    </div>
+                    {item.icon}
+                  </div>
                     <h3 className="text-xl font-semibold text-[var(--foreground)] mb-3">{item.title}</h3>
                     <p className="text-[var(--foreground-muted)] leading-relaxed">{item.desc}</p>
                   </div>
@@ -264,9 +264,9 @@ export default function FocusFlowPage() {
                 <div className="inline-flex items-center gap-2 badge badge-primary mb-6">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                    </svg>
                   Core Feature
-                </div>
+                  </div>
                 <h2 className="mb-6">Focus Timer</h2>
                 <p className="text-xl text-[var(--foreground-muted)] leading-relaxed mb-8">
                   Start timed focus sessions with customizable durations. Choose from 14 beautiful ambient backgrounds or connect your favorite music app.
@@ -293,25 +293,25 @@ export default function FocusFlowPage() {
                   ].map((feature, i) => (
                     <div key={i} className="flex gap-4 items-start">
                       <div className="w-2 h-2 rounded-full bg-[var(--accent-primary)] mt-2 flex-shrink-0" />
-                      <div>
+                    <div>
                         <h4 className="font-semibold text-[var(--foreground)] mb-1">{feature.title}</h4>
                         <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">{feature.desc}</p>
-                      </div>
                     </div>
+                  </div>
                   ))}
-                </div>
-              </div>
+                    </div>
+                    </div>
               
               <div className="flex justify-center">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-violet-500/30 to-purple-500/20 blur-[60px] scale-125" />
-                  <PhoneSimulator 
-                    screenshots={[
-                      '/images/screen-focus-1.png',
-                      '/images/screen-focus-2.png',
-                      '/images/screen-focus-3.png',
-                    ]}
-                    screenData={[
+                <PhoneSimulator 
+                  screenshots={[
+                    '/images/screen-focus-1.png',
+                    '/images/screen-focus-2.png',
+                    '/images/screen-focus-3.png',
+                  ]}
+                  screenData={[
                       { icon: '⏱️', title: 'Timer', desc: 'Start session', gradient: 'from-violet-500 to-purple-600' },
                       { icon: '⏱️', title: 'Timer', desc: 'In progress', gradient: 'from-violet-500 to-purple-600' },
                       { icon: '⏱️', title: 'Timer', desc: 'Complete', gradient: 'from-violet-500 to-purple-600' },
@@ -334,28 +334,28 @@ export default function FocusFlowPage() {
               <div className="order-2 lg:order-1 flex justify-center">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 to-teal-500/20 blur-[60px] scale-125" />
-                  <PhoneSimulator 
-                    screenshots={[
-                      '/images/screen-tasks-1.png',
-                      '/images/screen-tasks-2.png',
-                      '/images/screen-tasks-3.png',
-                    ]}
-                    screenData={[
+                <PhoneSimulator 
+                  screenshots={[
+                    '/images/screen-tasks-1.png',
+                    '/images/screen-tasks-2.png',
+                    '/images/screen-tasks-3.png',
+                  ]}
+                  screenData={[
                       { icon: '✅', title: 'Tasks', desc: 'Task list', gradient: 'from-emerald-500 to-teal-600' },
                       { icon: '✅', title: 'Tasks', desc: 'Create task', gradient: 'from-emerald-500 to-teal-600' },
                       { icon: '✅', title: 'Tasks', desc: 'Details', gradient: 'from-emerald-500 to-teal-600' },
-                    ]}
-                  />
-                </div>
+                  ]}
+                />
+              </div>
               </div>
               
               <div className="order-1 lg:order-2">
                 <div className="inline-flex items-center gap-2 badge badge-primary mb-6">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                    </svg>
                   Core Feature
-                </div>
+                  </div>
                 <h2 className="mb-6">Task Management</h2>
                 <p className="text-xl text-[var(--foreground-muted)] leading-relaxed mb-8">
                   Organize your to-do list with smart features. Set reminders, create recurring tasks, and link them to focus sessions.
@@ -382,13 +382,13 @@ export default function FocusFlowPage() {
                   ].map((feature, i) => (
                     <div key={i} className="flex gap-4 items-start">
                       <div className="w-2 h-2 rounded-full bg-[var(--success)] mt-2 flex-shrink-0" />
-                      <div>
+                    <div>
                         <h4 className="font-semibold text-[var(--foreground)] mb-1">{feature.title}</h4>
                         <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">{feature.desc}</p>
-                      </div>
                     </div>
+                  </div>
                   ))}
-                </div>
+                    </div>
               </div>
             </div>
           </div>
@@ -406,9 +406,9 @@ export default function FocusFlowPage() {
                 <div className="inline-flex items-center gap-2 badge badge-primary mb-6">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
+                    </svg>
                   Core Feature
-                </div>
+                  </div>
                 <h2 className="mb-6">Progress & Journey</h2>
                 <p className="text-xl text-[var(--foreground-muted)] leading-relaxed mb-8">
                   Track your focus time, maintain streaks, and watch your progress grow. Unlock achievements as you build habits.
@@ -435,31 +435,31 @@ export default function FocusFlowPage() {
                   ].map((feature, i) => (
                     <div key={i} className="flex gap-4 items-start">
                       <div className="w-2 h-2 rounded-full bg-[var(--accent-secondary)] mt-2 flex-shrink-0" />
-                      <div>
+                    <div>
                         <h4 className="font-semibold text-[var(--foreground)] mb-1">{feature.title}</h4>
                         <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">{feature.desc}</p>
-                      </div>
                     </div>
+                  </div>
                   ))}
-                </div>
-              </div>
+                    </div>
+                    </div>
               
               <div className="flex justify-center">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-amber-500/30 to-orange-500/20 blur-[60px] scale-125" />
-                  <PhoneSimulator 
-                    screenshots={[
-                      '/images/screen-progress-1.png',
-                      '/images/screen-progress-2.png',
-                      '/images/screen-progress-3.png',
-                    ]}
-                    screenData={[
+                <PhoneSimulator 
+                  screenshots={[
+                    '/images/screen-progress-1.png',
+                    '/images/screen-progress-2.png',
+                    '/images/screen-progress-3.png',
+                  ]}
+                  screenData={[
                       { icon: '📈', title: 'Progress', desc: 'Summary', gradient: 'from-amber-500 to-orange-600' },
                       { icon: '📈', title: 'Progress', desc: 'Journey', gradient: 'from-amber-500 to-orange-600' },
                       { icon: '📈', title: 'Progress', desc: 'Badges', gradient: 'from-amber-500 to-orange-600' },
-                    ]}
-                  />
-                </div>
+                  ]}
+                />
+              </div>
               </div>
             </div>
           </div>
@@ -586,7 +586,7 @@ export default function FocusFlowPage() {
                   ))}
                 </ul>
                 <div className="btn btn-secondary w-full justify-center opacity-50 cursor-not-allowed mt-auto">
-                  Current Plan
+                    Current Plan
                 </div>
               </div>
 
@@ -600,33 +600,33 @@ export default function FocusFlowPage() {
                 </div>
                 
                 <div className="card p-10 border-2 border-[var(--accent-primary)]/60 flex flex-col h-full shadow-xl shadow-[var(--accent-primary)]/10">
-                  <div className="text-center mb-8">
+                <div className="text-center mb-8">
                     <h3 className="text-2xl font-semibold text-gradient mb-3">Pro Yearly</h3>
                     <div className="text-5xl font-bold text-[var(--foreground)] mb-2">
-                      ${selectedCurrency === 'USD' ? '44.99' : '59.99'}
+                    ${selectedCurrency === 'USD' ? '44.99' : '59.99'}
                     </div>
                     <p className="text-sm text-[var(--foreground-subtle)]">per year</p>
                     <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--success)]/15 text-[var(--success)] text-sm font-medium border border-[var(--success)]/20">
                       Save ${selectedCurrency === 'USD' ? '2.89' : '11.88'}/year
-                    </div>
                   </div>
+                </div>
                   <ul className="space-y-4 mb-10 flex-1">
-                    {[
-                      'Everything in Free',
-                      'All 14 ambient backgrounds',
+                  {[
+                    'Everything in Free',
+                    'All 14 ambient backgrounds',
                       'Unlimited presets & tasks',
-                      'All 10 premium themes',
-                      'Advanced progress insights',
-                      'Priority support',
-                    ].map((feature, i) => (
+                    'All 10 premium themes',
+                    'Advanced progress insights',
+                    'Priority support',
+                  ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-3 text-[var(--foreground-muted)]">
                         <svg className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                         {feature}
-                      </li>
-                    ))}
-                  </ul>
+                    </li>
+                  ))}
+                </ul>
                   <a
                     href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
                     target="_blank"
@@ -644,7 +644,7 @@ export default function FocusFlowPage() {
                   <h3 className="text-xl font-semibold text-gradient mb-2">Pro Monthly</h3>
                   <div className="text-4xl font-bold text-[var(--foreground)] mb-1">
                     ${selectedCurrency === 'USD' ? '3.99' : '5.99'}
-                  </div>
+                </div>
                   <p className="text-sm text-[var(--foreground-subtle)]">per month</p>
                   {/* Spacer to match Pro Yearly height */}
                   <div className="mt-3 h-7" />
@@ -666,14 +666,14 @@ export default function FocusFlowPage() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  <a
+                    href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   className="btn btn-secondary w-full justify-center mt-auto"
-                >
-                  Start Free Trial
-                </a>
+                  >
+                    Start Free Trial
+                  </a>
               </div>
             </div>
 
@@ -685,10 +685,10 @@ export default function FocusFlowPage() {
                 <h3 className="text-3xl font-bold text-[var(--foreground)] mb-4">Start Your Free Trial</h3>
                 <p className="text-lg text-[var(--foreground-muted)] mb-2">3 days free, then choose your plan</p>
                 <p className="text-[var(--foreground-subtle)] mb-8">Cancel anytime. No commitment.</p>
-                <a
-                  href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  <a
+                    href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   className="btn btn-accent btn-lg"
                 >
                   Download & Try Free
@@ -725,22 +725,22 @@ export default function FocusFlowPage() {
             <p className="text-xl text-[var(--foreground-muted)] mb-10 leading-relaxed">
               Download FocusFlow and start your journey to more focused, productive work.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
-                target="_blank"
-                rel="noopener noreferrer"
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <a
+                    href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
+                    target="_blank"
+                    rel="noopener noreferrer"
                 className="btn btn-accent btn-lg"
-              >
+                  >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                 </svg>
-                Download on App Store
-              </a>
+                    Download on App Store
+                  </a>
               <Link href="/support" className="btn btn-secondary btn-lg">
                 Get Support
-              </Link>
-            </div>
+                  </Link>
+                </div>
           </div>
         </Container>
       </section>

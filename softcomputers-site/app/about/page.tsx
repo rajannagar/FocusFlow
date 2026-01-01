@@ -21,11 +21,11 @@ export default function AboutPage() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-40 pb-24 overflow-hidden">
+      <section className="relative pt-28 md:pt-40 pb-16 md:pb-24 overflow-hidden">
         {/* Animated background */}
         <div className="absolute inset-0">
           <div 
-            className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 transition-all duration-[2000ms]"
+            className="absolute top-1/4 left-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] rounded-full blur-[80px] md:blur-[120px] opacity-20 transition-all duration-[2000ms]"
             style={{
               background: `radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)`,
               transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
@@ -36,14 +36,14 @@ export default function AboutPage() {
 
         <Container>
           <div className="max-w-4xl relative z-10 stagger-children">
-            <div className="inline-flex items-center gap-2 badge badge-primary mb-8">
+            <div className="inline-flex items-center gap-2 badge badge-primary mb-6 md:mb-8">
               <span className="w-2 h-2 rounded-full bg-[var(--accent-primary)] animate-pulse" />
               Our Story
             </div>
-            <h1 className="mb-8">
+            <h1 className="mb-6 md:mb-8">
               We build software that helps you <span className="text-gradient">focus</span>
             </h1>
-            <p className="text-xl md:text-2xl text-[var(--foreground-muted)] leading-relaxed max-w-3xl">
+            <p className="text-lg md:text-2xl text-[var(--foreground-muted)] leading-relaxed max-w-3xl">
               Soft Computers is a small team dedicated to creating premium software that empowers people to do their best work—calmly, consistently, and with intention.
             </p>
           </div>
@@ -56,18 +56,18 @@ export default function AboutPage() {
       <section className="section-padding bg-[var(--background-elevated)]">
         <Container>
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="mb-6">Our mission</h2>
-              <p className="text-xl text-[var(--foreground-muted)]">
+            <div className="text-center mb-10 md:mb-16">
+              <h2 className="mb-4 md:mb-6">Our mission</h2>
+              <p className="text-base md:text-xl text-[var(--foreground-muted)]">
                 Technology should serve humanity, not distract from it.
               </p>
             </div>
 
-            <div className="card-glass p-10 md:p-12">
-              <p className="text-lg text-[var(--foreground-muted)] leading-relaxed mb-6">
+            <div className="card-glass p-6 md:p-10 lg:p-12">
+              <p className="text-base md:text-lg text-[var(--foreground-muted)] leading-relaxed mb-4 md:mb-6">
                 At Soft Computers, we build software that helps people focus. Every product we create is designed with intention, built for clarity, and focused on what truly matters.
               </p>
-              <p className="text-lg text-[var(--foreground-muted)] leading-relaxed">
+              <p className="text-base md:text-lg text-[var(--foreground-muted)] leading-relaxed">
                 We're not trying to be the biggest productivity company. We're trying to be the <span className="text-[var(--foreground)]">best</span>. That means focusing on quality over quantity, depth over breadth, and user experience over growth metrics.
               </p>
             </div>
