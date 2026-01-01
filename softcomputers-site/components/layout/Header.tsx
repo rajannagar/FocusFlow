@@ -17,19 +17,9 @@ export default function Header() {
   }, []);
 
   return (
-    <>
-      {/* iOS Status Bar Cover - Dark overlay that covers the status bar area */}
-      <div 
-        className="fixed top-0 left-0 right-0 z-[102] bg-[#0A0A0B] pointer-events-none md:hidden"
-        aria-hidden="true"
-        style={{
-          height: '60px', // Fixed height to cover status bar area on all iOS devices
-        }}
-      />
-      
-      <header 
-        className="fixed top-0 left-0 right-0 z-[100] bg-[#0A0A0B] border-b border-[rgba(245,240,232,0.08)] pt-[env(safe-area-inset-top,0px)] md:pt-0"
-      >
+    <header 
+      className="fixed top-0 left-0 right-0 z-[9999] bg-[#0A0A0B] border-b border-[rgba(245,240,232,0.08)]"
+    >
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex h-16 md:h-20 items-center justify-between">
           {/* Logo - Text Only */}
@@ -182,6 +172,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-    </>
   );
 }

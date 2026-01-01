@@ -72,20 +72,15 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* iOS Safe Area Support */
-@supports (padding-top: env(safe-area-inset-top)) {
-  html {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+  overflow-x: hidden;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-cabinet), system-ui, sans-serif;
+  overflow-x: hidden;
+  overscroll-behavior-y: none; /* Prevents iOS rubber-band scrolling */
   font-feature-settings: "kern" 1, "liga" 1;
   text-rendering: optimizeLegibility;
   line-height: 1.6;
