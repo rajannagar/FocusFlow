@@ -18,13 +18,13 @@ export default function CurrencySelector({ onCurrencyChange, defaultCurrency = '
   };
 
   return (
-    <div className="flex items-center gap-2 bg-[var(--soft)] rounded-lg p-1 border border-[var(--border)]">
+    <div className="flex items-center gap-1 bg-[var(--background-subtle)] rounded-full p-1 border border-[var(--border)]">
       <button
         onClick={() => handleCurrencyChange('USD')}
-        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+        className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
           selectedCurrency === 'USD'
-            ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
-            : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+            ? 'bg-[var(--accent-primary)] text-white shadow-sm shadow-[var(--accent-glow)]'
+            : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
         }`}
         type="button"
       >
@@ -32,10 +32,10 @@ export default function CurrencySelector({ onCurrencyChange, defaultCurrency = '
       </button>
       <button
         onClick={() => handleCurrencyChange('CAD')}
-        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+        className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
           selectedCurrency === 'CAD'
-            ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
-            : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+            ? 'bg-[var(--accent-primary)] text-white shadow-sm shadow-[var(--accent-glow)]'
+            : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
         }`}
         type="button"
       >
@@ -44,4 +44,3 @@ export default function CurrencySelector({ onCurrencyChange, defaultCurrency = '
     </div>
   );
 }
-

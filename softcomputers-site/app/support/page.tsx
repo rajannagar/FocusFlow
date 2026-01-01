@@ -17,38 +17,51 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      {/* Hero Section */}
-      <section className="relative pt-40 pb-24 px-6 overflow-hidden">
-        {/* Subtle animated background */}
+      
+      {/* ═══════════════════════════════════════════════════════════════
+          HERO SECTION
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="relative pt-40 pb-24 overflow-hidden">
         <div className="absolute inset-0">
           <div 
-            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-20 transition-all duration-1000"
+            className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 transition-all duration-[2000ms]"
             style={{
-              background: `radial-gradient(circle, rgba(0, 113, 227, 0.15) 0%, transparent 70%)`,
+              background: `radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)`,
               transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
             }}
           />
         </div>
+        <div className="absolute inset-0 bg-grid opacity-20" />
 
         <Container>
-          <div className="max-w-5xl relative z-10">
-            <h1 className="text-6xl md:text-7xl font-semibold tracking-tight mb-8">
-              Support & Contact
+          <div className="max-w-4xl relative z-10 stagger-children">
+            <div className="inline-flex items-center gap-2 badge badge-primary mb-8">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              We're Here to Help
+            </div>
+            <h1 className="mb-8">
+              Support & <span className="text-gradient">Contact</span>
             </h1>
-            <p className="text-2xl md:text-3xl text-[var(--muted)] leading-relaxed mb-12 max-w-4xl">
-              We're here to help. Get support, ask questions, or share feedback. We typically respond within 24 hours.
+            <p className="text-xl md:text-2xl text-[var(--foreground-muted)] leading-relaxed max-w-3xl">
+              Get support, ask questions, or share feedback. We typically respond within 24 hours.
             </p>
           </div>
         </Container>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-24 bg-[var(--soft)]">
+      {/* ═══════════════════════════════════════════════════════════════
+          FAQ SECTION
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="section-padding bg-[var(--background-elevated)]">
         <Container>
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-12 text-center">Frequently asked questions</h2>
+            <div className="text-center mb-16">
+              <h2 className="mb-6">Frequently asked questions</h2>
+            </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4">
               {[
                 {
                   q: 'How do I sync my data across devices?',
@@ -83,9 +96,11 @@ export default function SupportPage() {
                   a: 'We love hearing from you! Email us at Info@softcomputers.ca with your ideas. We review all feedback and consider it for future updates.',
                 },
               ].map((faq, i) => (
-                <div key={i} className="card p-8">
-                  <h3 className="text-xl font-semibold mb-4">{faq.q}</h3>
-                  <p className="text-[var(--muted)] leading-relaxed">{faq.a}</p>
+                <div key={i} className="card group p-6 hover:border-[var(--accent-primary)]/30">
+                  <h3 className="text-lg font-semibold text-[var(--foreground)] mb-3 group-hover:text-[var(--accent-primary-light)] transition-colors">
+                    {faq.q}
+                  </h3>
+                  <p className="text-[var(--foreground-muted)] leading-relaxed">{faq.a}</p>
                 </div>
               ))}
             </div>
@@ -93,104 +108,81 @@ export default function SupportPage() {
         </Container>
       </section>
 
-      {/* Additional Resources */}
-      <section className="py-24">
+      {/* ═══════════════════════════════════════════════════════════════
+          EMAIL SUPPORT - HIGHLIGHTED
+          ═══════════════════════════════════════════════════════════════ */}
+      <section id="email-support" className="section-padding relative overflow-hidden">
+        <div className="absolute inset-0 bg-mesh" />
+        <div className="absolute inset-0">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-to-r from-[var(--accent-primary)]/15 to-[var(--accent-secondary)]/10 blur-3xl" />
+        </div>
+
         <Container>
-          <div className="max-w-3xl mx-auto">
-            <div className="card p-12">
-              <h2 className="text-2xl font-semibold tracking-tight mb-6">Additional Resources</h2>
-              <p className="text-lg text-[var(--muted)] leading-relaxed mb-8">
-                Find more information about our policies and terms.
+          <div className="max-w-3xl mx-auto relative z-10">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 badge badge-primary mb-6">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Get in Touch
+              </div>
+              <h2 className="mb-6">Email Support</h2>
+              <p className="text-xl text-[var(--foreground-muted)]">
+                Have a question or need help? We're here for you.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/privacy"
-                  className="btn btn-secondary inline-block text-center"
+            </div>
+
+            <div className="card-glass p-12 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)]/5 to-[var(--accent-secondary)]/5" />
+              <div className="relative z-10">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-dark)] flex items-center justify-center text-white mx-auto mb-6">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                
+                <a
+                  href="mailto:Info@softcomputers.ca"
+                  className="text-3xl md:text-4xl font-bold text-gradient hover:opacity-80 transition-opacity inline-block mb-6"
                 >
-                  Privacy Policy
-                </Link>
-                <Link
-                  href="/terms"
-                  className="btn btn-secondary inline-block text-center"
-                >
-                  Terms of Service
-                </Link>
-                <Link
-                  href="/focusflow"
-                  className="btn btn-secondary inline-block text-center"
-                >
-                  Learn about FocusFlow
-                </Link>
+                  Info@softcomputers.ca
+                </a>
+                
+                <p className="text-[var(--foreground-muted)] leading-relaxed mb-8 max-w-xl mx-auto">
+                  For support, feedback, account deletion requests, or general questions. We typically respond within 24 hours.
+                </p>
+
+                <div className="card p-4 max-w-lg mx-auto">
+                  <p className="text-sm text-[var(--foreground-subtle)]">
+                    <strong className="text-[var(--foreground-muted)]">Pro tip:</strong> Include your device model, iOS version, and a brief description of the issue for faster assistance.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </Container>
       </section>
 
-      {/* Email Support - Highlighted Section */}
-      <section id="email-support" className="py-32 relative overflow-hidden bg-gradient-to-b from-[var(--soft)] to-[var(--background)]">
-        {/* Subtle premium background */}
-        <div className="absolute inset-0">
-          <div 
-            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-15 transition-all duration-1000"
-            style={{
-              background: `radial-gradient(circle, rgba(94, 92, 230, 0.2) 0%, rgba(0, 113, 227, 0.1) 50%, transparent 70%)`,
-              transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
-            }}
-          />
-          <div 
-            className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-10 transition-all duration-1000"
-            style={{
-              background: `radial-gradient(circle, rgba(191, 90, 242, 0.15) 0%, rgba(94, 92, 230, 0.08) 50%, transparent 70%)`,
-              transform: `translate(${-mousePosition.x * 0.015}px, ${-mousePosition.y * 0.015}px)`,
-            }}
-          />
-        </div>
-
+      {/* ═══════════════════════════════════════════════════════════════
+          ADDITIONAL RESOURCES
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="section-padding bg-[var(--background-elevated)]">
         <Container>
-          <div className="max-w-4xl mx-auto relative z-10">
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 mb-6">
-                <svg className="w-5 h-5 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <span className="text-sm font-semibold text-[var(--accent-primary)]">Get in Touch</span>
-              </div>
-              <h2 className="text-5xl md:text-6xl font-semibold tracking-tight mb-6">
-                Email Support
-              </h2>
-              <p className="text-xl text-[var(--muted)] leading-relaxed max-w-2xl mx-auto">
-                Have a question or need help? We're here for you.
-              </p>
-            </div>
-
-            <div className="card p-16 text-center bg-gradient-to-br from-[var(--accent-primary)]/5 to-[var(--accent-secondary)]/5 border-2 border-[var(--accent-primary)]/30 relative shadow-lg">
-              <div className="mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-[var(--accent-primary)] flex items-center justify-center text-white mx-auto mb-6 shadow-lg">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="text-xs font-medium text-[var(--muted)] uppercase tracking-wide mb-4">
-                  Email Address
-                </div>
-                <a
-                  href="mailto:Info@softcomputers.ca"
-                  className="text-4xl md:text-5xl font-semibold text-[var(--foreground)] hover:text-[var(--accent-primary)] transition-colors inline-block mb-6"
-                >
-                  Info@softcomputers.ca
-                </a>
-              </div>
-              
-              <p className="text-lg text-[var(--muted)] leading-relaxed mb-8 max-w-2xl mx-auto">
-                For support, feedback, account deletion requests, or general questions, reach out anytime. We typically respond within 24 hours.
-              </p>
-
-              <div className="card p-6 bg-[var(--background)] max-w-xl mx-auto">
-                <p className="text-sm text-[var(--muted)] leading-relaxed">
-                  <strong className="text-[var(--foreground)]">For faster assistance:</strong> Include your device model, iOS version, and a short description of what happened.
-                </p>
-              </div>
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="mb-6">Additional Resources</h2>
+            <p className="text-xl text-[var(--foreground-muted)] mb-10">
+              Find more information about our policies and products.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/privacy" className="btn btn-secondary">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="btn btn-secondary">
+                Terms of Service
+              </Link>
+              <Link href="/focusflow" className="btn btn-accent">
+                Learn about FocusFlow
+              </Link>
             </div>
           </div>
         </Container>

@@ -20,72 +20,89 @@ export default function Header() {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled 
-          ? 'bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]' 
+          ? 'bg-[var(--background)]/90 backdrop-blur-xl border-b border-[var(--border)]' 
           : 'bg-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
+          {/* Logo - Text Only */}
           <Link 
             href="/" 
-            className="text-xl font-semibold tracking-tight hover:opacity-70 transition-opacity"
+            className="group relative"
           >
-            Soft Computers
+            <span className="text-xl font-bold tracking-tight text-[var(--foreground)] transition-all duration-300 group-hover:text-gradient">
+              Soft Computers
+            </span>
+            {/* Underline accent on hover */}
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] group-hover:w-full transition-all duration-300" />
           </Link>
 
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             <Link
               href="/"
-              className="px-4 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--soft)] transition-all duration-200"
+              className="px-4 py-2.5 rounded-full text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)] transition-all duration-300"
             >
               Home
             </Link>
-              <Link
-                href="/focusflow"
-                className="px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[var(--soft)] transition-all duration-200 flex items-center gap-2 relative group"
-              >
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[var(--accent-primary)]/20 via-[var(--accent-secondary)]/20 to-[var(--accent-primary)]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 blur-sm" />
-                <Image
-                  src="/focusflow_app_icon.jpg"
-                  alt="FocusFlow"
-                  width={18}
-                  height={18}
-                  className="rounded-md relative z-10 ring-1 ring-[var(--accent-primary)]/30 group-hover:ring-[var(--accent-primary)]/60 transition-all duration-200"
-                />
-                <span className="relative z-10 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] bg-clip-text text-transparent group-hover:drop-shadow-[0_0_8px_rgba(0,113,227,0.5)] transition-all duration-200">
-                  FocusFlow
-                </span>
-              </Link>
+            <Link
+              href="/focusflow"
+              className="group px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 relative"
+            >
+              {/* Glow effect on hover */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+              <div className="absolute inset-0 rounded-full border border-[var(--accent-primary)]/0 group-hover:border-[var(--accent-primary)]/30 transition-all duration-300" />
+              
+              <Image
+                src="/focusflow_app_icon.jpg"
+                alt="FocusFlow"
+                width={24}
+                height={24}
+                className="rounded-lg relative z-10 shadow-md transition-all duration-300 group-hover:scale-110"
+              />
+              <span className="relative z-10 text-gradient group-hover:drop-shadow-[0_0_12px_rgba(139,92,246,0.5)] transition-all duration-300">
+                FocusFlow
+              </span>
+            </Link>
             <Link
               href="/about"
-              className="px-4 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--soft)] transition-all duration-200"
+              className="px-4 py-2.5 rounded-full text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)] transition-all duration-300"
             >
               About
             </Link>
             <Link
               href="/support"
-              className="px-4 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--soft)] transition-all duration-200"
+              className="px-4 py-2.5 rounded-full text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)] transition-all duration-300"
             >
               Support
             </Link>
           </nav>
 
+          {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/focusflow"
-              className="px-5 py-2.5 rounded-lg text-sm font-medium text-[var(--foreground)] bg-[var(--soft)] hover:bg-[var(--soft-light)] transition-all duration-200"
+              className="group relative px-5 py-2.5 rounded-full text-sm font-medium overflow-hidden"
             >
-              Get Started
+              {/* Button gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)] transition-all duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-full blur-xl bg-[var(--accent-primary)] opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
+              
+              <span className="relative z-10 text-white">Get Started</span>
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-[var(--soft)] transition-colors text-[var(--foreground)]"
+            className="md:hidden p-2.5 rounded-full hover:bg-[var(--background-subtle)] transition-colors text-[var(--foreground)]"
             aria-label="Menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -96,57 +113,58 @@ export default function Header() {
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden pb-6 pt-4 border-t border-[var(--border)]">
+        <div className={`md:hidden overflow-hidden transition-all duration-500 ease-out ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="pb-6 pt-4 border-t border-[var(--border)]">
             <div className="flex flex-col gap-1">
               <Link 
                 href="/" 
-                className="px-4 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--soft)] transition-all"
+                className="px-4 py-3 rounded-xl text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)] transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Home
               </Link>
               <Link 
                 href="/focusflow" 
-                className="px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[var(--soft)] transition-all flex items-center gap-2 relative group"
+                className="px-4 py-3 rounded-xl text-sm font-medium hover:bg-[var(--background-subtle)] transition-all flex items-center gap-3 group"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[var(--accent-primary)]/20 via-[var(--accent-secondary)]/20 to-[var(--accent-primary)]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 blur-sm" />
                 <Image
                   src="/focusflow_app_icon.jpg"
                   alt="FocusFlow"
-                  width={18}
-                  height={18}
-                  className="rounded-md relative z-10 ring-1 ring-[var(--accent-primary)]/30 group-hover:ring-[var(--accent-primary)]/60 transition-all duration-200"
+                  width={28}
+                  height={28}
+                  className="rounded-lg shadow-md"
                 />
-                <span className="relative z-10 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] bg-clip-text text-transparent group-hover:drop-shadow-[0_0_8px_rgba(0,113,227,0.5)] transition-all duration-200">
-                  FocusFlow
-                </span>
+                <span className="text-gradient">FocusFlow</span>
               </Link>
               <Link 
                 href="/about" 
-                className="px-4 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--soft)] transition-all"
+                className="px-4 py-3 rounded-xl text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)] transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 About
               </Link>
               <Link 
                 href="/support" 
-                className="px-4 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--soft)] transition-all"
+                className="px-4 py-3 rounded-xl text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)] transition-all"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Support
               </Link>
-              <Link 
-                href="/focusflow" 
-                className="px-4 py-2.5 rounded-lg text-sm font-medium text-[var(--foreground)] bg-[var(--soft)] hover:bg-[var(--soft-light)] transition-all mt-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Get Started
-              </Link>
+              
+              {/* Mobile CTA */}
+              <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                <Link 
+                  href="/focusflow" 
+                  className="btn btn-accent w-full justify-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </header>
   );
