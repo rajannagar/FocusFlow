@@ -3,15 +3,17 @@ frontend:
   phases:
     preBuild:
       commands:
+        - cd softcomputers-site
         - npm ci
     build:
       commands:
+        - cd softcomputers-site
         - npm run build
   artifacts:
-    baseDirectory: out
+    baseDirectory: softcomputers-site/out
     files:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
+      - softcomputers-site/node_modules/**/*
 
