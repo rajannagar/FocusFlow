@@ -30,6 +30,9 @@ export default function Header() {
           <Link 
             href="/" 
             className="group relative"
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           >
             <span className="text-xl font-bold tracking-tight text-[var(--foreground)] transition-all duration-300 group-hover:text-gradient">
               Soft Computers
@@ -43,6 +46,9 @@ export default function Header() {
             <Link
               href="/"
               className="px-4 py-2.5 rounded-full text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)] transition-all duration-300"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               Home
             </Link>
@@ -119,7 +125,10 @@ export default function Header() {
               <Link 
                 href="/" 
                 className="px-4 py-3 rounded-xl text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)] transition-all"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               >
                 Home
               </Link>
