@@ -9,6 +9,7 @@ applications:
         build:
           commands:
             - npm run build
+            - echo '{"version":3,"routes":[]}' > out/required-server-files.json
       artifacts:
         baseDirectory: out
         files:
@@ -16,9 +17,4 @@ applications:
       cache:
         paths:
           - node_modules/**/*
-    customHeaders:
-      - pattern: '**/*'
-        headers:
-          - key: 'Cache-Control'
-            value: 'public, max-age=0, must-revalidate'
 
