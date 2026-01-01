@@ -9,13 +9,13 @@ applications:
         build:
           commands:
             - npm run build
-            - mkdir -p out/.next
             - echo '{"version":3,"routes":[]}' > out/required-server-files.json
+            - echo '[]' > out/server-trace.json
+            - echo '[]' > out/server-trace-manifest.json
+            - mkdir -p out/.next
             - echo '{"version":3,"allRoutes":[],"dynamicRoutes":[],"staticRoutes":[],"dataRoutes":[],"i18n":null}' > out/.next/routes-manifest.json
-            - echo '[]' > out/.next/server-trace.json
-            - echo '[]' > out/.next/server-trace-manifest.json
             - echo '{"pages":{},"version":3}' > out/.next/build-manifest.json
-            - echo '{"version":3}' > out/.next/prerender-manifest.json
+            - echo '{"version":3,"routes":{}}' > out/.next/prerender-manifest.json
       artifacts:
         baseDirectory: out
         files:
