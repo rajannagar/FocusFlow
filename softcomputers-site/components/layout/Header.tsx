@@ -18,11 +18,10 @@ export default function Header() {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled 
-          ? 'bg-[var(--background)] md:bg-[var(--background)]/95 backdrop-blur-xl border-b border-[var(--border)]' 
-          : 'bg-[var(--background)] md:bg-transparent backdrop-blur-none md:backdrop-blur-none border-b border-[var(--border)] md:border-transparent'
-      }`}
+      className="fixed top-0 left-0 right-0 z-[100] bg-[#0A0A0B] border-b border-[rgba(245,240,232,0.08)]"
+      style={{
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex h-16 md:h-20 items-center justify-between">

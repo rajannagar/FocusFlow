@@ -26,6 +26,11 @@ export const metadata: Metadata = {
   description: "We build premium software that helps people do meaningful work—calmly, consistently, and with intention. Discover FocusFlow, our flagship focus timer app.",
   keywords: ["focus timer", "productivity", "task management", "iOS app", "focus app", "pomodoro"],
   authors: [{ name: "Soft Computers" }],
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+  },
   openGraph: {
     title: "Soft Computers | Premium Software for Focused Work",
     description: "We build premium software that helps people do meaningful work—calmly, consistently, and with intention.",

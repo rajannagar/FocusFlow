@@ -18,7 +18,7 @@ export default function FocusFlowPage() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-20 md:pt-32 pb-12 md:pb-24 overflow-hidden">
+      <section className="relative pt-24 md:pt-32 pb-12 md:pb-24 overflow-hidden">
         {/* Animated background */}
         <div className="absolute inset-0">
           <div 

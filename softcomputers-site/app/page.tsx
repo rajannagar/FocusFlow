@@ -67,7 +67,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION - Swipeable Carousel
           ═══════════════════════════════════════════════════════════════ */}
-      <section ref={heroRef} className="relative min-h-screen flex items-start md:items-center justify-center overflow-hidden pt-20 md:pt-24">
+      <section ref={heroRef} className="relative min-h-screen flex items-start md:items-center justify-center overflow-hidden pt-24 md:pt-28">
         {/* Animated Aurora Background */}
         <div className="absolute inset-0 bg-aurora">
           <div 
