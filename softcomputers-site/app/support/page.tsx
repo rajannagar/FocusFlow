@@ -1,8 +1,9 @@
 'use client';
 
-import Container from '@/components/ui/Container';
 import Link from 'next/link';
-import { useThrottledMouse } from '../hooks/useThrottledMouse';
+import { Container, AnimatedBackground } from '@/components';
+import { useThrottledMouse } from '@/hooks';
+import { CONTACT_EMAIL } from '@/lib/constants';
 
 export default function SupportPage() {
   const mousePosition = useThrottledMouse();

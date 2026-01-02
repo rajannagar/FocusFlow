@@ -1,7 +1,8 @@
 'use client';
 
-import Container from '@/components/ui/Container';
 import Link from 'next/link';
+import { Container } from '@/components';
+import { CONTACT_EMAIL } from '@/lib/constants';
 
 export default function TermsPage() {
   const sections = [

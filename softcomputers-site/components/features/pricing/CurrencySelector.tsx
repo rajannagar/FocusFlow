@@ -9,7 +9,13 @@ interface CurrencySelectorProps {
   defaultCurrency?: Currency;
 }
 
-export default function CurrencySelector({ onCurrencyChange, defaultCurrency = 'CAD' }: CurrencySelectorProps) {
+/**
+ * Currency toggle selector for pricing display
+ */
+export default function CurrencySelector({ 
+  onCurrencyChange, 
+  defaultCurrency = 'CAD' 
+}: CurrencySelectorProps) {
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>(defaultCurrency);
 
   const handleCurrencyChange = (currency: Currency) => {
@@ -44,3 +50,4 @@ export default function CurrencySelector({ onCurrencyChange, defaultCurrency = '
     </div>
   );
 }
+

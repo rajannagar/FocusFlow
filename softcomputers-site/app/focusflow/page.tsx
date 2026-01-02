@@ -2,11 +2,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import Container from '@/components/ui/Container';
-import PhoneSimulator from '@/components/phone/iPhoneSimulator';
-import CurrencySelector from '@/components/ui/CurrencySelector';
+import { Container, PhoneSimulator, CurrencySelector } from '@/components';
 import { useState } from 'react';
-import { useThrottledMouse } from '../hooks/useThrottledMouse';
+import { useThrottledMouse } from '@/hooks';
+import { APP_STORE_URL, PRICING } from '@/lib/constants';
 
 // Feature data for the tabbed section
 const features = [

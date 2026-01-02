@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 /**
  * Throttled mouse position hook for performance
  * Updates mouse position at most once every 50ms (20fps)
+ * 
+ * @returns {{ x: number, y: number }} Current mouse position
  */
 export function useThrottledMouse() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });

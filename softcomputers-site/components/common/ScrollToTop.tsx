@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 
+/**
+ * Floating scroll-to-top button that appears when user scrolls down
+ */
 export default function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -54,3 +57,4 @@ export default function ScrollToTop() {
     </button>
   );
 }
+

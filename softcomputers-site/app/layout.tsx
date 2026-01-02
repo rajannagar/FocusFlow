@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Sora, Inter } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import ScrollToTop from "@/components/ui/ScrollToTop";
+import { Header, Footer, ScrollToTop } from "@/components";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, CONTACT_EMAIL } from "@/lib/constants";
 
 // Premium Display Font - Geometric, Modern
 const sora = Sora({
@@ -21,8 +20,8 @@ const inter = Inter({
   display: "swap",
 });
 
-// Base URL for the site
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.softcomputers.ca";
+// Use constants for site configuration
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

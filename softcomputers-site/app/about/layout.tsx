@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
+import { SITE_URL, SITE_NAME } from '@/lib/constants';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.softcomputers.ca';
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   title: 'About Us - Our Mission & Values',

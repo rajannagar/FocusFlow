@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import Container from '@/components/ui/Container';
-import { useThrottledMouse } from './hooks/useThrottledMouse';
+import { Container, AnimatedBackground } from '@/components';
+import { useThrottledMouse } from '@/hooks';
 
 export default function Home() {
   const mousePosition = useThrottledMouse();

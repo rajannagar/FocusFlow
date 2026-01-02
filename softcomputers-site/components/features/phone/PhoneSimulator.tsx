@@ -3,20 +3,42 @@
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
 
-interface iPhoneSimulatorProps {
-  screenshots?: string[];
-  screenData?: Array<{ icon: string; title: string; desc: string; gradient: string }>;
+interface ScreenData {
+  icon: string;
+  title: string;
+  desc: string;
+  gradient: string;
 }
 
-export default function iPhoneSimulator({ 
+interface PhoneSimulatorProps {
+  /** Array of screenshot image paths */
+  screenshots?: string[];
+  /** Data for fallback screen display when images fail to load */
+  screenData?: ScreenData[];
+}
+
+const DEFAULT_SCREENS = [
+  '/images/screen-focus.png',
+  '/images/screen-tasks.png',
+  '/images/screen-progress.png',
+  '/images/screen-profile.png',
+];
+
+const DEFAULT_SCREEN_DATA: ScreenData[] = [
+  { icon: '⏱️', title: 'Focus Timer', desc: 'Timed sessions', gradient: 'from-violet-500 to-purple-600' },
+  { icon: '✅', title: 'Tasks', desc: 'Smart management', gradient: 'from-emerald-500 to-teal-600' },
+  { icon: '📈', title: 'Progress', desc: 'Track growth', gradient: 'from-amber-500 to-orange-600' },
+  { icon: '👤', title: 'Profile', desc: 'Customize & sync', gradient: 'from-rose-500 to-pink-600' },
+];
+
+/**
+ * Interactive iPhone simulator component with swipe/drag support
+ * Displays app screenshots in a realistic device frame
+ */
+export default function PhoneSimulator({ 
   screenshots = [], 
-  screenData = [
-    { icon: '⏱️', title: 'Focus Timer', desc: 'Timed sessions', gradient: 'from-violet-500 to-purple-600' },
-    { icon: '✅', title: 'Tasks', desc: 'Smart management', gradient: 'from-emerald-500 to-teal-600' },
-    { icon: '📈', title: 'Progress', desc: 'Track growth', gradient: 'from-amber-500 to-orange-600' },
-    { icon: '👤', title: 'Profile', desc: 'Customize & sync', gradient: 'from-rose-500 to-pink-600' },
-  ]
-}: iPhoneSimulatorProps) {
+  screenData = []
+}: PhoneSimulatorProps) {
   const [currentScreen, setCurrentScreen] = useState(0);
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
   
@@ -31,17 +53,8 @@ export default function iPhoneSimulator({
 
   const minSwipeDistance = 50;
 
-  const defaultScreens = [
-    '/images/screen-focus.png',
-    '/images/screen-tasks.png',
-    '/images/screen-progress.png',
-    '/images/screen-profile.png',
-  ];
-
-  const screens = screenshots.length > 0 ? screenshots : defaultScreens;
-  const displayData = screenData.length > 0 ? screenData : [
-    { icon: '⏱️', title: 'FocusFlow', desc: 'Be Present', gradient: 'from-violet-500 to-purple-600' },
-  ];
+  const screens = screenshots.length > 0 ? screenshots : DEFAULT_SCREENS;
+  const displayData = screenData.length > 0 ? screenData : DEFAULT_SCREEN_DATA;
 
   const handleImageError = (index: number) => {
     setImageError(prev => ({ ...prev, [index]: true }));
@@ -124,7 +137,6 @@ export default function iPhoneSimulator({
       onMouseUp();
     }
   };
-
 
   return (
     <div className="relative md:animate-float">
@@ -216,3 +228,4 @@ export default function iPhoneSimulator({
     </div>
   );
 }
+

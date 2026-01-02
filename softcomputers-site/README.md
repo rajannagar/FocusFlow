@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Soft Computers Website
 
-## Getting Started
+The official website for Soft Computers, featuring our flagship product **FocusFlow**.
 
-First, run the development server:
+Built with [Next.js 14](https://nextjs.org) (App Router), TypeScript, and Tailwind CSS.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🏗️ Project Structure
+
+```
+softcomputers-site/
+├── app/                          # Next.js App Router (Pages)
+│   ├── about/                    # About page
+│   ├── focusflow/                # FocusFlow product page
+│   ├── privacy/                  # Privacy policy
+│   ├── support/                  # Support & contact
+│   ├── terms/                    # Terms of service
+│   ├── globals.css               # Global styles & CSS variables
+│   ├── layout.tsx                # Root layout (header, footer)
+│   └── page.tsx                  # Homepage
+│
+├── components/                   # React components
+│   ├── common/                   # Shared/reusable components
+│   │   ├── AnimatedBackground.tsx
+│   │   ├── Container.tsx
+│   │   └── ScrollToTop.tsx
+│   ├── features/                 # Feature-specific components
+│   │   ├── phone/                # iPhone simulator
+│   │   │   └── PhoneSimulator.tsx
+│   │   └── pricing/              # Pricing components
+│   │       └── CurrencySelector.tsx
+│   └── layout/                   # Site-wide layout elements
+│       ├── Footer.tsx
+│       └── Header.tsx
+│
+├── hooks/                        # Custom React hooks
+│   └── useThrottledMouse.ts      # Mouse position hook for parallax effects
+│
+├── lib/                          # Utilities & constants
+│   └── constants.ts              # Site configuration, URLs, pricing
+│
+└── public/                       # Static assets
+    ├── images/                   # App screenshots
+    ├── focusflow_app_icon.*      # App icons
+    └── ...                       # Favicons, manifest, etc.
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Install dependencies
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Start development server
+npm run dev
 
-## Learn More
+# Build for production
+npm run build
 
-To learn more about Next.js, take a look at the following resources:
+# Export static site
+npm run build  # Outputs to /out directory
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000) to view the site.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📦 Import Patterns
 
-## Deploy on Vercel
+Components and hooks use path aliases for clean imports:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```typescript
+// Import components
+import { Container, Header, PhoneSimulator } from '@/components';
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+// Import hooks
+import { useThrottledMouse } from '@/hooks';
+
+// Import constants
+import { SITE_URL, APP_STORE_URL, PRICING } from '@/lib/constants';
+```
+
+## 🎨 Styling
+
+- **Tailwind CSS** for utility-first styling
+- **CSS Variables** defined in `globals.css` for theming
+- Dark theme by default with premium purple/gold accents
+
+## 📱 Pages
+
+| Path | Description |
+|------|-------------|
+| `/` | Homepage - Company intro & FocusFlow preview |
+| `/focusflow` | FocusFlow product page with features & pricing |
+| `/about` | About Soft Computers - mission & values |
+| `/support` | Support page with FAQs & contact |
+| `/privacy` | Privacy policy |
+| `/terms` | Terms of service |
+
+## 🔧 Configuration
+
+Site-wide configuration is centralized in `lib/constants.ts`:
+
+- Site URL & metadata
+- Contact information
+- App Store links
+- Pricing tiers
+
+## 📤 Deployment
+
+The site is configured for static export via AWS Amplify (`amplify.yml`).
+
+Build output goes to the `/out` directory.
