@@ -195,6 +195,44 @@ export default function AboutPage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
+          WHERE WE'RE BASED
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="py-16 md:py-20">
+        <Container>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 p-8 md:p-12 rounded-2xl bg-[var(--background-subtle)] border border-[var(--border)]">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--foreground)]">Based in Toronto</h3>
+                  <p className="text-[var(--foreground-muted)]">Ontario, Canada</p>
+                </div>
+              </div>
+              <div className="hidden md:block w-px h-12 bg-[var(--border)]" />
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--foreground)]">Get in Touch</h3>
+                  <a href="mailto:Info@softcomputers.ca" className="text-[var(--accent-primary)] hover:text-[var(--accent-primary-light)] transition-colors">
+                    Info@softcomputers.ca
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
           WHAT'S NEXT
           ═══════════════════════════════════════════════════════════════ */}
       <section className="section-padding relative overflow-hidden">
