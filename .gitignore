@@ -1,0 +1,106 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# FocusFlow Project .gitignore
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────
+# macOS
+# ─────────────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Xcode
+# ─────────────────────────────────────────────────────────────────────────────
+# Build generated
+build/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Xcode user data
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.xcworkspace
+!*.xcworkspace/contents.xcworkspacedata
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# iOS App Data (exported from simulator)
+# ─────────────────────────────────────────────────────────────────────────────
+*.xcappdata/
+ca.softcomputers.FocusFlow*/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CocoaPods (if used in future)
+# ─────────────────────────────────────────────────────────────────────────────
+Pods/
+*.xcworkspace
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fastlane (if used in future)
+# ─────────────────────────────────────────────────────────────────────────────
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Node.js / Website (softcomputers-site)
+# ─────────────────────────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Supabase
+# ─────────────────────────────────────────────────────────────────────────────
+supabase/.branches/
+supabase/.temp/
+.supabase/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# IDE & Editors
+# ─────────────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Secrets & Credentials (never commit these!)
+# ─────────────────────────────────────────────────────────────────────────────
+*.pem
+*.p12
+*.key
+*.mobileprovision
+AuthKey_*.p8
+
