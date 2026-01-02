@@ -14,20 +14,29 @@ export default function AboutPage() {
           HERO SECTION
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative pt-8 md:pt-20 pb-12 md:pb-24 overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0">
+        {/* Animated background - matching homepage */}
+        <div className="absolute inset-0 bg-aurora">
           <div 
-            className="absolute top-1/4 left-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] rounded-full blur-[60px] md:blur-[80px] opacity-20 transition-transform duration-1000 ease-out"
+            className="absolute top-1/4 left-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] rounded-full blur-[60px] md:blur-[80px] opacity-25 md:opacity-30 transition-transform duration-1000 ease-out"
             style={{
               background: `radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)`,
               transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
+              willChange: 'transform',
+            }}
+          />
+          <div 
+            className="absolute bottom-1/4 right-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] rounded-full blur-[40px] md:blur-[60px] opacity-15 md:opacity-20 transition-transform duration-1000 ease-out"
+            style={{
+              background: `radial-gradient(circle, rgba(212, 168, 83, 0.3) 0%, transparent 70%)`,
+              transform: `translate(${-mousePosition.x * 0.015}px, ${-mousePosition.y * 0.015}px)`,
+              willChange: 'transform',
             }}
           />
         </div>
-        <div className="absolute inset-0 bg-grid opacity-20" />
+        <div className="absolute inset-0 bg-grid opacity-30" />
 
         <Container>
-          <div className="max-w-4xl relative z-10 stagger-children">
+          <div className="max-w-4xl relative z-10 stagger-children px-4">
             <div className="inline-flex items-center gap-2 badge badge-primary mb-6 md:mb-8">
               <span className="w-2 h-2 rounded-full bg-[var(--accent-primary)] animate-pulse" />
               Our Story
@@ -236,9 +245,10 @@ export default function AboutPage() {
           WHAT'S NEXT
           ═══════════════════════════════════════════════════════════════ */}
       <section className="section-padding relative overflow-hidden">
-        {/* Background effect */}
+        {/* Background effect - matching homepage */}
+        <div className="absolute inset-0 bg-mesh opacity-50" />
         <div className="absolute inset-0">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-to-r from-[var(--accent-primary)]/10 to-[var(--accent-secondary)]/10 blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] md:w-[800px] h-[500px] md:h-[800px] rounded-full bg-gradient-to-r from-[var(--accent-primary)]/10 to-[var(--accent-secondary)]/10 blur-3xl" />
         </div>
         
         <Container>
