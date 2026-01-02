@@ -45,9 +45,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" style={{ backgroundColor: '#0A0A0B' }}>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="theme-color" content="#0A0A0B" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
       <body
-        className={`${sora.variable} ${inter.variable} antialiased min-h-screen flex flex-col`}
+        className={`${sora.variable} ${inter.variable} antialiased min-h-screen flex flex-col bg-[#0A0A0B]`}
       >
         <Header />
         <main className="flex-1 pt-16 md:pt-20">{children}</main>

@@ -73,18 +73,28 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  background: #0A0A0B;
+  /* Prevent overscroll on iOS */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+html, body {
+  /* Prevent content from appearing above viewport */
+  overscroll-behavior-y: none;
+  -webkit-overscroll-behavior-y: none;
 }
 
 body {
-  background: var(--background);
+  background: #0A0A0B;
   color: var(--foreground);
   font-family: var(--font-cabinet), system-ui, sans-serif;
   overflow-x: hidden;
-  overscroll-behavior-y: none; /* Prevents iOS rubber-band scrolling */
   font-feature-settings: "kern" 1, "liga" 1;
   text-rendering: optimizeLegibility;
   line-height: 1.6;
-  overflow-x: hidden;
+  /* Ensure body starts below any browser chrome */
+  position: relative;
 }
 
 /* Noise/Grain Texture Overlay */
