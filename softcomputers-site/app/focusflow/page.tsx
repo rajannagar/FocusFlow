@@ -272,28 +272,28 @@ export default function FocusFlowPage() {
         <Container>
           <div className="max-w-7xl mx-auto relative z-10">
             {/* Section Header */}
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 badge badge-primary mb-6">
+            <div className="text-center mb-10 md:mb-16 px-4">
+              <div className="inline-flex items-center gap-2 badge badge-primary mb-4 md:mb-6">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 Core Features
               </div>
-              <h2 className="mb-4">Three tools. <span className="text-gradient">One app.</span></h2>
-              <p className="text-lg text-[var(--foreground-muted)] max-w-2xl mx-auto">
-                Everything you need for deep work and lasting habits.
+              <h2 className="mb-3 md:mb-4">Everything in <span className="text-gradient">one app.</span></h2>
+              <p className="text-base md:text-lg text-[var(--foreground-muted)] max-w-2xl mx-auto">
+                Focus, tasks, progress, and personalization.
               </p>
             </div>
 
             {/* Feature Navigation - Premium Pills */}
-            <div className="flex justify-center mb-16">
-              <div className="grid grid-cols-4 gap-2 md:gap-4 w-full max-w-3xl">
+            <div className="flex justify-center mb-8 md:mb-16 px-2">
+              <div className="grid grid-cols-4 gap-1.5 sm:gap-2 md:gap-4 w-full max-w-3xl">
                 {features.map((feature, index) => (
                   <button
                     key={feature.id}
                     onClick={() => setActiveFeature(index)}
                     className={`
-                      relative group p-4 md:p-6 rounded-2xl border transition-all duration-500 text-center
+                      relative group p-3 sm:p-4 md:p-6 rounded-xl md:rounded-2xl border transition-all duration-500 text-center
                       ${activeFeature === index 
                         ? 'bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-primary)]/5 border-[var(--accent-primary)]/50 shadow-lg shadow-[var(--accent-primary)]/20' 
                         : 'bg-[var(--background-elevated)] border-[var(--border)] hover:border-[var(--accent-primary)]/30 hover:bg-[var(--background-subtle)]'
@@ -303,15 +303,15 @@ export default function FocusFlowPage() {
                     {/* Active indicator line */}
                     <div 
                       className={`
-                        absolute bottom-0 left-1/2 -translate-x-1/2 h-1 rounded-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] transition-all duration-500
-                        ${activeFeature === index ? 'w-12 opacity-100' : 'w-0 opacity-0'}
+                        absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 md:h-1 rounded-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] transition-all duration-500
+                        ${activeFeature === index ? 'w-8 md:w-12 opacity-100' : 'w-0 opacity-0'}
                       `}
                     />
                     
-                    <div className={`text-3xl md:text-4xl mb-2 md:mb-3 transition-transform duration-300 ${activeFeature === index ? 'scale-110' : 'group-hover:scale-105'}`}>
+                    <div className={`text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-3 transition-transform duration-300 ${activeFeature === index ? 'scale-110' : 'group-hover:scale-105'}`}>
                       {feature.icon}
                     </div>
-                    <div className={`text-sm md:text-base font-semibold transition-colors duration-300 ${activeFeature === index ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>
+                    <div className={`text-[10px] sm:text-xs md:text-base font-semibold transition-colors duration-300 leading-tight ${activeFeature === index ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>
                       {feature.label}
                     </div>
                   </button>
@@ -320,7 +320,7 @@ export default function FocusFlowPage() {
             </div>
 
             {/* Feature Content - Premium Card */}
-            <div className="relative min-h-[600px] md:min-h-[500px]">
+            <div className="relative">
               {features.map((feature, index) => (
                 <div
                   key={feature.id}
@@ -333,17 +333,17 @@ export default function FocusFlowPage() {
                   `}
                 >
                   {/* Premium glass card */}
-                  <div className="relative rounded-3xl overflow-hidden">
+                  <div className="relative rounded-2xl md:rounded-3xl overflow-hidden mx-2 md:mx-0">
                     {/* Card background with gradient border effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)]/10 via-transparent to-[var(--accent-secondary)]/10" />
-                    <div className="absolute inset-[1px] rounded-3xl bg-[var(--background-elevated)]" />
+                    <div className="absolute inset-[1px] rounded-2xl md:rounded-3xl bg-[var(--background-elevated)]" />
                     
-                    <div className="relative p-6 md:p-10 lg:p-12">
-                      <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+                    <div className="relative p-5 md:p-10 lg:p-12">
+                      <div className="grid lg:grid-cols-2 gap-6 md:gap-10 lg:gap-16 items-center">
                         {/* Left - Phone */}
                         <div className="flex justify-center order-1">
-                          <div className="relative">
-                            <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} blur-[80px] scale-150 opacity-60`} />
+                          <div className="relative scale-90 md:scale-100">
+                            <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} blur-[40px] md:blur-[80px] scale-125 md:scale-150 opacity-50 md:opacity-60`} />
                             <PhoneSimulator 
                               screenshots={feature.screenshots}
                               screenData={feature.screenData}
@@ -352,37 +352,37 @@ export default function FocusFlowPage() {
                         </div>
 
                         {/* Right - Content */}
-                        <div className="order-2">
-                          <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--foreground)] mb-4 md:mb-6 leading-tight">
+                        <div className="order-2 text-center lg:text-left">
+                          <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--foreground)] mb-3 md:mb-6 leading-tight">
                             {feature.headline}
                           </h3>
-                          <p className="text-lg md:text-xl text-[var(--foreground-muted)] leading-relaxed mb-8 md:mb-10">
+                          <p className="text-base md:text-xl text-[var(--foreground-muted)] leading-relaxed mb-6 md:mb-10">
                             {feature.description}
                           </p>
                           
                           {/* Feature Highlights - Premium List */}
-                          <div className="space-y-4">
+                          <div className="space-y-3 md:space-y-4">
                             {feature.highlights.map((highlight, i) => (
                               <div 
                                 key={i} 
-                                className="flex items-start gap-4 group"
+                                className="flex items-start gap-3 md:gap-4 group text-left"
                               >
                                 <div 
-                                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 transition-transform duration-300 group-hover:scale-110"
+                                  className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 transition-transform duration-300 group-hover:scale-110"
                                   style={{
                                     background: `linear-gradient(135deg, ${feature.accentColor}20, ${feature.accentColor}10)`,
                                     border: `1px solid ${feature.accentColor}30`,
                                   }}
                                 >
-                                  <svg className="w-5 h-5" style={{ color: feature.accentColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-4 h-4 md:w-5 md:h-5" style={{ color: feature.accentColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                   </svg>
                                 </div>
                                 <div>
-                                  <h4 className="font-semibold text-[var(--foreground)] mb-0.5">
+                                  <h4 className="font-semibold text-[var(--foreground)] mb-0.5 text-sm md:text-base">
                                     {highlight.title}
                                   </h4>
-                                  <p className="text-sm text-[var(--foreground-muted)]">
+                                  <p className="text-xs md:text-sm text-[var(--foreground-muted)]">
                                     {highlight.desc}
                                   </p>
                                 </div>
@@ -403,28 +403,28 @@ export default function FocusFlowPage() {
       {/* ═══════════════════════════════════════════════════════════════
           TESTIMONIAL / SOCIAL PROOF
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-20">
+      <section className="py-12 md:py-20 px-4">
         <Container>
           <div className="max-w-4xl mx-auto">
-            <div className="card-glass p-8 md:p-12 text-center relative overflow-hidden">
+            <div className="card-glass p-6 md:p-12 text-center relative overflow-hidden">
               {/* Background accent */}
               <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)]/5 to-transparent" />
               
               <div className="relative z-10">
                 {/* Stars */}
-                <div className="flex justify-center gap-1 mb-6">
+                <div className="flex justify-center gap-1 mb-4 md:mb-6">
                   {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-6 h-6 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <svg key={i} className="w-5 h-5 md:w-6 md:h-6 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
                 </div>
                 
-                <blockquote className="text-xl md:text-2xl text-[var(--foreground)] leading-relaxed mb-6 font-medium">
+                <blockquote className="text-lg md:text-2xl text-[var(--foreground)] leading-relaxed mb-4 md:mb-6 font-medium">
                   "Finally, a focus app that actually helps me focus. The ambient backgrounds are beautiful, and the XP system keeps me motivated."
                 </blockquote>
                 
-                <div className="text-[var(--foreground-muted)]">
+                <div className="text-sm md:text-base text-[var(--foreground-muted)]">
                   — App Store Review
                 </div>
               </div>
@@ -436,28 +436,28 @@ export default function FocusFlowPage() {
       {/* ═══════════════════════════════════════════════════════════════
           ADDITIONAL FEATURES - COMPACT STRIP
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="py-12 md:py-16 bg-[var(--background-elevated)]">
+      <section className="py-10 md:py-16 bg-[var(--background-elevated)]">
         <Container>
-          <div className="max-w-6xl mx-auto">
-            <h3 className="text-center text-lg font-medium text-[var(--foreground-muted)] mb-8">
+          <div className="max-w-6xl mx-auto px-4">
+            <h3 className="text-center text-base md:text-lg font-medium text-[var(--foreground-muted)] mb-6 md:mb-8">
               Built for people who value
             </h3>
             
-            <div className="flex flex-wrap justify-center gap-3 md:gap-4">
+            <div className="flex flex-wrap justify-center gap-2 md:gap-4">
               {[
                 { icon: '🔒', label: 'Privacy First' },
-                { icon: '📱', label: 'Home Widgets' },
+                { icon: '📱', label: 'Widgets' },
                 { icon: '🔔', label: 'Live Activity' },
-                { icon: '✈️', label: 'Works Offline' },
-                { icon: '🎵', label: 'Music Integration' },
-                { icon: '💾', label: 'Local Backup' },
+                { icon: '✈️', label: 'Offline' },
+                { icon: '🎵', label: 'Music' },
+                { icon: '💾', label: 'Backup' },
               ].map((item, i) => (
                 <div 
                   key={i} 
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 transition-colors"
+                  className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 transition-colors"
                 >
-                  <span className="text-lg">{item.icon}</span>
-                  <span className="text-sm font-medium text-[var(--foreground)]">{item.label}</span>
+                  <span className="text-base md:text-lg">{item.icon}</span>
+                  <span className="text-xs md:text-sm font-medium text-[var(--foreground)]">{item.label}</span>
                 </div>
               ))}
             </div>
