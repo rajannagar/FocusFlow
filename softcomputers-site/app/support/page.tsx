@@ -13,7 +13,7 @@ export default function SupportPage() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-24 md:pt-40 pb-12 md:pb-24 overflow-hidden">
+      <section className="relative pt-8 md:pt-20 pb-12 md:pb-24 overflow-hidden">
         <div className="absolute inset-0">
           <div 
             className="absolute top-1/4 left-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] rounded-full blur-[60px] md:blur-[80px] opacity-20 transition-transform duration-1000 ease-out"

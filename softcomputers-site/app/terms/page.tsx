@@ -17,7 +17,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-[var(--background)]">
       
       {/* Hero Section */}
-      <section className="relative pt-24 md:pt-40 pb-12 md:pb-16 overflow-hidden">
+      <section className="relative pt-8 md:pt-20 pb-12 md:pb-16 overflow-hidden">
         <div className="absolute inset-0">
           <div 
             className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full blur-[80px] opacity-15 transition-transform duration-1000 ease-out"

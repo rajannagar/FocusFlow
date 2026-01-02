@@ -50,7 +50,7 @@ export default function RootLayout({
         className={`${sora.variable} ${inter.variable} antialiased min-h-screen flex flex-col`}
       >
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pt-16 md:pt-20">{children}</main>
         <Footer />
         <ScrollToTop />
       </body>
