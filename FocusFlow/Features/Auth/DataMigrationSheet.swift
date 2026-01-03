@@ -23,16 +23,24 @@ struct DataMigrationSheet: View {
     private var tasksCount: Int { migrationManager.guestTasksCount() }
     private var presetsCount: Int { migrationManager.guestPresetsCount() }
     private var dailyGoal: Int? { migrationManager.guestDailyGoal() }
+    private var hasSettings: Bool { migrationManager.hasGuestSettings() }
     
     private var hasAnyData: Bool {
-        sessionsCount > 0 || tasksCount > 0 || presetsCount > 0 || dailyGoal != nil
+        sessionsCount > 0 || tasksCount > 0 || presetsCount > 0 || dailyGoal != nil || hasSettings
     }
     
     private var hasAnySelection: Bool {
         migrationOptions.migrateSessions ||
         migrationOptions.migrateTasks ||
         migrationOptions.migratePresets ||
-        migrationOptions.migrateDailyGoal
+        migrationOptions.migrateDailyGoal ||
+        migrationOptions.migrateSettings
+    }
+    
+    /// Check if user is already signed in (sheet shown after sign-in from ContentView)
+    private var isAlreadySignedIn: Bool {
+        if case .signedIn = auth.state { return true }
+        return false
     }
     
     var body: some View {
@@ -43,6 +51,8 @@ struct DataMigrationSheet: View {
                 
                 if migrationSuccess {
                     successView
+                } else if migrationManager.isMigrating {
+                    migratingView
                 } else {
                     // Always show data selection first
                     dataSelectionView
@@ -61,8 +71,22 @@ struct DataMigrationSheet: View {
         .fullScreenCover(isPresented: $showingAuth) {
             AuthLandingView()
         }
+        .onAppear {
+            // If user is already signed in and has data selected, we can show the migrate button
+            // Pre-select all available data by default
+            if isAlreadySignedIn {
+                #if DEBUG
+                print("[DataMigrationSheet] User already signed in, pre-selecting all data")
+                #endif
+                migrationOptions.migrateSessions = sessionsCount > 0
+                migrationOptions.migrateTasks = tasksCount > 0
+                migrationOptions.migratePresets = presetsCount > 0
+                migrationOptions.migrateDailyGoal = dailyGoal != nil
+                migrationOptions.migrateSettings = hasSettings
+            }
+        }
         .onChange(of: auth.state) { oldState, newState in
-            // When user signs in, close auth and migrate
+            // When user signs in (from the auth sheet we opened), close auth and migrate
             if showingAuth, case .signedIn(let userId) = newState {
                 #if DEBUG
                 print("[DataMigrationSheet] User signed in: \(userId), triggering migration")
@@ -86,6 +110,30 @@ struct DataMigrationSheet: View {
                     performMigration()
                 }
             }
+        }
+    }
+    
+    // MARK: - Migrating View
+    
+    private var migratingView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            ProgressView()
+                .scaleEffect(1.5)
+                .tint(theme.accentPrimary)
+            
+            Text("Migrating your data...")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+            
+            Text("Please wait while we transfer your guest data to your account.")
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            Spacer()
         }
     }
     
@@ -120,25 +168,6 @@ struct DataMigrationSheet: View {
                 }
                 .padding(.top, 20)
                 
-                // Data summary (if has data)
-                if hasAnyData {
-                    VStack(spacing: 12) {
-                        if sessionsCount > 0 {
-                            dataRow(icon: "timer", text: "\(sessionsCount) Focus Session\(sessionsCount == 1 ? "" : "s")", color: theme.accentPrimary)
-                        }
-                        if tasksCount > 0 {
-                            dataRow(icon: "checklist", text: "\(tasksCount) Task\(tasksCount == 1 ? "" : "s")", color: theme.accentSecondary)
-                        }
-                        if presetsCount > 0 {
-                            dataRow(icon: "slider.horizontal.3", text: "\(presetsCount) Custom Preset\(presetsCount == 1 ? "" : "s")", color: .orange)
-                        }
-                        if let goal = dailyGoal {
-                            dataRow(icon: "target", text: "Daily Goal: \(goal) min", color: .blue)
-                        }
-                    }
-                    .padding(.vertical, 20)
-                }
-                
                 // Migration checkboxes (only show if has data)
                 if hasAnyData {
                     VStack(spacing: 16) {
@@ -164,8 +193,8 @@ struct DataMigrationSheet: View {
                         
                         if presetsCount > 0 {
                             migrationCheckbox(
-                                title: "Custom Presets",
-                                subtitle: "\(presetsCount) preset\(presetsCount == 1 ? "" : "s")",
+                                title: "Focus Presets",
+                                subtitle: "\(presetsCount) preset\(presetsCount == 1 ? "" : "s") (with your settings)",
                                 icon: "slider.horizontal.3",
                                 isSelected: $migrationOptions.migratePresets,
                                 color: .orange
@@ -181,29 +210,61 @@ struct DataMigrationSheet: View {
                                 color: .blue
                             )
                         }
+                        
+                        if hasSettings {
+                            migrationCheckbox(
+                                title: "App Settings",
+                                subtitle: "Theme, sounds & preferences",
+                                icon: "gearshape.fill",
+                                isSelected: $migrationOptions.migrateSettings,
+                                color: .purple
+                            )
+                        }
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 20)
                 }
                 
-                // Continue button
-                Button {
-                    showingAuth = true
-                } label: {
-                    HStack {
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text(hasAnyData ? "Continue to Sign In" : "Create Account or Sign In")
-                            .font(.system(size: 16, weight: .semibold))
+                // Action button - different based on auth state
+                if isAlreadySignedIn {
+                    // User is already signed in - show Migrate button
+                    Button {
+                        performMigration()
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text(hasAnyData && hasAnySelection ? "Migrate Selected Data" : "Skip Migration")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(hasAnySelection ? theme.accentPrimary : Color.white.opacity(0.2))
+                        .cornerRadius(12)
                     }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(theme.accentPrimary)
-                    .cornerRadius(12)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                } else {
+                    // User needs to sign in first
+                    Button {
+                        showingAuth = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text(hasAnyData ? "Continue to Sign In" : "Create Account or Sign In")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(theme.accentPrimary)
+                        .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
                 
                 if let error = migrationError {
                     Text(error)
@@ -346,18 +407,21 @@ struct DataMigrationSheet: View {
         print("[DataMigrationSheet] Options: sessions=\(migrationOptions.migrateSessions), tasks=\(migrationOptions.migrateTasks), presets=\(migrationOptions.migratePresets), goal=\(migrationOptions.migrateDailyGoal)")
         #endif
         
-        // If no data selected and no data available, just dismiss (user created account without migrating)
-        if !hasAnyData || !hasAnySelection {
-            if !hasAnyData {
-                // No data to migrate, just show success
-                #if DEBUG
-                print("[DataMigrationSheet] No data to migrate, showing success")
-                #endif
-                migrationSuccess = true
-            } else {
-                // Has data but nothing selected - show error
-                migrationError = "Please select at least one data type to migrate"
-            }
+        // If no data available at all, just show success and dismiss
+        if !hasAnyData {
+            #if DEBUG
+            print("[DataMigrationSheet] No data to migrate, showing success")
+            #endif
+            migrationSuccess = true
+            return
+        }
+        
+        // If has data but nothing selected, skip migration (user chose to skip)
+        if !hasAnySelection {
+            #if DEBUG
+            print("[DataMigrationSheet] User skipped migration (nothing selected)")
+            #endif
+            dismiss()
             return
         }
         

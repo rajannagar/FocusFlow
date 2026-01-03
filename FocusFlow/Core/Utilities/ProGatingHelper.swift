@@ -56,7 +56,7 @@ enum CloudSyncStatus: Equatable {
 // MARK: - Pro Gating Helper
 
 @MainActor
-final class ProGatingHelper: ObservableObject {
+final class ProGatingHelper {
     
     // MARK: - Singleton
     

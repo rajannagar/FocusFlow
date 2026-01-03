@@ -36,10 +36,19 @@ final class GuestMigrationManager: ObservableObject {
         
         // Fall back to checking UserDefaults
         let guestSessionsKey = "ff_local_progress.sessions.v1_guest"
-        guard let sessionsData = defaults.data(forKey: guestSessionsKey),
-              let sessions = try? JSONDecoder().decode([ProgressSession].self, from: sessionsData) else {
+        guard let sessionsData = defaults.data(forKey: guestSessionsKey) else {
             #if DEBUG
-            print("[GuestMigrationManager] No sessions found in UserDefaults for key: \(guestSessionsKey)")
+            print("[GuestMigrationManager] No sessions data in UserDefaults for key: \(guestSessionsKey)")
+            #endif
+            return 0
+        }
+        
+        // IMPORTANT: Use iso8601 date decoding to match how sessions are encoded
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let sessions = try? decoder.decode([ProgressSession].self, from: sessionsData) else {
+            #if DEBUG
+            print("[GuestMigrationManager] Failed to decode sessions data (decoding error)")
             #endif
             return 0
         }
@@ -86,14 +95,14 @@ final class GuestMigrationManager: ObservableObject {
         return tasksState.tasks.count
     }
     
-    /// Get count of custom guest presets
+    /// Get count of guest presets (all presets - will replace account defaults with guest's versions)
     func guestPresetsCount() -> Int {
         // First check in-memory store if we're in guest mode
         if AuthManagerV2.shared.state == .guest {
-            let inMemoryPresets = FocusPresetStore.shared.presets.filter { !$0.isSystemDefault }
+            let inMemoryPresets = FocusPresetStore.shared.presets
             if !inMemoryPresets.isEmpty {
                 #if DEBUG
-                print("[GuestMigrationManager] Found \(inMemoryPresets.count) custom presets in memory")
+                print("[GuestMigrationManager] Found \(inMemoryPresets.count) presets in memory (\(inMemoryPresets.filter { !$0.isSystemDefault }.count) custom)")
                 #endif
                 return inMemoryPresets.count
             }
@@ -108,11 +117,10 @@ final class GuestMigrationManager: ObservableObject {
             #endif
             return 0
         }
-        let customCount = presets.filter { !$0.isSystemDefault }.count
         #if DEBUG
-        print("[GuestMigrationManager] Found \(customCount) custom presets in UserDefaults")
+        print("[GuestMigrationManager] Found \(presets.count) presets in UserDefaults (\(presets.filter { !$0.isSystemDefault }.count) custom)")
         #endif
-        return customCount
+        return presets.count
     }
     
     /// Get guest daily goal (returns nil if default or 0)
@@ -149,12 +157,13 @@ final class GuestMigrationManager: ObservableObject {
         let hasTasks = guestTasksCount() > 0
         let hasPresets = guestPresetsCount() > 0
         let hasGoal = guestDailyGoal() != nil
+        let hasSettings = hasGuestSettings()
         
         #if DEBUG
-        print("[GuestMigrationManager] hasGuestData check: sessions=\(hasSessions), tasks=\(hasTasks), presets=\(hasPresets), goal=\(hasGoal)")
+        print("[GuestMigrationManager] hasGuestData check: sessions=\(hasSessions), tasks=\(hasTasks), presets=\(hasPresets), goal=\(hasGoal), settings=\(hasSettings)")
         #endif
         
-        return hasSessions || hasTasks || hasPresets || hasGoal
+        return hasSessions || hasTasks || hasPresets || hasGoal || hasSettings
     }
     
     // MARK: - Selective Migration
@@ -165,6 +174,43 @@ final class GuestMigrationManager: ObservableObject {
         var migrateTasks: Bool = false
         var migratePresets: Bool = false
         var migrateDailyGoal: Bool = false
+        var migrateSettings: Bool = false  // Theme, sound preferences, etc.
+    }
+    
+    // MARK: - Additional Guest Data Info
+    
+    /// Check if guest has custom settings (theme, sound, etc.)
+    func hasGuestSettings() -> Bool {
+        // Check for non-default theme
+        let guestThemeKey = "ff_selectedTheme_guest"
+        if let themeRaw = defaults.string(forKey: guestThemeKey), 
+           themeRaw != "forest" {
+            #if DEBUG
+            print("[GuestMigrationManager] Found guest theme: \(themeRaw)")
+            #endif
+            return true
+        }
+        
+        // Check for selected sound
+        let guestSoundKey = "ff_selectedFocusSound_guest"
+        if defaults.string(forKey: guestSoundKey) != nil {
+            #if DEBUG
+            print("[GuestMigrationManager] Found guest sound preference")
+            #endif
+            return true
+        }
+        
+        // Check for profile theme
+        let guestProfileThemeKey = "ff_profileTheme_guest"
+        if let profileTheme = defaults.string(forKey: guestProfileThemeKey),
+           profileTheme != "forest" {
+            #if DEBUG
+            print("[GuestMigrationManager] Found guest profile theme: \(profileTheme)")
+            #endif
+            return true
+        }
+        
+        return false
     }
     
     /// Migrate selected guest data to signed-in account (merges with existing data)
@@ -220,33 +266,211 @@ final class GuestMigrationManager: ObservableObject {
             try await migrateDailyGoal(to: namespace)
         }
         
-        // 5. Reload stores to pick up migrated data
-        // IMPORTANT: Do this on MainActor since stores are @MainActor
-        await MainActor.run {
-            #if DEBUG
-            print("[GuestMigrationManager] Reloading stores after migration...")
-            #endif
-            ProgressStore.shared.applyAuthState(AuthManagerV2.shared.state)
-            TasksStore.shared.applyAuthState(AuthManagerV2.shared.state)
-            FocusPresetStore.shared.applyNamespace(for: AuthManagerV2.shared.state)
+        // 5. Migrate settings (theme, sound, preferences)
+        if options.migrateSettings {
+            try await migrateSettings(to: namespace)
         }
         
-        // 6. Wait a bit for stores to reload
+        // 6. Update in-memory stores directly with migrated data
+        // (Don't rely on reload which may have early returns)
+        await MainActor.run {
+            #if DEBUG
+            print("[GuestMigrationManager] Updating in-memory stores with migrated data...")
+            #endif
+            
+            // Load and apply migrated sessions
+            if let sessionsData = defaults.data(forKey: "ff_local_progress.sessions.v1_\(namespace)") {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                if let sessions = try? decoder.decode([ProgressSession].self, from: sessionsData) {
+                    ProgressStore.shared.applyMergedSessions(sessions)
+                    #if DEBUG
+                    print("[GuestMigrationManager] Applied \(sessions.count) sessions to in-memory store")
+                    #endif
+                }
+            }
+            
+            // Load and apply migrated tasks (including completions)
+            if let tasksData = defaults.data(forKey: "focusflow_tasks_state_cloud_\(namespace)") {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                if let state = try? decoder.decode(TasksStore.LocalState.self, from: tasksData) {
+                    // IMPORTANT: Mark timestamps BEFORE applying state, so conflict resolution can find them
+                    for task in state.tasks {
+                        LocalTimestampTracker.shared.recordLocalChange(field: "task_\(task.id.uuidString)", namespace: namespace)
+                    }
+                    // Mark completion timestamps (format: "taskID|year-month-day")
+                    for completionKey in state.completedKeys {
+                        if let taskIDString = completionKey.split(separator: "|").first,
+                           let taskID = UUID(uuidString: String(taskIDString)) {
+                            LocalTimestampTracker.shared.recordLocalChange(field: "task_completion_\(taskID.uuidString)", namespace: namespace)
+                        }
+                    }
+                    
+                    TasksStore.shared.applyRemoteState(tasks: state.tasks, completionKeys: Set(state.completedKeys))
+                    // IMPORTANT: Manually save after applyRemoteState (it sets isApplyingState which blocks auto-save)
+                    TasksStore.shared.save()
+                    #if DEBUG
+                    print("[GuestMigrationManager] Applied \(state.tasks.count) tasks with \(state.completedKeys.count) completions to in-memory store and persisted")
+                    print("[GuestMigrationManager] Marked timestamps for \(state.tasks.count) tasks and \(state.completedKeys.count) completions")
+                    #endif
+                }
+            }
+            
+            // Load and apply migrated presets
+            if let presetsData = defaults.data(forKey: "ff_focus_presets_\(namespace)") {
+                if let presets = try? JSONDecoder().decode([FocusPreset].self, from: presetsData) {
+                    FocusPresetStore.shared.applyRemoteState(presets: presets, activePresetId: nil)
+                    #if DEBUG
+                    print("[GuestMigrationManager] Applied \(presets.count) presets to in-memory store")
+                    #endif
+                }
+            }
+            
+            // IMPORTANT: Reload AppSettings to apply migrated settings (theme, sound, etc.)
+            // Since namespace hasn't changed, manually reload from UserDefaults
+            let settings = AppSettings.shared
+            let settingsDefaults = UserDefaults.standard
+            
+            // Reload display name
+            if let displayName = settingsDefaults.string(forKey: "ff_displayName_\(namespace)"),
+               !displayName.isEmpty {
+                settings.displayName = displayName
+                #if DEBUG
+                print("[GuestMigrationManager] Applied migrated display name: \(displayName)")
+                #endif
+            }
+            
+            // Reload tagline
+            if let tagline = settingsDefaults.string(forKey: "ff_tagline_\(namespace)"),
+               !tagline.isEmpty {
+                settings.tagline = tagline
+                #if DEBUG
+                print("[GuestMigrationManager] Applied migrated tagline: \(tagline)")
+                #endif
+            }
+            
+            // Reload avatar ID
+            if let avatarID = settingsDefaults.string(forKey: "ff_avatarID_\(namespace)"),
+               !avatarID.isEmpty {
+                settings.avatarID = avatarID
+                #if DEBUG
+                print("[GuestMigrationManager] Applied migrated avatar ID: \(avatarID)")
+                #endif
+            }
+            
+            // Reload profile image
+            if let profileImageData = settingsDefaults.data(forKey: "ff_profileImageData_\(namespace)") {
+                settings.profileImageData = profileImageData
+                #if DEBUG
+                print("[GuestMigrationManager] Applied migrated profile image")
+                #endif
+            }
+            
+            // Reload theme (read from migrated user namespace key)
+            if let themeRaw = settingsDefaults.string(forKey: "ff_selectedTheme_\(namespace)"),
+               let theme = AppTheme(rawValue: themeRaw) {
+                // Temporarily disable timestamp tracking to avoid sync conflicts
+                settings.selectedTheme = theme
+                #if DEBUG
+                print("[GuestMigrationManager] Applied migrated theme: \(themeRaw)")
+                #endif
+            }
+            
+            // Reload profile theme
+            if let profileThemeRaw = settingsDefaults.string(forKey: "ff_profileTheme_\(namespace)"),
+               let profileTheme = AppTheme(rawValue: profileThemeRaw) {
+                settings.profileTheme = profileTheme
+                #if DEBUG
+                print("[GuestMigrationManager] Applied migrated profile theme: \(profileThemeRaw)")
+                #endif
+            }
+            
+            // Reload sound preference
+            if let soundRaw = settingsDefaults.string(forKey: "ff_selectedFocusSound_\(namespace)"),
+               let sound = FocusSound(rawValue: soundRaw) {
+                settings.selectedFocusSound = sound
+                #if DEBUG
+                print("[GuestMigrationManager] Applied migrated sound: \(soundRaw)")
+                #endif
+            }
+            
+            // Reload external music app
+            if let musicAppRaw = settingsDefaults.string(forKey: "ff_externalMusicApp_\(namespace)"),
+               let musicApp = AppSettings.ExternalMusicApp(rawValue: musicAppRaw) {
+                settings.selectedExternalMusicApp = musicApp
+                #if DEBUG
+                print("[GuestMigrationManager] Applied migrated music app: \(musicAppRaw)")
+                #endif
+            }
+            
+            // Reload other settings
+            if let soundEnabled = settingsDefaults.object(forKey: "ff_soundEnabled_\(namespace)") as? Bool {
+                settings.soundEnabled = soundEnabled
+            }
+            if let hapticsEnabled = settingsDefaults.object(forKey: "ff_hapticsEnabled_\(namespace)") as? Bool {
+                settings.hapticsEnabled = hapticsEnabled
+            }
+            if let dailyReminderEnabled = settingsDefaults.object(forKey: "ff_dailyReminderEnabled_\(namespace)") as? Bool {
+                settings.dailyReminderEnabled = dailyReminderEnabled
+            }
+            if let askToRecord = settingsDefaults.object(forKey: "ff_askToRecordIncompleteSessions_\(namespace)") as? Bool {
+                settings.askToRecordIncompleteSessions = askToRecord
+            }
+            
+            // Reload reminder time
+            if let hour = settingsDefaults.object(forKey: "ff_reminderHour_\(namespace)") as? Int,
+               let minute = settingsDefaults.object(forKey: "ff_reminderMinute_\(namespace)") as? Int {
+                let comps = DateComponents(hour: hour, minute: minute)
+                if let date = Calendar.current.date(from: comps) {
+                    settings.dailyReminderTime = date
+                }
+            }
+            
+            #if DEBUG
+            print("[GuestMigrationManager] Reloaded AppSettings to apply migrated preferences")
+            #endif
+        }
+        
+        // 7. Wait a bit for UI to update
         try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
         
-        // 7. Push migrated data to cloud FIRST (before pulling)
-        // This prevents cloud from overwriting our migrated data
+        // 8. Push migrated data to cloud FIRST (before any pull can happen)
         #if DEBUG
         print("[GuestMigrationManager] Pushing migrated data to cloud...")
         #endif
-        await SyncCoordinator.shared.forcePushAllPending() // Push migrated data first
+        await SyncCoordinator.shared.forcePushAllPending()
         
-        // 8. Then pull to merge with any existing cloud data
-        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+        // 9. Wait for push to complete, then mark timestamps to prevent overwrite
+        try? await Task.sleep(nanoseconds: 1000_000_000) // 1 second
+        
+        // 10. Mark all migrated data as "just updated" to prevent cloud from overwriting
+        // (Tasks and completions are already marked in step 6, so just mark sessions here)
+        await MainActor.run {
+            let namespace = namespace
+            // Mark sessions as recently changed
+            if let sessionsData = defaults.data(forKey: "ff_local_progress.sessions.v1_\(namespace)") {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                if let sessions = try? decoder.decode([ProgressSession].self, from: sessionsData) {
+                    for session in sessions {
+                        LocalTimestampTracker.shared.recordLocalChange(field: "session_\(session.id.uuidString)", namespace: namespace)
+                    }
+                    #if DEBUG
+                    print("[GuestMigrationManager] Marked \(sessions.count) sessions with timestamps")
+                    #endif
+                }
+            }
+            #if DEBUG
+            print("[GuestMigrationManager] Marked migrated data timestamps to prevent cloud overwrite")
+            #endif
+        }
+        
+        // 11. DON'T pull immediately - the migrated data should take precedence
+        // The next time the user opens the app, a pull will happen naturally
         #if DEBUG
-        print("[GuestMigrationManager] Pulling from cloud to merge...")
+        print("[GuestMigrationManager] Skipping pull to preserve migrated data")
         #endif
-        await SyncCoordinator.shared.pullFromRemote() // Pull to merge with cloud
         
         #if DEBUG
         print("[GuestMigrationManager] Selective migration completed successfully")
@@ -259,7 +483,7 @@ final class GuestMigrationManager: ObservableObject {
         let guestSessionsKey = "ff_local_progress.sessions.v1_guest"
         let userSessionsKey = "ff_local_progress.sessions.v1_\(namespace)"
         
-        // Get guest sessions - try UserDefaults first
+        // Get guest sessions from UserDefaults
         var guestSessions: [ProgressSession] = []
         
         if let guestSessionsData = defaults.data(forKey: guestSessionsKey) {
@@ -268,7 +492,7 @@ final class GuestMigrationManager: ObservableObject {
             if let decoded = try? decoder.decode([ProgressSession].self, from: guestSessionsData) {
                 guestSessions = decoded
                 #if DEBUG
-                print("[GuestMigrationManager] Found \(guestSessions.count) sessions in UserDefaults")
+                print("[GuestMigrationManager] Found \(guestSessions.count) sessions to migrate")
                 #endif
             } else {
                 #if DEBUG
@@ -278,22 +502,24 @@ final class GuestMigrationManager: ObservableObject {
         } else {
             #if DEBUG
             print("[GuestMigrationManager] No sessions data in UserDefaults for key: \(guestSessionsKey)")
-            // Try to get from in-memory if available (but this won't work after namespace switch)
             #endif
         }
         
         guard !guestSessions.isEmpty else {
             #if DEBUG
-            print("[GuestMigrationManager] No guest sessions to migrate (checked UserDefaults key: \(guestSessionsKey))")
+            print("[GuestMigrationManager] No guest sessions to migrate")
             #endif
             return
         }
         
-        // Load existing user sessions
+        // Load existing user sessions (with proper date decoding)
         var existingSessions: [ProgressSession] = []
-        if let existingData = defaults.data(forKey: userSessionsKey),
-           let decoded = try? JSONDecoder().decode([ProgressSession].self, from: existingData) {
-            existingSessions = decoded
+        if let existingData = defaults.data(forKey: userSessionsKey) {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            if let decoded = try? decoder.decode([ProgressSession].self, from: existingData) {
+                existingSessions = decoded
+            }
         }
         
         // Merge: add guest sessions that don't already exist (by ID)
@@ -301,11 +527,13 @@ final class GuestMigrationManager: ObservableObject {
         let newSessions = guestSessions.filter { !existingIds.contains($0.id) }
         let mergedSessions = existingSessions + newSessions
         
-        // Save merged sessions
-        if let encoded = try? JSONEncoder().encode(mergedSessions) {
+        // Save merged sessions (with proper date encoding)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        if let encoded = try? encoder.encode(mergedSessions) {
             defaults.set(encoded, forKey: userSessionsKey)
             #if DEBUG
-            print("[GuestMigrationManager] Migrated \(newSessions.count) new sessions (merged with \(existingSessions.count) existing)")
+            print("[GuestMigrationManager] ✅ Migrated \(newSessions.count) new sessions (merged with \(existingSessions.count) existing)")
             #endif
         } else {
             #if DEBUG
@@ -376,33 +604,24 @@ final class GuestMigrationManager: ObservableObject {
         let userPresetsKey = "ff_focus_presets_\(namespace)"
         
         guard let guestPresetsData = defaults.data(forKey: guestPresetsKey),
-              let guestPresets = try? JSONDecoder().decode([FocusPreset].self, from: guestPresetsData) else {
-            return
-        }
-        
-        // Only migrate custom presets (not system defaults)
-        let customGuestPresets = guestPresets.filter { !$0.isSystemDefault }
-        guard !customGuestPresets.isEmpty else {
-            return
-        }
-        
-        // Load existing user presets
-        var existingPresets: [FocusPreset] = []
-        if let existingData = defaults.data(forKey: userPresetsKey),
-           let decoded = try? JSONDecoder().decode([FocusPreset].self, from: existingData) {
-            existingPresets = decoded
-        }
-        
-        // Merge: add guest custom presets that don't already exist (by ID)
-        let existingPresetIds = Set(existingPresets.map { $0.id })
-        let newPresets = customGuestPresets.filter { !existingPresetIds.contains($0.id) }
-        let mergedPresets = existingPresets + newPresets
-        
-        // Save merged presets
-        if let encoded = try? JSONEncoder().encode(mergedPresets) {
-            defaults.set(encoded, forKey: userPresetsKey)
+              let guestPresets = try? JSONDecoder().decode([FocusPreset].self, from: guestPresetsData),
+              !guestPresets.isEmpty else {
             #if DEBUG
-            print("[GuestMigrationManager] Migrated \(newPresets.count) new presets (merged with \(existingPresets.count) existing)")
+            print("[GuestMigrationManager] No guest presets to migrate")
+            #endif
+            return
+        }
+        
+        // Migrate ALL guest presets (including system defaults that may have been modified)
+        // This replaces the new account's default presets with the guest's versions
+        // which preserves any customizations the user made to duration, theme, sound, etc.
+        
+        if let encoded = try? JSONEncoder().encode(guestPresets) {
+            defaults.set(encoded, forKey: userPresetsKey)
+            let customCount = guestPresets.filter { !$0.isSystemDefault }.count
+            let systemCount = guestPresets.filter { $0.isSystemDefault }.count
+            #if DEBUG
+            print("[GuestMigrationManager] Migrated \(guestPresets.count) presets (\(systemCount) system, \(customCount) custom)")
             #endif
         }
     }
@@ -430,6 +649,94 @@ final class GuestMigrationManager: ObservableObject {
             print("[GuestMigrationManager] User already has custom goal (\(existingGoal)), keeping it instead of migrating guest goal")
             #endif
         }
+    }
+    
+    private func migrateSettings(to namespace: String) async throws {
+        #if DEBUG
+        print("[GuestMigrationManager] Starting settings migration...")
+        #endif
+        
+        // Settings keys to migrate - ALWAYS migrate if guest has them (user explicitly chose to migrate)
+        let settingsToMigrate = [
+            "ff_selectedTheme",
+            "ff_profileTheme",
+            "ff_selectedFocusSound",
+            "ff_externalMusicApp",
+            "ff_soundEnabled",
+            "ff_hapticsEnabled",
+            "ff_dailyReminderEnabled",
+            "ff_reminderHour",
+            "ff_reminderMinute",
+            "ff_askToRecordIncompleteSessions"
+        ]
+        
+        var migratedCount = 0
+        
+        for baseKey in settingsToMigrate {
+            let guestKey = "\(baseKey)_guest"
+            let userKey = "\(baseKey)_\(namespace)"
+            
+            // Check if guest has this setting
+            guard let guestValue = defaults.object(forKey: guestKey) else { continue }
+            
+            // ALWAYS migrate (overwrite user's defaults with guest's preferences)
+            defaults.set(guestValue, forKey: userKey)
+            migratedCount += 1
+            #if DEBUG
+            print("[GuestMigrationManager] Migrated setting: \(baseKey) = \(guestValue)")
+            #endif
+        }
+        
+        // Migrate profile image - ALWAYS migrate if guest has it
+        let guestImageKey = "ff_profileImageData_guest"
+        let userImageKey = "ff_profileImageData_\(namespace)"
+        if let guestImageData = defaults.data(forKey: guestImageKey) {
+            defaults.set(guestImageData, forKey: userImageKey)
+            migratedCount += 1
+            #if DEBUG
+            print("[GuestMigrationManager] Migrated profile image")
+            #endif
+        }
+        
+        // Migrate display name - ALWAYS migrate if guest has it (user explicitly chose to migrate)
+        let guestNameKey = "ff_displayName_guest"
+        let userNameKey = "ff_displayName_\(namespace)"
+        if let guestName = defaults.string(forKey: guestNameKey),
+           !guestName.isEmpty {
+            defaults.set(guestName, forKey: userNameKey)
+            migratedCount += 1
+            #if DEBUG
+            print("[GuestMigrationManager] Migrated display name: \(guestName)")
+            #endif
+        }
+        
+        // Migrate tagline - ALWAYS migrate if guest has it
+        let guestTaglineKey = "ff_tagline_guest"
+        let userTaglineKey = "ff_tagline_\(namespace)"
+        if let guestTagline = defaults.string(forKey: guestTaglineKey),
+           !guestTagline.isEmpty {
+            defaults.set(guestTagline, forKey: userTaglineKey)
+            migratedCount += 1
+            #if DEBUG
+            print("[GuestMigrationManager] Migrated tagline: \(guestTagline)")
+            #endif
+        }
+        
+        // Migrate avatar ID - ALWAYS migrate if guest has it
+        let guestAvatarKey = "ff_avatarID_guest"
+        let userAvatarKey = "ff_avatarID_\(namespace)"
+        if let guestAvatar = defaults.string(forKey: guestAvatarKey),
+           !guestAvatar.isEmpty {
+            defaults.set(guestAvatar, forKey: userAvatarKey)
+            migratedCount += 1
+            #if DEBUG
+            print("[GuestMigrationManager] Migrated avatar ID: \(guestAvatar)")
+            #endif
+        }
+        
+        #if DEBUG
+        print("[GuestMigrationManager] Settings migration complete: \(migratedCount) settings migrated")
+        #endif
     }
     
     // MARK: - Errors
