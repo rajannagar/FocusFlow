@@ -514,12 +514,13 @@ export default function FocusFlowPage() {
                 </div>
                 <ul className="space-y-2 md:space-y-3 mb-6 md:mb-8 flex-1">
                   {[
-                    'Focus timer with 3 ambient backgrounds',
+                    'Focus timer',
+                    '3 ambient backgrounds',
                     '3 focus sounds',
-                    '2 themes (Forest, Neon)',
-                    '3 presets maximum',
-                    '3 tasks maximum',
-                    'Last 3 days of history',
+                    '2 themes',
+                    '3 presets',
+                    '3 tasks',
+                    'Limited history',
                     'View-only widgets',
                   ].map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 md:gap-3 text-xs md:text-sm text-[var(--foreground-muted)]">
@@ -558,16 +559,16 @@ export default function FocusFlowPage() {
                   <ul className="space-y-3 md:space-y-4 mb-8 md:mb-10 flex-1">
                   {[
                     'Everything in Free',
-                    'All 14 ambient backgrounds',
-                    'All 11 focus sounds',
-                    'All 10 premium themes',
+                    'All ambient backgrounds',
+                    'All focus sounds',
+                    'All premium themes',
                     'Unlimited presets & tasks',
                     'Full progress history',
-                    'XP & 50 levels system',
-                    'Journey view with daily summaries',
-                    'Cloud sync across devices',
+                    'XP & leveling system',
+                    'Journey view',
+                    'Cloud sync',
                     'Interactive widgets',
-                    'Live Activity (Dynamic Island)',
+                    'Live Activity',
                     'External music integration',
                   ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-2 md:gap-3 text-sm md:text-base text-[var(--foreground-muted)]">
@@ -603,16 +604,16 @@ export default function FocusFlowPage() {
                 <ul className="space-y-2 md:space-y-3 mb-6 md:mb-8 flex-1">
                   {[
                     'Everything in Free',
-                    'All 14 ambient backgrounds',
-                    'All 11 focus sounds',
-                    'All 10 premium themes',
+                    'All ambient backgrounds',
+                    'All focus sounds',
+                    'All premium themes',
                     'Unlimited presets & tasks',
                     'Full progress history',
-                    'XP & 50 levels system',
-                    'Journey view with daily summaries',
-                    'Cloud sync across devices',
+                    'XP & leveling system',
+                    'Journey view',
+                    'Cloud sync',
                     'Interactive widgets',
-                    'Live Activity (Dynamic Island)',
+                    'Live Activity',
                     'External music integration',
                   ].map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 md:gap-3 text-xs md:text-sm text-[var(--foreground-muted)]">
