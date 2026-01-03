@@ -4,6 +4,9 @@
 
 FocusFlow is a premium focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.
 
+**Version:** 1.2.1  
+**Status:** 🟡 In Development (81% of P1 tasks complete)
+
 [![App Store](https://img.shields.io/badge/App%20Store-Download-blue?logo=apple)](https://apps.apple.com/app/focusflow-be-present/id6739000000)
 
 ---
@@ -14,8 +17,7 @@ FocusFlow is a premium focus timer, task manager, and progress tracker. Beautifu
 FocusFlow/
 │
 ├── 📁 docs/                      # Documentation
-│   ├── AUDIT_REVIEW.md           # Security & code audit notes
-│   └── LAUNCH_GAME_PLAN.md       # Launch strategy & timeline
+│   └── IMPLEMENTATION_PLAN.md    # Launch implementation plan & progress
 │
 ├── 📁 FocusFlow/                 # iOS App Source Code
 │   ├── App/                      # App lifecycle & entry points
@@ -24,16 +26,16 @@ FocusFlow/
 │   │   ├── Logging/              # Debug logging & sync logs
 │   │   ├── Notifications/        # Notification system
 │   │   ├── UI/                   # Reusable UI components
-│   │   └── Utilities/            # Helpers (haptics, network, etc.)
+│   │   └── Utilities/            # Helpers (ProGatingHelper, haptics, network, etc.)
 │   ├── Features/                 # Feature modules
-│   │   ├── Auth/                 # Authentication flows
-│   │   ├── Focus/                # Focus timer & ambient sounds
-│   │   ├── Journey/              # Daily summary timeline
+│   │   ├── Auth/                 # Authentication flows & guest migration
+│   │   ├── Focus/                # Focus timer, ambient sounds & backgrounds
+│   │   ├── Journey/              # Daily summary timeline (Pro only)
 │   │   ├── NotificationsCenter/  # In-app notification center
 │   │   ├── Onboarding/           # First-run experience
 │   │   ├── Presets/              # Custom focus presets
 │   │   ├── Profile/              # User profile & settings
-│   │   ├── Progress/             # XP, levels & stats
+│   │   ├── Progress/             # XP, levels & stats (Pro only)
 │   │   └── Tasks/                # Task management
 │   ├── Infrastructure/           # Backend & sync
 │   │   └── Cloud/                # Supabase, auth, sync engines
@@ -67,7 +69,7 @@ FocusFlow/
 ### Prerequisites
 
 - **Xcode 16+** (uses File System Synchronized Groups)
-- **iOS 17.0+** deployment target
+- **iOS 18.6+** deployment target
 - **Node.js 18+** (for website development)
 
 ### iOS App
@@ -90,16 +92,59 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## 🎯 Key Features
 
-| Feature | Description |
-|---------|-------------|
-| **Focus Timer** | Timed sessions with 14 ambient backgrounds |
-| **Smart Tasks** | Recurring tasks with reminders & duration estimates |
-| **XP & Levels** | 50 levels to unlock, earn XP for sessions & tasks |
-| **10 Themes** | Beautiful customization options |
-| **Cloud Sync** | Sync across devices with Supabase |
-| **Guest Mode** | Use without an account (local only) |
-| **Widgets** | Home screen widgets & Live Activity |
-| **Privacy First** | No tracking, no ads |
+### Focus Timer
+- **14 Ambient Backgrounds** – Aurora, Rain, Ocean, Forest, Stars, and more
+- **11 Focus Sounds** – Light Rain, Fireplace, Soft Ambience, and more
+- **Custom Presets** – Save your perfect focus setup
+- **Live Activity** – Timer in Dynamic Island (Pro only)
+
+### Task Management
+- **Smart Tasks** – Recurring tasks with reminders & duration estimates
+- **Task Limits** – Free: 3 tasks | Pro: Unlimited
+
+### Progress & Gamification
+- **XP & Levels** – 50 levels to unlock, earn XP for sessions & tasks (Pro only)
+- **Journey View** – Daily summaries & weekly reviews (Pro only)
+- **Progress History** – Free: Last 3 days | Pro: Full history
+
+### Customization
+- **10 Themes** – Forest, Neon, Peach, Cyber, Ocean, Sunrise, Amber, Mint, Royal, Slate
+- **Free Themes** – Forest, Neon (2)
+- **Pro Themes** – All 10 themes
+
+### Sync & Cloud
+- **Cloud Sync** – Sync across devices with Supabase (Pro + SignedIn only)
+- **Guest Mode** – Use without an account (local only)
+- **Data Migration** – Seamless guest → account migration
+
+### Platform Features
+- **Widgets** – Home screen widgets (Free: view-only | Pro: full interactivity)
+- **Live Activity** – Dynamic Island integration (Pro only)
+- **External Music** – Spotify, Apple Music, YouTube Music integration (Pro only)
+
+### Privacy & Security
+- **Privacy First** – No tracking, no ads
+- **Secure Authentication** – Email/Password & Google Sign-In
+- **End-to-End Sync** – Your data, encrypted
+
+---
+
+## 💎 Free vs Pro
+
+| Feature | Free | Pro |
+|---------|------|-----|
+| **Themes** | 2 (Forest, Neon) | 10 (All themes) |
+| **Focus Sounds** | 3 | 11 (All sounds) |
+| **Ambient Backgrounds** | 3 (Minimal, Stars, Forest) | 14 (All backgrounds) |
+| **Presets** | 3 total | Unlimited |
+| **Tasks** | 3 total | Unlimited |
+| **Progress History** | Last 3 days | Full history |
+| **XP & Levels** | ❌ Hidden | ✅ 50 levels |
+| **Journey View** | ❌ Locked | ✅ Full access |
+| **Cloud Sync** | ❌ | ✅ (requires sign-in) |
+| **Widgets** | View-only | Full interactivity |
+| **Live Activity** | ❌ | ✅ |
+| **External Music** | ❌ | ✅ |
 
 ---
 
@@ -108,14 +153,41 @@ Open [http://localhost:3000](http://localhost:3000)
 ### iOS App
 - **SwiftUI** – Modern declarative UI
 - **Supabase** – Authentication & database
+- **StoreKit 2** – In-app purchases & subscriptions
 - **WidgetKit** – Home screen widgets
 - **ActivityKit** – Live Activities
+- **Google Sign-In** – Social authentication
 
 ### Website
 - **Next.js 14** – App Router, React Server Components
 - **TypeScript** – Type safety
 - **Tailwind CSS** – Styling
 - **AWS Amplify** – Hosting
+
+---
+
+## 📊 Development Status
+
+### ✅ Completed (13/16 P1 tasks)
+- ✅ PaywallView with contextual support
+- ✅ ProGatingHelper (centralized gating logic)
+- ✅ Guest → Account Migration
+- ✅ Theme Gating (2 free, 8 Pro)
+- ✅ Sound Gating (3 free, 8 Pro)
+- ✅ Ambiance Gating (3 free, 11 Pro)
+- ✅ Preset Gating (3 max free, unlimited Pro)
+- ✅ Task Gating (3 max free, unlimited Pro)
+- ✅ Progress History Gating (3 days free)
+- ✅ XP/Levels Gating (Pro only)
+- ✅ Journey View Gating (Pro only)
+- ✅ External Music Gating (Pro only)
+
+### ⏳ Remaining P1 Tasks (3)
+- ⏳ Cloud Sync Gating
+- ⏳ Widget Gating
+- ⏳ Live Activity Gating
+
+See [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for full details.
 
 ---
 
