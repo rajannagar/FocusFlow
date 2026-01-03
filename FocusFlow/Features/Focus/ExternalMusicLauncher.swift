@@ -3,6 +3,20 @@ import UIKit
 struct ExternalMusicLauncher {
     static func openSelectedApp(_ app: AppSettings.ExternalMusicApp?) {
         guard let app else { return }
+        
+        // Gate external music apps for Pro users only
+        guard ProGatingHelper.shared.isPro else {
+            #if DEBUG
+            print("[ExternalMusicLauncher] 🔒 External music apps require Pro subscription")
+            #endif
+            // Post notification to show paywall
+            NotificationCenter.default.post(
+                name: Notification.Name("FocusFlow.showPaywall"),
+                object: nil,
+                userInfo: ["context": PaywallContext.externalMusic]
+            )
+            return
+        }
 
         let scheme: String
         let appStoreURLString: String?

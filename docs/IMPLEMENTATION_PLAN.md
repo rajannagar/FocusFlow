@@ -1,7 +1,33 @@
 # FocusFlow Launch Implementation Plan
 **Created:** January 2, 2026  
-**Status:** Ready to Execute  
+**Last Updated:** January 2, 2026  
+**Status:** 🟡 In Progress (10/11 P1 tasks completed, 1 skipped)  
 **Estimated Time:** 5-7 days
+
+## 📊 Progress Summary
+
+**✅ Completed (10 tasks):**
+- ✅ P1-0: Update PaywallView (contextual support)
+- ✅ P1-1: Create ProGatingHelper.swift
+- ✅ P1-2: Wire Guest → Account Migration
+- ✅ P1-3: Remove DebugLogView
+- ✅ P1-5: Gate Themes (2 free)
+- ✅ P1-6: Gate Sounds (3 free)
+- ✅ P1-7: Gate Ambiance (3 free)
+- ✅ P1-8: Gate Presets (3 total max)
+- ✅ P1-9: Gate Tasks (3 total max)
+- ✅ P1-11: Gate Progress History (3 days)
+- ✅ P1-12: Gate XP/Levels (Pro only)
+- ✅ P1-13: Gate Journey View (Pro only)
+- ✅ P1-16: Gate External Music Apps (Pro only)
+
+**⏭️ Skipped (1 task):**
+- ⏭️ P1-10: Gate Task Reminders (free users can use reminders on their 3 tasks)
+
+**⏳ Remaining P1 Tasks (3):**
+- ⏳ P1-4: Gate Cloud Sync
+- ⏳ P1-14: Gate Widgets
+- ⏳ P1-15: Gate Live Activity
 
 ---
 
@@ -17,15 +43,18 @@
 
 ## 🔴 PRIORITY 1: CRITICAL (Days 1-4)
 
-### P1-0: Update PaywallView.swift
+### P1-0: Update PaywallView.swift ✅ COMPLETED
 **File:** `FocusFlow/StoreKit/PaywallView.swift`  
 **Effort:** 1.5 hours  
 **Why:** PaywallView must show correct features & support contextual triggers
 
-**Current Issues:**
-- Feature list is generic, doesn't match new Free vs Pro matrix
-- No contextual support (same view for all triggers)
-- Missing key Pro features (Cloud Sync, Widgets, Live Activity, Journey)
+**Status:** ✅ Updated with contextual support and complete feature list
+
+**Changes:**
+- ✅ `PaywallContext` enum with all contexts (theme, sound, ambiance, preset, task, history, etc.)
+- ✅ Contextual headlines and icons
+- ✅ Complete feature list matching Free vs Pro matrix
+- ✅ Debug logging for subscription tracking
 
 **Changes Required:**
 
@@ -134,55 +163,59 @@ NotificationCenter.default.post(
 
 ---
 
-### P1-1: Create ProGatingHelper.swift
+### P1-1: Create ProGatingHelper.swift ✅ COMPLETED
 **File:** `FocusFlow/Core/Utilities/ProGatingHelper.swift` (NEW)  
 **Effort:** 1 hour  
 **Why:** Centralized gating logic prevents inconsistencies
 
-```swift
-// Create new file with:
-// - isPro check
-// - canUseCloudSync (isPro + isSignedIn)
-// - syncStatus enum (active, needsSignIn, needsUpgrade)
-// - Free tier limits (themes, sounds, ambiance sets)
-// - Feature check methods
-```
+**Status:** ✅ Created with full implementation
 
 **Free Tier Limits:**
-- Themes: Forest, Neon (2)
-- Sounds: Light Rain, Fireplace, Soft Ambience (3)
-- Ambiance: Minimal, Stars, Forest (3)
-- Tasks: 3 active max
-- Reminders: 1 max
-- History: 3 days
-- Presets: View/use 3 defaults, no create/edit
+- ✅ Themes: Forest, Neon (2)
+- ✅ Sounds: Light Rain, Fireplace, Soft Ambience (3)
+- ✅ Ambiance: Minimal, Stars, Forest (3)
+- ✅ Tasks: 3 total max
+- ✅ Reminders: SKIPPED (free users can use on their 3 tasks)
+- ✅ History: 3 days
+- ✅ Presets: 3 total max (can modify/delete system defaults)
+
+**Features:**
+- ✅ `isPro` check with environment object support
+- ✅ `canUseCloudSync` (isPro + isSignedIn)
+- ✅ `CloudSyncStatus` enum (active, needsSignIn, needsUpgrade)
+- ✅ Feature check methods for all gated features
+- ✅ Lock checking methods (`isThemeLocked`, `isSoundLocked`, etc.)
 
 ---
 
-### P1-2: Wire Guest → Account Migration
+### P1-2: Wire Guest → Account Migration ✅ COMPLETED
 **File:** `FocusFlow/App/ContentView.swift`  
 **Effort:** 30 minutes  
 **Why:** Prevents data loss when users sign in from guest mode
 
-**Changes:**
-1. Add `@State private var showMigrationSheet = false`
-2. Add `.onChange(of: authManager.state)` handler
-3. Check `GuestMigrationManager.shared.hasGuestData()`
-4. Show `DataMigrationSheet` when conditions met
+**Status:** ✅ Fully implemented and tested
 
-**Test:**
-- Start as guest → Create task/session → Sign in → Migration sheet appears
+**Changes:**
+- ✅ Added `@State private var showMigrationSheet = false`
+- ✅ Added `wasGuestBeforeSignIn` flag to track guest → signedIn transition
+- ✅ Added `persistGuestDataDirectly()` to save guest data before namespace switch
+- ✅ Added `.onChange(of: authManager.state)` handler
+- ✅ Shows `DataMigrationSheet` when guest data detected after sign-in
+- ✅ Migration handles: sessions, tasks, presets, daily goal, app settings (theme, sound, preferences, profile info)
+
+**Test Results:**
+- ✅ Guest → Sign in → Migration sheet appears
+- ✅ All data types migrate correctly
+- ✅ Migrated data persists and syncs to cloud
 
 ---
 
-### P1-3: Remove DebugLogView
+### P1-3: Remove DebugLogView ✅ COMPLETED
 **File:** `FocusFlow/Features/Focus/DebugLogView.swift`  
 **Effort:** 5 minutes  
 **Why:** Dead code, potential App Store rejection
 
-**Options:**
-- A: Delete file entirely
-- B: Wrap in `#if DEBUG ... #endif`
+**Status:** ✅ File deleted (was already wrapped in `#if DEBUG` but unused)
 
 ---
 
@@ -212,7 +245,7 @@ private func startAllEngines(userId: UUID) {
 
 ---
 
-### P1-5: Gate Themes (2 Free)
+### P1-5: Gate Themes (2 Free) ✅ COMPLETED
 **File:** `FocusFlow/Features/Profile/ProfileView.swift`  
 **Effort:** 1 hour  
 **Why:** Themes are highly visible upgrade trigger
@@ -221,13 +254,14 @@ private func startAllEngines(userId: UUID) {
 **Pro Themes:** Peach, Cyber, Ocean, Sunrise, Amber, Mint, Royal, Slate
 
 **Changes:**
-- Show lock icon on Pro themes
-- Tapping locked theme shows PaywallView
-- Prevent theme change if not Pro
+- ✅ Show lock icon on Pro themes (crown icon + PRO badge)
+- ✅ Tapping locked theme shows PaywallView with `.theme` context
+- ✅ Prevent theme change if not Pro
+- ✅ Visual feedback: dimmed appearance, gradient overlay
 
 ---
 
-### P1-6: Gate Sounds (3 Free)
+### P1-6: Gate Sounds (3 Free) ✅ COMPLETED
 **File:** `FocusFlow/Features/Focus/FocusSoundPicker.swift`  
 **Effort:** 1 hour  
 **Why:** Users encounter sounds first session
@@ -238,13 +272,14 @@ private func startAllEngines(userId: UUID) {
 - soft-ambience
 
 **Changes:**
-- Show lock icon on Pro sounds
-- Allow preview but not selection
-- Tapping locked sound shows PaywallView
+- ✅ Show lock icon on Pro sounds (crown icon + PRO badge)
+- ✅ Prevent selection if not Pro
+- ✅ Tapping locked sound shows PaywallView with `.sound` context
+- ✅ Visual feedback: dimmed appearance, gradient overlay
 
 ---
 
-### P1-7: Gate Ambiance (3 Free)
+### P1-7: Gate Ambiance (3 Free) ✅ COMPLETED
 **File:** `FocusFlow/Features/Focus/AmbientBackgrounds.swift`  
 **Effort:** 1 hour  
 **Why:** Visual backgrounds are strong upgrade trigger
@@ -253,13 +288,14 @@ private func startAllEngines(userId: UUID) {
 **Pro Ambiance:** Aurora, Rain, Fireplace, Ocean, Gradient, Snow, Underwater, Clouds, Sakura, Lightning, Lava
 
 **Changes:**
-- Show lock icon on Pro modes in AmbientPickerSheet
-- Prevent selection if not Pro
-- Show PaywallView on tap
+- ✅ Show lock icon on Pro modes in AmbientPickerSheet (crown icon + PRO badge)
+- ✅ Prevent selection if not Pro
+- ✅ Show PaywallView on tap with `.ambiance` context
+- ✅ Visual feedback: dimmed appearance, gradient overlay
 
 ---
 
-### P1-8: Gate Presets (No Create/Edit)
+### P1-8: Gate Presets (3 Total Max) ✅ COMPLETED
 **Files:** 
 - `FocusFlow/Features/Presets/FocusPresetStore.swift`
 - `FocusFlow/Features/Presets/FocusPresetManagerView.swift`
@@ -268,18 +304,19 @@ private func startAllEngines(userId: UUID) {
 **Effort:** 1 hour  
 **Why:** Custom presets are power user feature
 
-**Free:** Can view and USE first 3 default presets (Deep Work, Study, Writing)  
-**Pro:** 4th default (Reading) + unlimited custom + edit
+**Free:** Can have 3 presets total (system defaults + custom, can modify/delete)  
+**Pro:** Unlimited presets
 
 **Changes:**
-- Hide "+" button for free users
-- Show "Pro" badge on Reading preset
-- Block edit button for free users
-- Show PaywallView when blocked action attempted
+- ✅ "+" button shows paywall when 3+ presets exist
+- ✅ Presets beyond 3rd are locked (crown icon, dimmed)
+- ✅ Locked presets show paywall on tap
+- ✅ Section header shows "X/3" for free users
+- ✅ Free users can delete system defaults to make room for custom ones
 
 ---
 
-### P1-9: Gate Tasks (3 Max Active)
+### P1-9: Gate Tasks (3 Total Max) ✅ COMPLETED
 **Files:**
 - `FocusFlow/Features/Tasks/TasksStore.swift`
 - `FocusFlow/Features/Tasks/TasksView.swift`
@@ -287,69 +324,69 @@ private func startAllEngines(userId: UUID) {
 **Effort:** 1 hour  
 **Why:** Power users hit this limit quickly
 
-**Changes in TasksStore:**
-```swift
-func upsert(_ task: FFTaskItem) {
-    let isNewTask = !tasks.contains(where: { $0.id == task.id })
-    
-    if isNewTask && !ProGatingHelper.shared.isPro {
-        let activeTasks = tasks.filter { !isCompleted(taskId: $0.id, on: Date()) }
-        if activeTasks.count >= 3 {
-            // Post notification to show paywall
-            NotificationCenter.default.post(name: .showPaywall, object: nil, 
-                userInfo: ["context": "task_limit"])
-            return
-        }
-    }
-    // ... existing code
-}
-```
+**Free:** 3 tasks total (completed + incomplete)  
+**Pro:** Unlimited tasks
 
-**Changes in TasksView:**
-- Show "3/3 tasks" counter for free users
-- Show upgrade prompt when limit reached
+**Changes:**
+- ✅ All add buttons (floating +, Quick Add, empty state) gated at 3 tasks
+- ✅ Tasks beyond 3rd are locked (crown icon, dimmed, always at bottom)
+- ✅ Locked tasks cannot be completed or edited
+- ✅ Locking based on original task order (not sorted display order)
+- ✅ Quick stats show "X/3 Tasks" for free users
+- ✅ Paywall shown with `.task` context when limit reached
 
 ---
 
-### P1-10: Gate Task Reminders (1 Max)
+### P1-10: Gate Task Reminders (1 Max) ⏭️ SKIPPED
 **File:** `FocusFlow/Features/Tasks/TaskReminderScheduler.swift`  
 **Effort:** 30 minutes  
 **Why:** Limits encourage upgrade
 
-**Changes:**
-- Count tasks with reminders
-- Block adding reminder if count >= 1 and not Pro
-- Show message "Upgrade for unlimited reminders"
+**Decision:** SKIPPED - Free users have 3 tasks and can use reminders on all of them. No additional limit needed.
 
 ---
 
-### P1-11: Gate Progress History (3 Days)
+### P1-11: Gate Progress History (3 Days) ✅ COMPLETED
 **File:** `FocusFlow/Features/Progress/ProgressViewV2.swift`  
 **Effort:** 1 hour  
 **Why:** Historical data is valuable to committed users
 
+**Free:** Last 3 days of history  
+**Pro:** Full history access
+
 **Changes:**
-- Filter sessions to last 3 days for free users
-- Show "View full history with Pro" message
-- Add blur/overlay on older days
-- Tapping locked history shows PaywallView
+- ✅ Filter sessions to last 3 days for free users
+- ✅ Date navigation (left arrow) blocked beyond 3 days (shows paywall)
+- ✅ Date picker limited to last 3 days for free users
+- ✅ Paywall shown with `.history` context when locked date selected
+- ✅ `minimumAllowedDate` computed property enforces limit
+- ✅ `sessions(in:)` filters to 3 days for free users
 
 ---
 
-### P1-12: Gate XP/Levels (Pro Only)
+### P1-12: Gate XP/Levels (Pro Only) ✅ COMPLETED
 **File:** `FocusFlow/Features/Profile/ProfileView.swift`  
 **Effort:** 45 minutes  
 **Why:** Gamification is Pro perk
 
+**Free:** No XP/Levels system visible  
+**Pro:** Full XP system with 50 levels and achievements
+
 **Changes:**
-- Hide XP bar for free users
-- Hide level indicator
-- Hide achievements section
-- Show "Unlock XP & Levels with Pro" teaser card
+- ✅ Hidden RingProgress (level progress ring) for free users - replaced with simple circle
+- ✅ Hidden LevelBadge for free users
+- ✅ Hidden level title (currentTitle) and info button for free users
+- ✅ Hidden XPProgressBar and XP text for free users
+- ✅ Hidden badges section for free users
+- ✅ Added teaser card for free users with trophy icon, crown badge, and paywall trigger
+- ✅ Gated LevelInfoSheet - shows paywall for free users
+- ✅ Gated AllBadgesSheet - shows paywall for free users
+- ✅ Paywall context set to `.xpLevels`
+- ✅ Added ProGatingHelper integration and `.onChange(of: pro.isPro)` for view refresh
 
 ---
 
-### P1-13: Gate Journey View (Pro Only)
+### P1-13: Gate Journey View (Pro Only) ✅ COMPLETED
 **Files:**
 - `FocusFlow/Features/Profile/ProfileView.swift`
 - `FocusFlow/Features/Journey/JourneyView.swift`
@@ -357,10 +394,18 @@ func upsert(_ task: FFTaskItem) {
 **Effort:** 30 minutes  
 **Why:** Deep analytics is Pro feature
 
+**Free:** Journey button locked (dimmed, crown icon, shows paywall)  
+**Pro:** Full Journey view with daily summaries and weekly reviews
+
 **Changes:**
-- Hide Journey navigation for free users
-- Or show locked state with Pro teaser
-- If accessed directly, redirect to paywall
+- ✅ Journey button checks Pro status before navigation
+- ✅ Free users see paywall (context: `.journey`) when tapping button
+- ✅ Visual indicators: crown icon, dimmed UI, "Unlock with Pro" subtitle
+- ✅ Navigation destination gated to only show JourneyView for Pro users
+- ✅ JourneyView internal gating: free users see paywall screen if accessed directly
+- ✅ Paywall screen in JourneyView with "Journey is a Pro Feature" message
+- ✅ "Upgrade to Pro" and "Go Back" buttons in JourneyView paywall
+- ✅ ProGatingHelper integration
 
 ---
 
@@ -402,25 +447,27 @@ func startActivity(...) {
 
 ---
 
-### P1-16: Gate External Music Apps (Pro Only)
-**File:** `FocusFlow/Features/Focus/ExternalMusicLauncher.swift`  
+### P1-16: Gate External Music Apps (Pro Only) ✅ COMPLETED
+**Files:**
+- `FocusFlow/Features/Focus/ExternalMusicLauncher.swift`
+- `FocusFlow/Features/Focus/FocusSoundPicker.swift`
+
 **Effort:** 30 minutes  
 **Why:** Integration is Pro perk
 
-**Changes:**
-```swift
-static func openSelectedApp(_ app: AppSettings.ExternalMusicApp) {
-    guard ProGatingHelper.shared.isPro else {
-        // Show paywall instead
-        NotificationCenter.default.post(name: .showPaywall, object: nil,
-            userInfo: ["context": "external_music"])
-        return
-    }
-    // ... existing code
-}
-```
+**Free:** External music apps not accessible  
+**Pro:** Full access to Spotify, Apple Music, YouTube Music integration
 
-Also hide external music option in FocusSoundPicker for free users.
+**Changes:**
+- ✅ `ExternalMusicLauncher.openSelectedApp` gated - checks Pro status, shows paywall if not Pro
+- ✅ "Music Apps" tab visible for all users (with crown icon and dimmed appearance for free users)
+- ✅ Free users can select the tab - shows `ExternalMusicPaywallTeaser` with upgrade prompt
+- ✅ `ExternalMusicTab` only visible for Pro users (free users see paywall teaser instead)
+- ✅ Added `ExternalMusicPaywallTeaser` view for free users with upgrade prompt
+- ✅ `musicAppCard` gated - shows paywall if free user tries to select
+- ✅ External music app selection cleared for free users on `onAppear`
+- ✅ Paywall context set to `.externalMusic`
+- ✅ ProGatingHelper integration
 
 ---
 
@@ -537,27 +584,40 @@ enum PaywallContext: String {
 
 | Day | Focus | Tasks |
 |-----|-------|-------|
-| **1** | Foundation | P1-0 (PaywallView), P1-1 (ProGatingHelper), P1-2 (Migration), P1-3 (DebugLogView) |
-| **2** | Content Gates | P1-5 (Themes), P1-6 (Sounds), P1-7 (Ambiance) |
-| **3** | Feature Gates | P1-4 (Sync), P1-8 (Presets), P1-9 (Tasks), P1-10 (Reminders) |
-| **4** | Platform Gates | P1-11 (History), P1-12 (XP), P1-13 (Journey), P1-14-16 (Widget/LA/Music) |
-| **5** | High Priority | P2-1 (Sync UI), P2-2 (PaywallContext) |
-| **6** | Testing | P2-3 (Sync test), P2-4 (State test) |
-| **7+** | Polish | P3-1 through P3-4 |
+| **1** | Foundation | ✅ P1-0 (PaywallView), ✅ P1-1 (ProGatingHelper), ✅ P1-2 (Migration), ✅ P1-3 (DebugLogView) |
+| **2** | Content Gates | ✅ P1-5 (Themes), ✅ P1-6 (Sounds), ✅ P1-7 (Ambiance) |
+| **3** | Feature Gates | ⏳ P1-4 (Sync), ✅ P1-8 (Presets), ✅ P1-9 (Tasks), ⏭️ P1-10 (Reminders - skipped) |
+| **4** | Platform Gates | ✅ P1-11 (History), ✅ P1-12 (XP), ✅ P1-13 (Journey), ✅ P1-16 (External Music), ⏳ P1-14-15 (Widget/LA) |
+| **5** | High Priority | ⏳ P2-1 (Sync UI), ✅ P2-2 (PaywallContext - already done) |
+| **6** | Testing | ⏳ P2-3 (Sync test), ⏳ P2-4 (State test) |
+| **7+** | Polish | ⏳ P3-1 through P3-4 |
 
 ---
 
 ## ✅ Definition of Done
 
 **Each gate must:**
-- [ ] Check Pro status correctly
-- [ ] Show appropriate lock UI
-- [ ] Trigger PaywallView when blocked
-- [ ] Not crash when limit reached
-- [ ] Work in all 4 user states
+- [x] Check Pro status correctly ✅
+- [x] Show appropriate lock UI ✅ (crown icon + PRO badge + dimmed appearance)
+- [x] Trigger PaywallView when blocked ✅ (with contextual `.context` parameter)
+- [x] Not crash when limit reached ✅
+- [x] Work in all 4 user states ✅ (tested: Guest±Pro, SignedIn±Pro)
+
+**Completed Gates:**
+- ✅ Themes (2 free: Forest, Neon)
+- ✅ Sounds (3 free: Light Rain, Fireplace, Soft Ambience)
+- ✅ Ambiance (3 free: Minimal, Stars, Forest)
+- ✅ Presets (3 total max)
+- ✅ Tasks (3 total max)
+- ✅ Progress History (3 days max)
+- ✅ XP/Levels (Pro only - hidden for free users)
+- ✅ Journey View (Pro only - locked for free users)
+- ✅ External Music Apps (Pro only - tab hidden, paywall shown)
+- ✅ Guest → Account Migration
+- ✅ PaywallView (contextual support)
 
 **Before release:**
-- [ ] All P1 tasks complete
+- [ ] All P1 tasks complete (10/11 done, 1 skipped, 3 pending: Sync, Widgets, Live Activity)
 - [ ] All P2 tasks complete
 - [ ] No crashes in 24-hour test
 - [ ] TestFlight feedback addressed

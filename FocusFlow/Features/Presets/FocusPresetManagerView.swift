@@ -4,18 +4,28 @@ struct FocusPresetManagerView: View {
     @ObservedObject private var store = FocusPresetStore.shared
     @ObservedObject private var appSettings = AppSettings.shared
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var pro: ProEntitlementManager
 
     // Sheets
     @State private var selectedPreset: FocusPreset?
     @State private var showingNewPreset = false
+    @State private var showingPaywall = false
+    @State private var paywallContext: PaywallContext = .preset
 
     private var theme: AppTheme { appSettings.profileTheme }
+    
+    // Count total presets (system defaults + custom combined)
+    private var totalPresetCount: Int {
+        store.presets.count
+    }
 
     var body: some View {
+        let _ = ProGatingHelper.shared.setProManager(pro) // Update ProGatingHelper with current pro instance
+        
         let accentPrimary = theme.accentPrimary
         let accentSecondary = theme.accentSecondary
 
-        ZStack {
+        return ZStack {
             PremiumAppBackground(theme: theme, showParticles: true, particleCount: 16)
                 .ignoresSafeArea()
 
@@ -60,6 +70,16 @@ struct FocusPresetManagerView: View {
                 onSave: { created in FocusPresetStore.shared.upsert(created) }
             )
         }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(context: paywallContext).environmentObject(pro)
+        }
+        .onChange(of: pro.isPro) { oldValue, newValue in
+            #if DEBUG
+            print("[FocusPresetManagerView] 🔄 Pro status changed: \(oldValue) → \(newValue)")
+            #endif
+            // Refresh ProGatingHelper when Pro status changes
+            ProGatingHelper.shared.setProManager(pro)
+        }
         // ✅ Full-page sheet
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
@@ -95,15 +115,35 @@ struct FocusPresetManagerView: View {
 
             Button {
                 Haptics.impact(.light)
-                showingNewPreset = true
+                if ProGatingHelper.shared.canAddPreset(currentTotalCount: totalPresetCount) {
+                    showingNewPreset = true
+                } else {
+                    paywallContext = .preset
+                    showingPaywall = true
+                }
             } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.white.opacity(0.85))
-                    .frame(width: 34, height: 34)
-                    .background(Color.white.opacity(0.10))
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                ZStack {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .frame(width: 34, height: 34)
+                        .background(Color.white.opacity(0.10))
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                    
+                    if !ProGatingHelper.shared.canAddPreset(currentTotalCount: totalPresetCount) {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.yellow, .orange],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .offset(x: 10, y: -10)
+                    }
+                }
             }
             .buttonStyle(.plain)
 
@@ -187,14 +227,25 @@ struct FocusPresetManagerView: View {
             Spacer()
 
             if !store.presets.isEmpty {
-                Text("\(store.presets.count)")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.85))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                if ProGatingHelper.shared.isPro {
+                    Text("\(store.presets.count)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                } else {
+                    Text("\(totalPresetCount)/\(ProGatingHelper.freePresetLimit)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                }
             }
         }
     }
@@ -208,12 +259,20 @@ struct FocusPresetManagerView: View {
             } else {
                 // ✅ Keep List for swipe + reorder, but make it visually clean and flush
                 List {
-                    ForEach(store.presets) { preset in
+                    ForEach(Array(store.presets.enumerated()), id: \.element.id) { index, preset in
+                        let isLocked = ProGatingHelper.shared.isPresetLockedByIndex(index: index)
+                        
                         Button {
                             Haptics.impact(.light)
-                            selectedPreset = preset
+                            if isLocked {
+                                paywallContext = .preset
+                                showingPaywall = true
+                            } else {
+                                // Everyone can edit presets (free users can edit their own 3 presets)
+                                selectedPreset = preset
+                            }
                         } label: {
-                            presetRow(preset, accentPrimary: accentPrimary, accentSecondary: accentSecondary)
+                            presetRow(preset, isLocked: isLocked, accentPrimary: accentPrimary, accentSecondary: accentSecondary)
                         }
                         .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
@@ -221,6 +280,7 @@ struct FocusPresetManagerView: View {
                         .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
                         .contentShape(Rectangle())
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            // Allow deletion of any preset (free users can delete system defaults too)
                             Button(role: .destructive) {
                                 Haptics.impact(.light)
                                 store.delete(preset)
@@ -259,7 +319,12 @@ struct FocusPresetManagerView: View {
 
             Button {
                 Haptics.impact(.light)
-                showingNewPreset = true
+                if ProGatingHelper.shared.canAddPreset(currentTotalCount: totalPresetCount) {
+                    showingNewPreset = true
+                } else {
+                    paywallContext = .preset
+                    showingPaywall = true
+                }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill")
@@ -296,15 +361,29 @@ struct FocusPresetManagerView: View {
 
     // MARK: - Row view
 
-    private func presetRow(_ preset: FocusPreset, accentPrimary: Color, accentSecondary: Color) -> some View {
+    private func presetRow(_ preset: FocusPreset, isLocked: Bool, accentPrimary: Color, accentSecondary: Color) -> some View {
         let isActive = store.activePresetID == preset.id
 
         return HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Text(preset.name)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 6) {
+                        Text(preset.name)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white.opacity(isLocked ? 0.5 : 1.0))
+                        
+                        if isLocked {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.yellow, .orange],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                    }
 
                     if isActive {
                         Text("Active")
@@ -389,10 +468,10 @@ struct FocusPresetManagerView: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.white.opacity(isActive ? 0.06 : 0.04))
+                .fill(Color.white.opacity(isActive ? 0.06 : (isLocked ? 0.02 : 0.04)))
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.white.opacity(isActive ? 0.14 : 0.08), lineWidth: 1)
+                        .stroke(Color.white.opacity(isActive ? 0.14 : (isLocked ? 0.04 : 0.08)), lineWidth: 1)
                 )
         )
     }

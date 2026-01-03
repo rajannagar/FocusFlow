@@ -51,54 +51,130 @@ final class ProEntitlementManager: ObservableObject {
     }
 
     func refreshEntitlement() async {
+        #if DEBUG
+        print("[ProEntitlementManager] 🔄 Refreshing entitlement status...")
+        #endif
+        
         var hasPro = false
+        var foundTransactions: [String] = []
 
         for await result in Transaction.currentEntitlements {
-            guard case .verified(let transaction) = result else { continue }
+            guard case .verified(let transaction) = result else {
+                #if DEBUG
+                print("[ProEntitlementManager] ⚠️ Unverified transaction found")
+                #endif
+                continue
+            }
+
+            #if DEBUG
+            print("[ProEntitlementManager] 📦 Found transaction: \(transaction.productID), type: \(transaction.productType.rawValue), revoked: \(transaction.revocationDate != nil)")
+            #endif
 
             if transaction.productType == .autoRenewable,
                (transaction.productID == Self.monthlyID || transaction.productID == Self.yearlyID),
                transaction.revocationDate == nil {
                 hasPro = true
+                foundTransactions.append(transaction.productID)
+                #if DEBUG
+                print("[ProEntitlementManager] ✅ Valid Pro subscription found: \(transaction.productID)")
+                #endif
                 break
             }
         }
 
+        let oldStatus = self.isPro
         self.isPro = hasPro
+        
+        #if DEBUG
+        if oldStatus != hasPro {
+            print("[ProEntitlementManager] 🎉 Pro status changed: \(oldStatus) → \(hasPro)")
+            if hasPro {
+                print("[ProEntitlementManager] ✅ User is now PRO! Unlocking all features...")
+            } else {
+                print("[ProEntitlementManager] ❌ User is no longer PRO. Locking features...")
+            }
+        } else {
+            print("[ProEntitlementManager] ℹ️ Pro status unchanged: \(hasPro) (found \(foundTransactions.count) valid transactions)")
+        }
+        #endif
     }
 
     func purchase(_ product: Product) async {
+        #if DEBUG
+        print("[ProEntitlementManager] 💳 Starting purchase for: \(product.id)")
+        print("[ProEntitlementManager] 💰 Product price: \(product.displayPrice)")
+        #endif
+        
         lastErrorMessage = nil
         do {
             let result = try await product.purchase()
 
             switch result {
             case .success(let verification):
+                #if DEBUG
+                print("[ProEntitlementManager] ✅ Purchase successful! Verifying transaction...")
+                #endif
                 guard case .verified(let transaction) = verification else {
+                    #if DEBUG
+                    print("[ProEntitlementManager] ❌ Purchase verification failed")
+                    #endif
                     lastErrorMessage = "Purchase could not be verified."
                     return
                 }
+                #if DEBUG
+                print("[ProEntitlementManager] ✅ Transaction verified: \(transaction.productID)")
+                print("[ProEntitlementManager] 📝 Transaction date: \(transaction.purchaseDate)")
+                if let expirationDate = transaction.expirationDate {
+                    print("[ProEntitlementManager] 📅 Expiration date: \(expirationDate)")
+                }
+                #endif
                 await transaction.finish()
+                #if DEBUG
+                print("[ProEntitlementManager] ✅ Transaction finished. Refreshing entitlement...")
+                #endif
                 await refreshEntitlement()
 
             case .userCancelled:
+                #if DEBUG
+                print("[ProEntitlementManager] ⏸️ User cancelled purchase")
+                #endif
                 break
             case .pending:
+                #if DEBUG
+                print("[ProEntitlementManager] ⏳ Purchase pending (requires Apple ID confirmation)")
+                #endif
                 lastErrorMessage = "Purchase pending. Please complete on your Apple ID."
             @unknown default:
+                #if DEBUG
+                print("[ProEntitlementManager] ❓ Unknown purchase result")
+                #endif
                 break
             }
         } catch {
+            #if DEBUG
+            print("[ProEntitlementManager] ❌ Purchase failed with error: \(error.localizedDescription)")
+            print("[ProEntitlementManager] Error details: \(error)")
+            #endif
             lastErrorMessage = "Purchase failed: \(error.localizedDescription)"
         }
     }
 
     func restorePurchases() async {
+        #if DEBUG
+        print("[ProEntitlementManager] 🔄 Restoring purchases...")
+        #endif
         lastErrorMessage = nil
         do {
             try await AppStore.sync()
+            #if DEBUG
+            print("[ProEntitlementManager] ✅ AppStore sync completed. Refreshing entitlement...")
+            #endif
             await refreshEntitlement()
         } catch {
+            #if DEBUG
+            print("[ProEntitlementManager] ❌ Restore failed: \(error.localizedDescription)")
+            print("[ProEntitlementManager] Error details: \(error)")
+            #endif
             lastErrorMessage = "Restore failed: \(error.localizedDescription)"
         }
     }

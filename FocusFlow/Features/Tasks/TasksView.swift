@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 struct TasksView: View {
     @ObservedObject private var appSettings = AppSettings.shared
     @ObservedObject private var vm = TasksStore.shared
+    @EnvironmentObject private var pro: ProEntitlementManager
     
     @State private var selectedDate: Date = Calendar.autoupdatingCurrent.startOfDay(for: Date())
     @State private var centeredDateID: Int? = nil
@@ -22,6 +23,8 @@ struct TasksView: View {
     @State private var showingJumpToDate = false
     @State private var showingQuickAdd = false
     @State private var showingInfoSheet = false
+    @State private var showingPaywall = false
+    @State private var paywallContext: PaywallContext = .task
     
     private var theme: AppTheme { appSettings.profileTheme }
     private var cal: Calendar { .autoupdatingCurrent }
@@ -29,11 +32,48 @@ struct TasksView: View {
     
     // MARK: - Computed Properties
     
+    // Original ordered tasks for this day (used for locking - order never changes)
+    private var originalOrderedTasks: [FFTaskItem] {
+        vm.orderedTasks().filter { $0.occurs(on: day, calendar: cal) }
+    }
+    
     private var visibleTasks: [FFTaskItem] {
-        let base = vm.orderedTasks().filter { $0.occurs(on: day, calendar: cal) }
-        let incomplete = base.filter { !isCompleted($0, on: day) }
-        let complete = base.filter { isCompleted($0, on: day) }
-        return incomplete + complete
+        let base = originalOrderedTasks
+        // Separate tasks into: incomplete unlocked, complete unlocked, locked (incomplete + complete)
+        var incompleteUnlocked: [FFTaskItem] = []
+        var completeUnlocked: [FFTaskItem] = []
+        var lockedTasks: [FFTaskItem] = []
+        
+        for (index, task) in base.enumerated() {
+            let isLocked = ProGatingHelper.shared.isTaskLockedByIndex(index: index)
+            let done = isCompleted(task, on: day)
+            
+            if isLocked {
+                lockedTasks.append(task)
+            } else if done {
+                completeUnlocked.append(task)
+            } else {
+                incompleteUnlocked.append(task)
+            }
+        }
+        
+        // Order: incomplete unlocked → complete unlocked → locked (always at bottom)
+        return incompleteUnlocked + completeUnlocked + lockedTasks
+    }
+    
+    // Count ALL tasks (completed + incomplete) for the selected date
+    private var totalTaskCount: Int {
+        visibleTasks.count
+    }
+    
+    // Get the original index of a task (for locking - based on original order, not sorted)
+    private func originalIndex(of task: FFTaskItem) -> Int? {
+        originalOrderedTasks.firstIndex(where: { $0.id == task.id })
+    }
+    
+    // Count active (incomplete) tasks for the selected date (for display purposes)
+    private var activeTaskCount: Int {
+        visibleTasks.filter { !isCompleted($0, on: day) }.count
     }
     
     private var completedCount: Int {
@@ -145,8 +185,17 @@ struct TasksView: View {
                 taskToEdit: mode.task,
                 onCancel: { editorMode = nil },
                 onSave: { draft in
-                    upsertTask(draft)
-                    editorMode = nil
+                    // Check if this is a new task (not editing existing)
+                    let isNewTask = mode.task == nil
+                    if isNewTask && !ProGatingHelper.shared.canAddTask(currentActiveCount: totalTaskCount) {
+                        // Don't save, show paywall instead
+                        editorMode = nil
+                        paywallContext = .task
+                        showingPaywall = true
+                    } else {
+                        upsertTask(draft)
+                        editorMode = nil
+                    }
                 }
             )
             .presentationDetents([.large])
@@ -173,24 +222,44 @@ struct TasksView: View {
         }
         .sheet(isPresented: $showingQuickAdd) {
             QuickAddSheet(theme: theme, selectedDay: day) { title, duration in
-                let task = FFTaskItem(
-                    id: UUID(),
-                    sortIndex: vm.orderedTasks().count,
-                    title: title,
-                    notes: nil,
-                    reminderDate: nil, // ✅ Quick add tasks have no reminder
-                    repeatRule: .none, // ✅ Quick add tasks have no repeat
-                    customWeekdays: [],
-                    durationMinutes: duration,
-                    convertToPreset: false,
-                    presetCreated: false,
-                    createdAt: Date()
-                )
-                vm.upsert(task)
-                showingQuickAdd = false
+                // Check if user can add more tasks (based on TOTAL count, not just incomplete)
+                if ProGatingHelper.shared.canAddTask(currentActiveCount: totalTaskCount) {
+                    let task = FFTaskItem(
+                        id: UUID(),
+                        sortIndex: vm.orderedTasks().count,
+                        title: title,
+                        notes: nil,
+                        reminderDate: nil, // ✅ Quick add tasks have no reminder
+                        repeatRule: .none, // ✅ Quick add tasks have no repeat
+                        customWeekdays: [],
+                        durationMinutes: duration,
+                        convertToPreset: false,
+                        presetCreated: false,
+                        createdAt: Date()
+                    )
+                    vm.upsert(task)
+                    showingQuickAdd = false
+                } else {
+                    // Show paywall instead of creating task
+                    showingQuickAdd = false
+                    paywallContext = .task
+                    showingPaywall = true
+                }
             }
             .presentationDetents([.fraction(0.4), .medium, .large])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(context: paywallContext).environmentObject(pro)
+        }
+        .onChange(of: pro.isPro) { oldValue, newValue in
+            #if DEBUG
+            print("[TasksView] 🔄 Pro status changed: \(oldValue) → \(newValue)")
+            #endif
+            ProGatingHelper.shared.setProManager(pro)
+        }
+        .onAppear {
+            ProGatingHelper.shared.setProManager(pro)
         }
         .sheet(isPresented: $showingInfoSheet) {
             TasksInfoSheet(theme: theme)
@@ -407,12 +476,21 @@ struct TasksView: View {
                 color: .green
             )
             
-            quickStatItem(
-                icon: "list.bullet",
-                value: "\(visibleTasks.count - completedCount)",
-                label: "Remaining",
-                color: .orange
-            )
+            if ProGatingHelper.shared.isPro {
+                quickStatItem(
+                    icon: "list.bullet",
+                    value: "\(visibleTasks.count - completedCount)",
+                    label: "Remaining",
+                    color: .orange
+                )
+            } else {
+                quickStatItem(
+                    icon: "list.bullet",
+                    value: "\(totalTaskCount)/\(ProGatingHelper.freeTaskLimit)",
+                    label: "Tasks",
+                    color: .orange
+                )
+            }
         }
     }
     
@@ -452,13 +530,30 @@ struct TasksView: View {
                 if !visibleTasks.isEmpty {
                     Button {
                         Haptics.impact(.light)
-                        showingQuickAdd = true
+                        if ProGatingHelper.shared.canAddTask(currentActiveCount: totalTaskCount) {
+                            showingQuickAdd = true
+                        } else {
+                            paywallContext = .task
+                            showingPaywall = true
+                        }
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "plus")
                                 .font(.system(size: 10, weight: .bold))
                             Text("Quick Add")
                                 .font(.system(size: 11, weight: .semibold))
+                            
+                            if !ProGatingHelper.shared.canAddTask(currentActiveCount: totalTaskCount) {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 7, weight: .bold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.yellow, .orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
                         }
                         .foregroundColor(theme.accentPrimary)
                         .padding(.horizontal, 10)
@@ -479,34 +574,50 @@ struct TasksView: View {
     }
     
     private var tasksList: some View {
-        List {
-            ForEach(visibleTasks) { task in
+        // Lock based on TOTAL task count (completed + incomplete), not just incomplete
+        // Use original order index for locking (not sorted visibleTasks index)
+        return List {
+            ForEach(visibleTasks, id: \.id) { task in
+                let originalIndex = originalIndex(of: task) ?? Int.max
+                let isLocked = ProGatingHelper.shared.isTaskLockedByIndex(index: originalIndex)
+                let done = isCompleted(task, on: day)
+                
                 Button {
-                    toggleCompletion(task, on: day)
+                    if isLocked {
+                        paywallContext = .task
+                        showingPaywall = true
+                    } else {
+                        toggleCompletion(task, on: day)
+                    }
                 } label: {
-                    taskRow(task)
+                    taskRow(task, isLocked: isLocked)
                 }
                 .buttonStyle(.plain)
+                .disabled(isLocked) // Prevent any interaction with locked tasks
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        Haptics.impact(.medium)
-                        pendingDeleteTask = task
-                        showDeleteAlert = true
-                    } label: {
-                        Image(systemName: "trash")
+                    if !isLocked {
+                        Button(role: .destructive) {
+                            Haptics.impact(.medium)
+                            pendingDeleteTask = task
+                            showDeleteAlert = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
                     }
                 }
                 .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    Button {
-                        Haptics.impact(.light)
-                        editorMode = TaskEditorMode(id: task.id, task: task)
-                    } label: {
-                        Image(systemName: "pencil")
+                    if !isLocked {
+                        Button {
+                            Haptics.impact(.light)
+                            editorMode = TaskEditorMode(id: task.id, task: task)
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .tint(theme.accentPrimary)
                     }
-                    .tint(theme.accentPrimary)
                 }
             }
         }
@@ -516,7 +627,7 @@ struct TasksView: View {
         .frame(minHeight: CGFloat(visibleTasks.count) * 76)
     }
     
-    private func taskRow(_ task: FFTaskItem) -> some View {
+    private func taskRow(_ task: FFTaskItem, isLocked: Bool) -> some View {
         let done = isCompleted(task, on: day)
         
         return HStack(spacing: 14) {
@@ -546,16 +657,44 @@ struct TasksView: View {
                     Circle()
                         .stroke(Color.white.opacity(0.25), lineWidth: 2)
                         .frame(width: 28, height: 28)
+                        .opacity(isLocked ? 0.5 : 1.0)
+                    
+                    // Lock icon overlay
+                    if isLocked {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.yellow, .orange],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
                 }
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(done ? .white.opacity(0.5) : .white)
-                    .strikethrough(done, color: .white.opacity(0.3))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
+                HStack(spacing: 6) {
+                    Text(task.title)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(done ? .white.opacity(0.5) : .white.opacity(isLocked ? 0.5 : 1.0))
+                        .strikethrough(done, color: .white.opacity(0.3))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    
+                    if isLocked && !done {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.yellow, .orange],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
+                }
                 
                 let meta = taskMeta(task)
                 if !meta.isEmpty {
@@ -582,10 +721,10 @@ struct TasksView: View {
         .padding(.horizontal, 14)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(done ? 0.03 : 0.05))
+                .fill(Color.white.opacity(done ? 0.03 : (isLocked ? 0.02 : 0.05)))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        .stroke(Color.white.opacity(isLocked ? 0.04 : 0.08), lineWidth: 1)
                 )
         )
     }
@@ -615,13 +754,30 @@ struct TasksView: View {
             
             Button {
                 Haptics.impact(.light)
-                editorMode = TaskEditorMode(id: UUID(), task: nil)
+                if ProGatingHelper.shared.canAddTask(currentActiveCount: totalTaskCount) {
+                    editorMode = TaskEditorMode(id: UUID(), task: nil)
+                } else {
+                    paywallContext = .task
+                    showingPaywall = true
+                }
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "plus")
                         .font(.system(size: 14, weight: .bold))
                     Text("Add Task")
                         .font(.system(size: 15, weight: .semibold))
+                    
+                    if !ProGatingHelper.shared.canAddTask(currentActiveCount: totalTaskCount) {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.yellow, .orange],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
                 }
                 .foregroundColor(.black)
                 .padding(.horizontal, 24)
@@ -686,29 +842,70 @@ struct TasksView: View {
     // MARK: - Floating Add Button
     
     private var floatingAddButton: some View {
-        Button {
+        let canAdd = ProGatingHelper.shared.canAddTask(currentActiveCount: totalTaskCount)
+        
+        return Button {
             Haptics.impact(.medium)
-            editorMode = TaskEditorMode(id: UUID(), task: nil)
+            if canAdd {
+                editorMode = TaskEditorMode(id: UUID(), task: nil)
+            } else {
+                paywallContext = .task
+                showingPaywall = true
+            }
         } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.black)
-                .frame(width: 56, height: 56)
-                .background(
-                    LinearGradient(
-                        colors: [theme.accentPrimary, theme.accentSecondary],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            ZStack {
+                Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(canAdd ? .black : .white.opacity(0.5))
+                    .frame(width: 56, height: 56)
+                    .background(
+                        LinearGradient(
+                            colors: canAdd 
+                                ? [theme.accentPrimary, theme.accentSecondary]
+                                : [Color.white.opacity(0.1), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
-                .clipShape(Circle())
-                .shadow(color: theme.accentPrimary.opacity(0.4), radius: 12, y: 6)
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(canAdd ? 0.0 : 0.1), lineWidth: 1)
+                    )
+                    .shadow(color: canAdd ? theme.accentPrimary.opacity(0.4) : .clear, radius: 12, x: 0, y: 6)
+                
+                if !canAdd {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.yellow, .orange],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .offset(y: -2)
+                }
+            }
         }
+        .buttonStyle(.plain)
     }
     
     // MARK: - Actions
     
     private func toggleCompletion(_ task: FFTaskItem, on day: Date) {
+        // Check if task is locked (prevent completion of locked tasks)
+        // Use original order index, not sorted visibleTasks index
+        if let taskIndex = originalIndex(of: task),
+           ProGatingHelper.shared.isTaskLockedByIndex(index: taskIndex) {
+            #if DEBUG
+            print("[TasksView] 🔒 Attempted to toggle locked task: \(task.title) at original index \(taskIndex)")
+            #endif
+            paywallContext = .task
+            showingPaywall = true
+            return
+        }
+        
         let wasDone = vm.isCompleted(taskId: task.id, on: day, calendar: cal)
         
         if wasDone {

@@ -171,22 +171,53 @@ struct PaywallView: View {
             }
         }
         .task {
-            if pro.products.isEmpty { await pro.loadProducts() }
+            #if DEBUG
+            print("[PaywallView] 📱 PaywallView appeared (context: \(context.rawValue))")
+            print("[PaywallView] 📊 Current Pro status: \(pro.isPro)")
+            #endif
+            if pro.products.isEmpty {
+                #if DEBUG
+                print("[PaywallView] 📦 Loading products...")
+                #endif
+                await pro.loadProducts()
+            }
+            #if DEBUG
+            print("[PaywallView] 🔄 Refreshing entitlement...")
+            #endif
             await pro.refreshEntitlement()
             await checkSubscriptionStatus()
+            #if DEBUG
+            print("[PaywallView] ✅ Initialization complete. Pro status: \(pro.isPro)")
+            #endif
         }
     }
     
     private func checkSubscriptionStatus() async {
+        #if DEBUG
+        print("[PaywallView] 🔍 Checking subscription status...")
+        #endif
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result {
                 if transaction.productID == ProEntitlementManager.monthlyID ||
                    transaction.productID == ProEntitlementManager.yearlyID {
                     if let expirationDate = transaction.expirationDate {
+                        let isExpired = expirationDate <= Date()
+                        let isCancelled = transaction.revocationDate != nil
+                        #if DEBUG
+                        print("[PaywallView] 📦 Found subscription: \(transaction.productID)")
+                        print("[PaywallView] 📅 Expiration: \(expirationDate) (expired: \(isExpired))")
+                        print("[PaywallView] 🚫 Revoked: \(isCancelled)")
+                        #endif
                         if expirationDate > Date() {
-                            subscriptionStatus = transaction.revocationDate != nil ? .cancelled : .active
+                            subscriptionStatus = isCancelled ? .cancelled : .active
+                            #if DEBUG
+                            print("[PaywallView] ✅ Status: \(subscriptionStatus)")
+                            #endif
                         } else {
                             subscriptionStatus = .expired
+                            #if DEBUG
+                            print("[PaywallView] ⏰ Status: \(subscriptionStatus)")
+                            #endif
                         }
                     }
                     return
@@ -194,6 +225,9 @@ struct PaywallView: View {
             }
         }
         subscriptionStatus = .notSubscribed
+        #if DEBUG
+        print("[PaywallView] ❌ No active subscription found. Status: \(subscriptionStatus)")
+        #endif
     }
 
     // MARK: - Close Button
@@ -574,12 +608,37 @@ struct PaywallView: View {
             } else {
                 // Purchase CTA
                 Button {
-                    guard let product = selectedProduct else { return }
+                    guard let product = selectedProduct else {
+                        #if DEBUG
+                        print("[PaywallView] ❌ No product selected for purchase")
+                        #endif
+                        return
+                    }
+                    #if DEBUG
+                    print("[PaywallView] 💳 Purchase button tapped")
+                    print("[PaywallView] 📦 Product: \(product.id) - \(product.displayPrice)")
+                    print("[PaywallView] 📋 Context: \(context.rawValue)")
+                    #endif
                     isBusy = true
                     Task {
+                        let wasProBefore = pro.isPro
                         await pro.purchase(product)
                         isBusy = false
-                        if pro.isPro { await checkSubscriptionStatus() }
+                        let isProAfter = pro.isPro
+                        #if DEBUG
+                        print("[PaywallView] ✅ Purchase flow completed")
+                        print("[PaywallView] 📊 Pro status: \(wasProBefore) → \(isProAfter)")
+                        #endif
+                        if isProAfter {
+                            await checkSubscriptionStatus()
+                            #if DEBUG
+                            print("[PaywallView] 🎉 User is now Pro! Features should be unlocked.")
+                            #endif
+                        } else {
+                            #if DEBUG
+                            print("[PaywallView] ⚠️ User is not Pro after purchase. Error: \(pro.lastErrorMessage ?? "none")")
+                            #endif
+                        }
                     }
                 } label: {
                     HStack(spacing: 8) {

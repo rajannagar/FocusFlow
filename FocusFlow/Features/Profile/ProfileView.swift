@@ -364,6 +364,7 @@ struct ProfileView: View {
     @State private var showingAllBadges = false
     @State private var showingLevelInfo = false
     @State private var showingPaywall = false
+    @State private var paywallContext: PaywallContext = .xpLevels
     @State private var selectedBadge: Badge? = nil
     @State private var dataVersion = 0
 
@@ -515,7 +516,9 @@ struct ProfileView: View {
                             }
                             
                             journeyButton
-                            badgesSection
+                            if pro.isPro {
+                                badgesSection
+                            }
                             allTimeSection
                             weekCard
                             accountSection
@@ -536,15 +539,41 @@ struct ProfileView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(isPresented: $navigateToJourney) {
-                JourneyView()
+                if pro.isPro {
+                    JourneyView()
+                        .environmentObject(pro)
+                } else {
+                    // This shouldn't happen (button is gated), but safety check
+                    EmptyView()
+                }
             }
         }
         .sheet(isPresented: $showingSettings) { SettingsSheet(theme: theme).environmentObject(pro) }
         .sheet(isPresented: $showingEditProfile) { EditProfileSheet(theme: theme) }
-        .sheet(isPresented: $showingAllBadges) { AllBadgesSheet(badges: allBadges, theme: theme) }
-        .sheet(isPresented: $showingLevelInfo) { LevelInfoSheet(currentLevel: currentLevel, totalXP: totalXP, theme: theme) }
+        .sheet(isPresented: $showingAllBadges) {
+            if pro.isPro {
+                AllBadgesSheet(badges: allBadges, theme: theme)
+            } else {
+                // Show paywall if free user tries to access badges
+                PaywallView(context: .xpLevels).environmentObject(pro)
+            }
+        }
+        .sheet(isPresented: $showingLevelInfo) {
+            if pro.isPro {
+                LevelInfoSheet(currentLevel: currentLevel, totalXP: totalXP, theme: theme)
+            } else {
+                // Show paywall if free user tries to access level info
+                PaywallView(context: .xpLevels).environmentObject(pro)
+            }
+        }
         .sheet(item: $selectedBadge) { badge in BadgeDetailSheet(badge: badge, theme: theme) }
-        .sheet(isPresented: $showingPaywall) { PaywallView().environmentObject(pro) }
+        .sheet(isPresented: $showingPaywall) { PaywallView(context: paywallContext).environmentObject(pro) }
+        .onAppear {
+            ProGatingHelper.shared.setProManager(pro)
+        }
+        .onChange(of: pro.isPro) { _, _ in
+            print("[ProfileView] 🔄 Pro status changed: \(pro.isPro)")
+        }
         .onReceive(NotificationCenter.default.publisher(for: AppSyncManager.sessionCompleted)) { _ in dataVersion += 1 }
         .onReceive(NotificationCenter.default.publisher(for: AppSyncManager.taskCompleted)) { _ in dataVersion += 1 }
     }
@@ -591,20 +620,31 @@ struct ProfileView: View {
                 showingEditProfile = true
             } label: {
                 ZStack {
-                    RingProgress(progress: levelProgress, lineWidth: 4, color: theme.accentPrimary)
-                        .frame(width: 96, height: 96)
+                    // Show level progress ring only for Pro users
+                    if pro.isPro {
+                        RingProgress(progress: levelProgress, lineWidth: 4, color: theme.accentPrimary)
+                            .frame(width: 96, height: 96)
+                    } else {
+                        // Simple circle for free users
+                        Circle()
+                            .stroke(Color.white.opacity(0.1), lineWidth: 4)
+                            .frame(width: 96, height: 96)
+                    }
 
                     profileAvatar(size: 80)
 
-                    VStack {
-                        Spacer()
-                        HStack {
+                    // Show level badge only for Pro users
+                    if pro.isPro {
+                        VStack {
                             Spacer()
-                            LevelBadge(level: currentLevel, color: theme.accentPrimary, size: 32)
-                                .offset(x: 6, y: 6)
+                            HStack {
+                                Spacer()
+                                LevelBadge(level: currentLevel, color: theme.accentPrimary, size: 32)
+                                    .offset(x: 6, y: 6)
+                            }
                         }
+                        .frame(width: 96, height: 96)
                     }
-                    .frame(width: 96, height: 96)
                 }
             }
             .buttonStyle(.plain)
@@ -614,41 +654,122 @@ struct ProfileView: View {
                 .foregroundColor(.white)
                 .padding(.top, 12)
 
-            HStack(spacing: 6) {
-                Text(currentTitle)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(theme.accentPrimary)
+            // Show level title and info only for Pro users
+            if pro.isPro {
+                HStack(spacing: 6) {
+                    Text(currentTitle)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(theme.accentPrimary)
+                    Button {
+                        Haptics.impact(.light)
+                        showingLevelInfo = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.4))
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 5)
+                .background(theme.accentPrimary.opacity(0.15))
+                .clipShape(Capsule())
+                .padding(.top, 6)
+
+                VStack(spacing: 6) {
+                    XPProgressBar(progress: levelProgress, color: theme.accentPrimary)
+
+                    HStack {
+                        Text("\(totalXP) XP")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
+                        Spacer()
+                        Text(currentLevel < 50 ? "\(xpToNext) XP to Level \(currentLevel + 1)" : "MAX LEVEL")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(currentLevel < 50 ? .white.opacity(0.4) : theme.accentPrimary)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 20)
+            } else {
+                // XP/Levels teaser card for free users
                 Button {
                     Haptics.impact(.light)
-                    showingLevelInfo = true
+                    paywallContext = .xpLevels
+                    showingPaywall = true
                 } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.4))
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [theme.accentPrimary.opacity(0.2), theme.accentSecondary.opacity(0.1)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 48, height: 48)
+                            
+                            Image(systemName: "trophy.fill")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.yellow, .orange],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Text("XP & 50 Levels")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.white)
+                                
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.yellow, .orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                            
+                            Text("Track your progress with XP, unlock achievements, and level up to 50")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.white.opacity(0.6))
+                                .lineLimit(2)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.4))
+                    }
+                    .padding(16)
+                    .background(Color.white.opacity(0.04))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.2)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
                 }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 20)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 5)
-            .background(theme.accentPrimary.opacity(0.15))
-            .clipShape(Capsule())
-            .padding(.top, 6)
-
-            VStack(spacing: 6) {
-                XPProgressBar(progress: levelProgress, color: theme.accentPrimary)
-
-                HStack {
-                    Text("\(totalXP) XP")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.5))
-                    Spacer()
-                    Text(currentLevel < 50 ? "\(xpToNext) XP to Level \(currentLevel + 1)" : "MAX LEVEL")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(currentLevel < 50 ? .white.opacity(0.4) : theme.accentPrimary)
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-            .padding(.bottom, 20)
         }
         .background(Color.white.opacity(0.04))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -681,7 +802,12 @@ struct ProfileView: View {
     private var journeyButton: some View {
         Button {
             Haptics.impact(.light)
-            navigateToJourney = true
+            if pro.isPro {
+                navigateToJourney = true
+            } else {
+                paywallContext = .journey
+                showingPaywall = true
+            }
         } label: {
             HStack(spacing: 14) {
                 ZStack {
@@ -694,37 +820,74 @@ struct ProfileView: View {
                             )
                         )
                         .frame(width: 44, height: 44)
+                        .opacity(pro.isPro ? 1.0 : 0.5)
 
                     Image(systemName: "book.pages.fill")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(theme.accentPrimary)
+                        .opacity(pro.isPro ? 1.0 : 0.5)
+                    
+                    // Show lock overlay for free users
+                    if !pro.isPro {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.yellow, .orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .offset(x: 2, y: 2)
+                            }
+                        }
+                        .frame(width: 44, height: 44)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("My Journey")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 6) {
+                        Text("My Journey")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white.opacity(pro.isPro ? 1.0 : 0.7))
+                        
+                        if !pro.isPro {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.yellow, .orange],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                    }
 
-                    Text("Your focus story & daily summaries")
+                    Text(pro.isPro ? "Your focus story & daily summaries" : "Unlock with Pro")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(.white.opacity(pro.isPro ? 0.5 : 0.4))
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.3))
+                    .foregroundColor(.white.opacity(pro.isPro ? 0.3 : 0.2))
             }
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.white.opacity(pro.isPro ? 0.04 : 0.02))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .stroke(
                                 LinearGradient(
-                                    colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.1)],
+                                    colors: [theme.accentPrimary.opacity(pro.isPro ? 0.3 : 0.15), theme.accentSecondary.opacity(pro.isPro ? 0.2 : 0.1)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
@@ -1567,6 +1730,7 @@ private struct SettingsSheet: View {
     @State private var showingReset = false
     @State private var resetText = ""
     @State private var showingPaywall = false
+    @State private var paywallContext: PaywallContext = .general
     @State private var showingNotificationSettings = false
     @State private var showingRestore = false
     @State private var resetError: String?
@@ -1631,7 +1795,7 @@ private struct SettingsSheet: View {
             }
         }
         .sheet(isPresented: $showingPaywall) {
-            PaywallView().environmentObject(pro)
+            PaywallView(context: paywallContext).environmentObject(pro)
         }
         .sheet(isPresented: $showingNotificationSettings) {
             NotificationSettingsView()
@@ -1786,25 +1950,72 @@ private struct SettingsSheet: View {
     }
 
     private func themeButton(for t: AppTheme) -> some View {
-        Button {
+        let isLocked = ProGatingHelper.shared.isThemeLocked(t)
+        let isSelected = settings.profileTheme == t
+        
+        return Button {
             Haptics.impact(.light)
-            settings.setThemeWithSync(t)
+            if isLocked {
+                paywallContext = .theme
+                showingPaywall = true
+            } else {
+                settings.setThemeWithSync(t)
+            }
         } label: {
             VStack(spacing: 8) {
-                Circle()
-                    .fill(LinearGradient(colors: [t.accentPrimary, t.accentSecondary], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 48, height: 48)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white, lineWidth: settings.profileTheme == t ? 3 : 0)
-                            .frame(width: 48, height: 48)
-                    )
-                    .scaleEffect(settings.profileTheme == t ? 1.0 : 0.92)
-                    .animation(.easeInOut(duration: 0.15), value: settings.profileTheme == t)
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [t.accentPrimary, t.accentSecondary], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 48, height: 48)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: isSelected ? 3 : 0)
+                                .frame(width: 48, height: 48)
+                        )
+                        .scaleEffect(isSelected ? 1.0 : 0.92)
+                        .animation(.easeInOut(duration: 0.15), value: isSelected)
+                    
+                    // Premium lock overlay
+                    if isLocked {
+                        ZStack {
+                            // Gradient overlay
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.black.opacity(0.6),
+                                            Color.black.opacity(0.4)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 48, height: 48)
+                            
+                            // PRO badge
+                            VStack(spacing: 2) {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.yellow, .orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                
+                                Text("PRO")
+                                    .font(.system(size: 7, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .tracking(0.5)
+                            }
+                        }
+                    }
+                }
 
                 Text(t.displayName)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(settings.profileTheme == t ? .white : .white.opacity(0.5))
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.5))
             }
         }
         .buttonStyle(.plain)

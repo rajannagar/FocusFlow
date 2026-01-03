@@ -62,7 +62,26 @@ final class ProGatingHelper {
     
     static let shared = ProGatingHelper()
     
+    // Optional ProEntitlementManager instance (from environment object)
+    // Falls back to shared instance if not provided
+    private var proManager: ProEntitlementManager?
+    
     private init() {}
+    
+    /// Set the ProEntitlementManager instance (called from views with environment object)
+    func setProManager(_ manager: ProEntitlementManager) {
+        let wasPro = self.isPro
+        self.proManager = manager
+        let nowPro = self.isPro
+        
+        #if DEBUG
+        if wasPro != nowPro {
+            print("[ProGatingHelper] 🔄 Pro manager updated. Status changed: \(wasPro) → \(nowPro)")
+        } else {
+            print("[ProGatingHelper] 🔄 Pro manager updated. Status: \(nowPro)")
+        }
+        #endif
+    }
     
     // MARK: - Free Tier Limits
     
@@ -96,7 +115,15 @@ final class ProGatingHelper {
     
     /// Returns true if user has Pro subscription (via Apple ID)
     var isPro: Bool {
-        ProEntitlementManager.shared.isPro
+        let manager = proManager ?? ProEntitlementManager.shared
+        let status = manager.isPro
+        #if DEBUG
+        // Only log occasionally to avoid spam
+        if Int.random(in: 0...99) == 0 {
+            print("[ProGatingHelper] 🔍 Checking Pro status: \(status) (using \(proManager != nil ? "environment" : "shared") instance)")
+        }
+        #endif
+        return status
     }
     
     /// Returns true if user can use cloud sync (Pro + SignedIn)
@@ -153,14 +180,32 @@ final class ProGatingHelper {
     
     // MARK: - Preset Gating
     
-    /// Returns true if user can create custom presets
+    /// Returns true if user can create more presets
+    /// - Parameter currentTotalCount: Total number of presets (system defaults + custom combined)
+    func canAddPreset(currentTotalCount: Int) -> Bool {
+        let canAdd = isPro || currentTotalCount < Self.freePresetLimit
+        #if DEBUG
+        if !canAdd {
+            print("[ProGatingHelper] 🔒 Cannot add preset (isPro: \(isPro), current: \(currentTotalCount), limit: \(Self.freePresetLimit))")
+        }
+        #endif
+        return canAdd
+    }
+    
+    /// Returns the number of remaining presets user can create
+    func remainingPresets(currentTotalCount: Int) -> Int {
+        if isPro { return Int.max }
+        return max(0, Self.freePresetLimit - currentTotalCount)
+    }
+    
+    /// Returns true if user can create custom presets (deprecated - use canAddPreset instead)
     var canCreatePresets: Bool {
         isPro
     }
     
-    /// Returns true if user can edit presets
+    /// Returns true if user can edit presets (free users can edit their own presets)
     var canEditPresets: Bool {
-        isPro
+        true // Everyone can edit presets
     }
     
     /// Returns true if the preset is available to use
@@ -179,18 +224,52 @@ final class ProGatingHelper {
         return !Self.freePresetNames.contains(name)
     }
     
+    /// Returns true if a preset at the given index is locked for free users
+    /// - Free users can only access the first 3 presets (index 0, 1, 2)
+    /// - Pro users can access all presets
+    /// - Parameter index: The index of the preset in the ordered list
+    func isPresetLockedByIndex(index: Int) -> Bool {
+        let locked = !isPro && index >= Self.freePresetLimit
+        #if DEBUG
+        if locked {
+            print("[ProGatingHelper] 🔒 Preset at index \(index) is LOCKED (isPro: \(isPro), limit: \(Self.freePresetLimit))")
+        }
+        #endif
+        return locked
+    }
+    
     // MARK: - Task Gating
     
     /// Returns true if user can add more tasks
     /// - Parameter currentActiveCount: Number of currently active (incomplete) tasks
     func canAddTask(currentActiveCount: Int) -> Bool {
-        isPro || currentActiveCount < Self.freeTaskLimit
+        let canAdd = isPro || currentActiveCount < Self.freeTaskLimit
+        #if DEBUG
+        if !canAdd {
+            print("[ProGatingHelper] 🔒 Cannot add task (isPro: \(isPro), current: \(currentActiveCount), limit: \(Self.freeTaskLimit))")
+        }
+        #endif
+        return canAdd
     }
     
     /// Returns the number of remaining tasks user can add
     func remainingTasks(currentActiveCount: Int) -> Int {
         if isPro { return Int.max }
         return max(0, Self.freeTaskLimit - currentActiveCount)
+    }
+    
+    /// Returns true if a task at the given index in the incomplete tasks list is locked
+    /// - Free users can only access the first 3 incomplete tasks (index 0, 1, 2)
+    /// - Pro users can access all tasks
+    /// - Parameter index: The index of the task in the incomplete tasks list
+    func isTaskLockedByIndex(index: Int) -> Bool {
+        let locked = !isPro && index >= Self.freeTaskLimit
+        #if DEBUG
+        if locked {
+            print("[ProGatingHelper] 🔒 Task at index \(index) is LOCKED (isPro: \(isPro), limit: \(Self.freeTaskLimit))")
+        }
+        #endif
+        return locked
     }
     
     // MARK: - Reminder Gating

@@ -9,11 +9,14 @@ struct ProgressViewV2: View {
     @ObservedObject private var appSettings = AppSettings.shared
     @ObservedObject private var progressStore = ProgressStore.shared
     @ObservedObject private var tasksStore = TasksStore.shared
+    @EnvironmentObject private var pro: ProEntitlementManager
 
     @State private var selectedDate: Date = Date()
     @State private var showGoalSheet = false
     @State private var showDatePicker = false
     @State private var goalVersion: Int = 0
+    @State private var showingPaywall = false
+    @State private var paywallContext: PaywallContext = .history
 
     @State private var weekPageIndex: Int = 0
     @State private var weekStarts: [Date] = []
@@ -30,6 +33,22 @@ struct ProgressViewV2: View {
 
     private var theme: AppTheme { appSettings.profileTheme }
     private var cal: Calendar { .autoupdatingCurrent }
+    
+    // Cached minimum allowed date for free users (3 days ago)
+    // Only recalculated when Pro status changes or on appear
+    @State private var cachedMinimumDate: Date = {
+        let cal = Calendar.autoupdatingCurrent
+        let today = cal.startOfDay(for: Date())
+        return cal.date(byAdding: .day, value: -ProGatingHelper.freeHistoryDays, to: today) ?? today
+    }()
+    
+    // Minimum allowed date for free users (3 days ago)
+    private var minimumAllowedDate: Date {
+        if pro.isPro {
+            return Date.distantPast
+        }
+        return cachedMinimumDate
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -109,10 +128,19 @@ struct ProgressViewV2: View {
             .presentationBackground(Color(red: 0.08, green: 0.08, blue: 0.10))
         }
         .sheet(isPresented: $showDatePicker) {
-            DatePickerSheet(theme: theme, date: $selectedDate)
-                .presentationDetents([.fraction(0.65), .large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(Color(red: 0.08, green: 0.08, blue: 0.10))
+            DatePickerSheet(
+                theme: theme,
+                date: $selectedDate,
+                minimumDate: minimumAllowedDate,
+                isPro: pro.isPro,
+                onLockedDateSelected: {
+                    paywallContext = .history
+                    showingPaywall = true
+                }
+            )
+            .presentationDetents([.fraction(0.65), .large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color(red: 0.08, green: 0.08, blue: 0.10))
         }
         .sheet(isPresented: $showStreakInfo) {
             InfoSheet(
@@ -187,8 +215,29 @@ struct ProgressViewV2: View {
             .presentationDragIndicator(.visible)
         }
         .onAppear {
+            ProGatingHelper.shared.setProManager(pro)
             preferredWeekdayOffset = weekdayIndexWithinWeek(for: selectedDate)
             rebuildWeekWindow(around: selectedDate)
+            // Cache minimum date on appear
+            let today = cal.startOfDay(for: Date())
+            cachedMinimumDate = cal.date(byAdding: .day, value: -ProGatingHelper.freeHistoryDays, to: today) ?? today
+            // Ensure selectedDate is within allowed range for free users
+            if !pro.isPro {
+                let selectedDay = cal.startOfDay(for: selectedDate)
+                let minDay = cachedMinimumDate
+                if selectedDay < minDay {
+                    selectedDate = Date()
+                }
+            }
+        }
+        .onChange(of: pro.isPro) { _, _ in
+            print("[ProgressViewV2] 🔄 Pro status changed: \(pro.isPro)")
+            // Recalculate minimum date when Pro status changes
+            let today = cal.startOfDay(for: Date())
+            cachedMinimumDate = cal.date(byAdding: .day, value: -ProGatingHelper.freeHistoryDays, to: today) ?? today
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(context: paywallContext).environmentObject(pro)
         }
         .onChange(of: selectedDate) { _, newValue in
             guard !isSyncingFromPager else { return }
@@ -255,7 +304,20 @@ struct ProgressViewV2: View {
         HStack(spacing: 12) {
             Button {
                 Haptics.impact(.light)
-                stepDay(-1)
+                if pro.isPro {
+                    stepDay(-1)
+                } else {
+                    // Check if going back would exceed 3-day limit
+                    let newDate = cal.date(byAdding: .day, value: -1, to: selectedDate) ?? selectedDate
+                    let newDay = cal.startOfDay(for: newDate)
+                    let minDay = minimumAllowedDate
+                    if newDay >= minDay {
+                        stepDay(-1)
+                    } else {
+                        paywallContext = .history
+                        showingPaywall = true
+                    }
+                }
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 14, weight: .semibold))
@@ -745,6 +807,7 @@ struct ProgressViewV2: View {
                 ForEach(Array(weekStarts.enumerated()), id: \.offset) { idx, start in
                     weekBarsView(for: start)
                         .tag(idx)
+                        .drawingGroup() // Optimize rendering performance
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -757,19 +820,26 @@ struct ProgressViewV2: View {
 
     private func weekBarsView(for weekStart: Date) -> some View {
         let bars = weekBars(for: weekStart)
+        let today = cal.startOfDay(for: Date())
+        let minDate = pro.isPro ? Date.distantPast : cachedMinimumDate
 
         return HStack(alignment: .bottom, spacing: 8) {
             ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
                 let d = bar.2
+                let dayStart = cal.startOfDay(for: d)
                 let isSelected = cal.isDate(d, inSameDayAs: selectedDate)
-                let isFuture = cal.startOfDay(for: d) > cal.startOfDay(for: Date())
+                let isFuture = dayStart > today
+                let isLocked = !pro.isPro && dayStart < minDate
                 let goal = goalMinutes(for: d)
                 let progress = goal > 0 ? min(1.0, Double(bar.1) / Double(goal)) : 0
 
                 Button {
-                    Haptics.impact(.light)
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        selectedDate = d
+                    // Only allow selection if not locked
+                    if !isLocked {
+                        Haptics.impact(.light)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                            selectedDate = d
+                        }
                     }
                 } label: {
                     VStack(spacing: 8) {
@@ -778,7 +848,7 @@ struct ProgressViewV2: View {
                                 .fill(Color.white.opacity(0.06))
                                 .frame(width: 36, height: 100)
 
-                            if !isFuture && bar.1 > 0 {
+                            if !isFuture && bar.1 > 0 && !isLocked {
                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                                     .fill(
                                         LinearGradient(
@@ -805,6 +875,7 @@ struct ProgressViewV2: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .disabled(isLocked) // Disable interaction for locked bars
             }
         }
         .frame(maxWidth: .infinity)
@@ -1141,9 +1212,16 @@ struct ProgressViewV2: View {
     // =========================================================
 
     private func sessions(in interval: DateInterval) -> [ProgressSession] {
-        progressStore.sessions
+        var filtered = progressStore.sessions
             .filter { $0.date >= interval.start && $0.date < interval.end }
-            .sorted(by: { $0.date > $1.date })
+        
+        // For free users, only show sessions from last 3 days
+        if !pro.isPro {
+            let minDate = minimumAllowedDate
+            filtered = filtered.filter { $0.date >= minDate }
+        }
+        
+        return filtered.sorted(by: { $0.date > $1.date })
     }
 
     private func focusSeconds(in interval: DateInterval) -> TimeInterval {
@@ -1442,8 +1520,21 @@ struct ProgressViewV2: View {
     // =========================================================
 
     private func stepDay(_ val: Int) {
+        let newDate = cal.date(byAdding: .day, value: val, to: selectedDate) ?? selectedDate
+        
+        // For free users, prevent going back beyond 3 days
+        if !pro.isPro && val < 0 {
+            let newDay = cal.startOfDay(for: newDate)
+            let minDay = minimumAllowedDate
+            if newDay < minDay {
+                paywallContext = .history
+                showingPaywall = true
+                return
+            }
+        }
+        
         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-            selectedDate = cal.date(byAdding: .day, value: val, to: selectedDate) ?? selectedDate
+            selectedDate = newDate
         }
     }
 }
@@ -1721,7 +1812,20 @@ private struct GoalSheet: View {
 private struct DatePickerSheet: View {
     let theme: AppTheme
     @Binding var date: Date
+    let minimumDate: Date
+    let isPro: Bool
+    let onLockedDateSelected: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedDateInPicker: Date
+
+    init(theme: AppTheme, date: Binding<Date>, minimumDate: Date, isPro: Bool, onLockedDateSelected: @escaping () -> Void) {
+        self.theme = theme
+        self._date = date
+        self.minimumDate = minimumDate
+        self.isPro = isPro
+        self.onLockedDateSelected = onLockedDateSelected
+        self._selectedDateInPicker = State(initialValue: date.wrappedValue)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1756,16 +1860,39 @@ private struct DatePickerSheet: View {
             .padding(.bottom, 8)
 
             // Calendar
-            DatePicker("", selection: $date, displayedComponents: [.date])
+            DatePicker("", selection: $selectedDateInPicker, in: (isPro ? Date.distantPast : minimumDate)...Date(), displayedComponents: [.date])
                 .datePickerStyle(.graphical)
                 .tint(theme.accentPrimary)
                 .padding(.horizontal, 8)
+                .onChange(of: selectedDateInPicker) { oldValue, newValue in
+                    // Check if selected date is locked for free users
+                    if !isPro {
+                        let selectedDay = Calendar.autoupdatingCurrent.startOfDay(for: newValue)
+                        let minDay = Calendar.autoupdatingCurrent.startOfDay(for: minimumDate)
+                        if selectedDay < minDay {
+                            onLockedDateSelected()
+                            selectedDateInPicker = oldValue // Revert selection
+                            return
+                        }
+                    }
+                    date = newValue
+                }
 
             Spacer()
             
             // Done button
             Button {
                 Haptics.impact(.light)
+                // Final check before dismissing
+                if !isPro {
+                    let selectedDay = Calendar.autoupdatingCurrent.startOfDay(for: selectedDateInPicker)
+                    let minDay = Calendar.autoupdatingCurrent.startOfDay(for: minimumDate)
+                    if selectedDay < minDay {
+                        onLockedDateSelected()
+                        return
+                    }
+                }
+                date = selectedDateInPicker
                 dismiss()
             } label: {
                 Text("Done")

@@ -1218,6 +1218,9 @@ struct AmbientPickerSheet: View {
     @Binding var selectedMode: AmbientMode
     @Binding var intensity: Double
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var pro: ProEntitlementManager
+    
+    @State private var showingPaywall = false
     
     var body: some View {
         ZStack {
@@ -1289,8 +1292,12 @@ struct AmbientPickerSheet: View {
                                 isSelected: selectedMode == mode,
                                 onTap: {
                                     Haptics.impact(.light)
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                        selectedMode = mode
+                                    if ProGatingHelper.shared.isAmbianceLocked(mode) {
+                                        showingPaywall = true
+                                    } else {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            selectedMode = mode
+                                        }
                                     }
                                 }
                             )
@@ -1327,6 +1334,9 @@ struct AmbientPickerSheet: View {
         }
         .presentationDragIndicator(.hidden)
         .presentationCornerRadius(32)
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(context: .ambiance).environmentObject(pro)
+        }
     }
 }
 
@@ -1381,6 +1391,10 @@ private struct AmbientModeCard: View {
     let isSelected: Bool
     let onTap: () -> Void
     
+    private var isLocked: Bool {
+        ProGatingHelper.shared.isAmbianceLocked(mode)
+    }
+    
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 12) {
@@ -1396,14 +1410,77 @@ private struct AmbientModeCard: View {
                     Image(systemName: mode.icon)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(isSelected ? .black : .white.opacity(0.8))
+                    
+                    // Premium lock overlay
+                    if isLocked {
+                        ZStack {
+                            // Gradient overlay
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.black.opacity(0.7),
+                                            Color.black.opacity(0.5)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 50, height: 50)
+                            
+                            // PRO badge
+                            VStack(spacing: 2) {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.yellow, .orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                
+                                Text("PRO")
+                                    .font(.system(size: 7, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .tracking(0.5)
+                            }
+                        }
+                    }
                 }
                 
                 VStack(spacing: 2) {
-                    Text(mode.rawValue)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 4) {
+                        Text(mode.rawValue)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                        
+                        if isLocked {
+                            HStack(spacing: 2) {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.yellow, .orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text("PRO")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .tracking(0.5)
+                            }
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(0.12))
+                            )
+                        }
+                    }
                     
-                    Text(mode.description)
+                    Text(isLocked ? "Unlock with Pro" : mode.description)
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
                 }
@@ -1412,7 +1489,7 @@ private struct AmbientModeCard: View {
             .padding(.vertical, 20)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.white.opacity(isSelected ? 0.12 : 0.04))
+                    .fill(Color.white.opacity(isSelected ? 0.12 : (isLocked ? 0.02 : 0.04)))
                     .overlay(
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .stroke(

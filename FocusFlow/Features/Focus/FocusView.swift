@@ -20,6 +20,10 @@ struct FocusView: View {
     @ObservedObject private var progressStore = ProgressStore.shared
     @ObservedObject private var notifications = NotificationCenterManager.shared
     @ObservedObject private var presetStore = FocusPresetStore.shared
+    @EnvironmentObject private var pro: ProEntitlementManager
+    
+    @State private var showingPaywall = false
+    @State private var paywallContext: PaywallContext = .preset
     
     @State private var showingTimePicker = false
     @State private var selectedHours: Int = 0
@@ -97,7 +101,9 @@ struct FocusView: View {
     private var theme: AppTheme { appSettings.profileTheme }
     
     var body: some View {
-        GeometryReader { proxy in
+        let _ = ProGatingHelper.shared.setProManager(pro) // Update ProGatingHelper with current pro instance
+        
+        return GeometryReader { proxy in
             content(size: proxy.size)
         }
     }
@@ -330,6 +336,13 @@ struct FocusView: View {
                     applyPresetSettingsOnly(preset)
                 }
             }
+            .onChange(of: pro.isPro) { oldValue, newValue in
+                #if DEBUG
+                print("[FocusView] 🔄 Pro status changed: \(oldValue) → \(newValue)")
+                #endif
+                // Refresh ProGatingHelper when Pro status changes
+                ProGatingHelper.shared.setProManager(pro)
+            }
             .sheet(isPresented: $showingTimePicker) { timePickerSheet }
             .sheet(isPresented: $showingSoundSheet) { FocusSoundPicker() }
             .sheet(isPresented: $showingNotificationCenter) { NotificationCenterView() }
@@ -345,6 +358,9 @@ struct FocusView: View {
                     .presentationDragIndicator(.visible)
                     .presentationBackground(.clear)
                     .presentationCornerRadius(32)
+            }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView(context: paywallContext).environmentObject(pro)
             }
             .alert(item: $activeAlert) { alert in
                 switch alert {
@@ -574,36 +590,56 @@ struct FocusView: View {
                 }
                 .buttonStyle(.plain)
 
-                ForEach(presetStore.presets) { preset in
+                ForEach(Array(presetStore.presets.enumerated()), id: \.element.id) { index, preset in
                     let isSelected = (presetStore.activePresetID == preset.id)
+                    let isLocked = ProGatingHelper.shared.isPresetLockedByIndex(index: index)
 
                     Button {
                         simpleTap()
-                        handlePresetTap(preset)
+                        if isLocked {
+                            paywallContext = .preset
+                            showingPaywall = true
+                        } else {
+                            handlePresetTap(preset)
+                        }
                     } label: {
-                        Text(preset.name)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(isSelected ? .black : .white.opacity(0.85))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(
-                                Group {
-                                    if isSelected {
+                        HStack(spacing: 6) {
+                            Text(preset.name)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(isSelected ? .black : .white.opacity(isLocked ? 0.5 : 0.85))
+                            
+                            if isLocked {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(
                                         LinearGradient(
-                                            colors: [accentPrimary, accentSecondary],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
+                                            colors: [.yellow, .orange],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
                                         )
-                                    } else {
-                                        Color.white.opacity(0.04)
-                                    }
+                                    )
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            Group {
+                                if isSelected {
+                                    LinearGradient(
+                                        colors: [accentPrimary, accentSecondary],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                } else {
+                                    Color.white.opacity(isLocked ? 0.02 : 0.04)
                                 }
-                            )
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule().stroke(Color.white.opacity(isSelected ? 0.0 : 0.06), lineWidth: 1)
-                            )
-                            .shadow(color: isSelected ? accentPrimary.opacity(0.3) : .clear, radius: isSelected ? 8 : 0)
+                            }
+                        )
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().stroke(Color.white.opacity(isSelected ? 0.0 : (isLocked ? 0.04 : 0.06)), lineWidth: 1)
+                        )
+                        .shadow(color: isSelected ? accentPrimary.opacity(0.3) : .clear, radius: isSelected ? 8 : 0)
                     }
                     .buttonStyle(.plain)
                 }
