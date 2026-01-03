@@ -15,11 +15,12 @@ const features = [
     icon: '⏱️',
     color: 'violet',
     headline: 'Deep focus, beautiful ambiance',
-    description: 'Start timed sessions with customizable durations. Choose from 14 ambient backgrounds or connect your music app.',
+    description: 'Start timed sessions with customizable durations. Choose from ambient backgrounds or connect your music app (Pro).',
     highlights: [
-      { title: '14 Ambient Backgrounds', desc: 'Aurora, Rain, Fireplace, Ocean, Forest, and more' },
-      { title: 'Music Integration', desc: 'Spotify, Apple Music, or YouTube Music' },
-      { title: 'Live Activity', desc: 'See your timer on Lock Screen' },
+      { title: '14 Ambient Backgrounds', desc: 'Aurora, Rain, Fireplace, Ocean, Forest, and more (3 free, 14 Pro)' },
+      { title: '11 Focus Sounds', desc: 'Light Rain, Fireplace, Soft Ambience, and more (3 free, 11 Pro)' },
+      { title: 'Music Integration', desc: 'Spotify, Apple Music, or YouTube Music (Pro)' },
+      { title: 'Live Activity', desc: 'See your timer in Dynamic Island (Pro)' },
       { title: 'Session Intentions', desc: 'Set focus goals for each session' },
     ],
     screenshots: ['/images/screen-focus-1.png', '/images/screen-focus-2.png', '/images/screen-focus-3.png'],
@@ -41,7 +42,7 @@ const features = [
     highlights: [
       { title: 'Recurring Tasks', desc: 'Daily, weekly, monthly, or custom' },
       { title: 'Duration Estimates', desc: 'Track actual vs estimated time' },
-      { title: 'Convert to Presets', desc: 'One tap to start configured sessions' },
+      { title: 'Task Limits', desc: '3 tasks (Free) or unlimited (Pro)' },
       { title: 'Smart Reminders', desc: 'Never miss important tasks' },
     ],
     screenshots: ['/images/screen-tasks-1.png', '/images/screen-tasks-2.png', '/images/screen-tasks-3.png'],
@@ -59,11 +60,12 @@ const features = [
     icon: '📈',
     color: 'amber',
     headline: 'Track your growth',
-    description: 'Earn XP, level up through 50 ranks, maintain streaks, and unlock achievement badges.',
+    description: 'Earn XP, level up through 50 ranks, maintain streaks, and unlock achievement badges (Pro).',
     highlights: [
-      { title: 'XP & 50 Levels', desc: 'Earn XP for sessions and tasks' },
-      { title: 'Achievement Badges', desc: 'Unlock milestones and rewards' },
-      { title: 'Daily Summaries', desc: 'View focus time and trends' },
+      { title: 'XP & 50 Levels', desc: 'Earn XP for sessions and tasks (Pro)' },
+      { title: 'Achievement Badges', desc: 'Unlock milestones and rewards (Pro)' },
+      { title: 'Journey View', desc: 'Daily summaries and weekly reviews (Pro)' },
+      { title: 'Progress History', desc: 'Last 3 days (Free) or full history (Pro)' },
       { title: 'Streak Tracking', desc: 'Build consistency over time' },
     ],
     screenshots: ['/images/screen-progress-1.png', '/images/screen-progress-2.png', '/images/screen-progress-3.png'],
@@ -81,12 +83,13 @@ const features = [
     icon: '👤',
     color: 'rose',
     headline: 'Make it yours',
-    description: 'Personalize every aspect of your experience. Choose your avatar, pick your theme, and sync across all your devices.',
+    description: 'Personalize every aspect of your experience. Choose your avatar, pick your theme, and sync across all your devices (Pro).',
     highlights: [
-      { title: '10 Beautiful Themes', desc: 'Forest, Neon Glow, Ocean Mist, and more' },
+      { title: '10 Beautiful Themes', desc: 'Forest, Neon (Free), plus 8 Pro themes' },
       { title: '50+ Symbol Avatars', desc: 'Express yourself without photos' },
-      { title: 'Custom Focus Presets', desc: 'Save your favorite session setups' },
-      { title: 'Cloud Sync', desc: 'Your data on all your devices' },
+      { title: 'Custom Focus Presets', desc: '3 presets (Free) or unlimited (Pro)' },
+      { title: 'Cloud Sync', desc: 'Sync across all devices (Pro + sign-in required)' },
+      { title: 'Interactive Widgets', desc: 'Control timer from home screen (Pro)' },
     ],
     screenshots: ['/images/screen-profile.png', '/images/screen-profile-2.png', '/images/screen-profile-3.png'],
     screenData: [
@@ -511,11 +514,13 @@ export default function FocusFlowPage() {
                 </div>
                 <ul className="space-y-2 md:space-y-3 mb-6 md:mb-8 flex-1">
                   {[
-                    'Focus timer with 3 backgrounds',
-                    'Basic task management',
-                    'Progress tracking with XP',
-                    '3 themes',
-                    'Limited presets',
+                    'Focus timer with 3 ambient backgrounds',
+                    '3 focus sounds',
+                    '2 themes (Forest, Neon)',
+                    '3 presets maximum',
+                    '3 tasks maximum',
+                    'Last 3 days of history',
+                    'View-only widgets',
                   ].map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 md:gap-3 text-xs md:text-sm text-[var(--foreground-muted)]">
                       <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-[var(--foreground-subtle)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -554,10 +559,16 @@ export default function FocusFlowPage() {
                   {[
                     'Everything in Free',
                     'All 14 ambient backgrounds',
-                      'Unlimited presets & tasks',
+                    'All 11 focus sounds',
                     'All 10 premium themes',
-                    'Advanced progress insights',
-                    'Priority support',
+                    'Unlimited presets & tasks',
+                    'Full progress history',
+                    'XP & 50 levels system',
+                    'Journey view with daily summaries',
+                    'Cloud sync across devices',
+                    'Interactive widgets',
+                    'Live Activity (Dynamic Island)',
+                    'External music integration',
                   ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-2 md:gap-3 text-sm md:text-base text-[var(--foreground-muted)]">
                         <svg className="w-4 h-4 md:w-5 md:h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -593,10 +604,16 @@ export default function FocusFlowPage() {
                   {[
                     'Everything in Free',
                     'All 14 ambient backgrounds',
-                    'Unlimited presets & tasks',
+                    'All 11 focus sounds',
                     'All 10 premium themes',
-                    'Advanced progress insights',
-                    'Priority support',
+                    'Unlimited presets & tasks',
+                    'Full progress history',
+                    'XP & 50 levels system',
+                    'Journey view with daily summaries',
+                    'Cloud sync across devices',
+                    'Interactive widgets',
+                    'Live Activity (Dynamic Island)',
+                    'External music integration',
                   ].map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 md:gap-3 text-xs md:text-sm text-[var(--foreground-muted)]">
                       <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
