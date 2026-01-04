@@ -10,7 +10,7 @@
      COLOR PALETTE - Dark Luxury
      ───────────────────────────────────────────────────────────── */
   
-  /* Base Colors */
+  /* Base Colors - Can be overridden by theme */
   --background: #0A0A0B;
   --background-elevated: #111113;
   --background-subtle: #18181B;
@@ -21,13 +21,13 @@
   --foreground-muted: #A8A29E;
   --foreground-subtle: #78716C;
   
-  /* Accent - Electric Violet */
+  /* Accent - Electric Violet - Can be overridden by theme */
   --accent-primary: #8B5CF6;
   --accent-primary-light: #A78BFA;
   --accent-primary-dark: #7C3AED;
   --accent-glow: rgba(139, 92, 246, 0.4);
   
-  /* Secondary Accent - Warm Gold */
+  /* Secondary Accent - Warm Gold - Can be overridden by theme */
   --accent-secondary: #D4A853;
   --accent-secondary-light: #E5C07B;
   
@@ -92,9 +92,12 @@
   --error: #EF4444;
   
   /* Borders & Surfaces */
-  --border: rgba(26, 22, 18, 0.08);
-  --border-hover: rgba(26, 22, 18, 0.15);
+  --border: rgba(26, 22, 18, 0.06);
+  --border-hover: rgba(26, 22, 18, 0.12);
   --surface-glass: rgba(255, 255, 255, 0.9);
+  
+  /* Theme-aware borders */
+  --border-theme: var(--border);
   
   /* Shadows & Effects - softer for light theme */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -210,6 +213,20 @@ p {
   overflow: hidden;
 }
 
+/* Theme-aware borders - softer in light mode, use theme colors */
+[data-theme="light"] .card {
+  border-color: rgba(26, 22, 18, 0.04);
+}
+
+[data-theme="dark"] .card {
+  border-color: rgba(245, 240, 232, 0.08);
+}
+
+/* Cards with theme accent borders on hover */
+.card:hover {
+  border-color: var(--accent-primary)30 !important;
+}
+
 .card::before {
   content: "";
   position: absolute;
@@ -307,18 +324,22 @@ p {
 
 .btn-secondary:hover {
   background: var(--background-elevated);
-  border-color: var(--border-hover);
+  border-color: var(--accent-primary)40;
+  color: var(--accent-primary);
 }
 
 .btn-accent {
-  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dark) 100%);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
   color: white;
-  box-shadow: 0 4px 20px var(--accent-glow);
+  box-shadow: 0 4px 20px var(--accent-primary)30;
+  font-weight: 600;
 }
 
 .btn-accent:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 40px var(--accent-glow);
+  box-shadow: 0 8px 40px var(--accent-primary)40;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+  filter: brightness(1.1);
 }
 
 /* Large Button Variant */
@@ -638,6 +659,16 @@ a:active {
   .section-padding {
     padding: 120px 0;
   }
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* ─────────────────────────────────────────────────────────────

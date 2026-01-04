@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react';
 
-export type Theme = 'dark' | 'light';
+export type DarkMode = 'dark' | 'light';
 
-export function useTheme() {
-  const [theme, setTheme] = useState<Theme>('dark');
+/**
+ * Hook for managing dark/light mode (like main site)
+ */
+export function useDarkMode() {
+  const [theme, setTheme] = useState<DarkMode>('dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -13,14 +16,14 @@ export function useTheme() {
     setMounted(true);
     
     // Get theme from localStorage or default to dark
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
+    const savedTheme = localStorage.getItem('focusflow-dark-mode') as DarkMode | null;
     const initialTheme = savedTheme || 'dark';
     
     setTheme(initialTheme);
     applyTheme(initialTheme);
   }, []);
 
-  const applyTheme = (newTheme: Theme) => {
+  const applyTheme = (newTheme: DarkMode) => {
     const root = document.documentElement;
     root.setAttribute('data-theme', newTheme);
     
@@ -35,16 +38,16 @@ export function useTheme() {
   };
 
   const toggleTheme = () => {
-    const newTheme: Theme = theme === 'dark' ? 'light' : 'dark';
+    const newTheme: DarkMode = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+    localStorage.setItem('focusflow-dark-mode', newTheme);
     applyTheme(newTheme);
   };
 
   return {
     theme,
     toggleTheme,
-    mounted, // Useful for preventing hydration mismatch
+    mounted,
   };
 }
 

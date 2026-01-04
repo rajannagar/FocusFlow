@@ -7,7 +7,7 @@ import { useThrottledMouse } from '@/hooks/useThrottledMouse';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { APP_STORE_URL } from '@/lib/constants';
-import ThemeToggle from '@/components/common/ThemeToggle';
+import DarkModeToggle from '@/components/common/DarkModeToggle';
 import { Mail, Lock, LogIn, UserPlus, Loader2, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 
 function SignInContent() {
@@ -120,7 +120,7 @@ function SignInContent() {
     <div className="min-h-screen bg-[var(--background)] flex relative">
       {/* Theme Toggle - Fixed Top Right */}
       <div className="fixed top-4 right-4 z-50">
-        <ThemeToggle />
+        <DarkModeToggle />
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════

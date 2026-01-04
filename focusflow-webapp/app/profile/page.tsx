@@ -3,12 +3,17 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSyncAuth, useOnlineStatus } from '@/hooks';
 import AppHeader from '@/components/layout/AppHeader';
-import { User, Mail, Calendar } from 'lucide-react';
+import { User, Mail, Calendar, Settings } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  
+  // Sync auth state with stores
+  useSyncAuth();
+  useOnlineStatus();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,9 +39,9 @@ export default function ProfilePage() {
       <main className="flex-1 container-wide px-4 md:px-6 lg:px-8 py-8 md:py-12">
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold">Profile</h1>
+            <h1 className="text-3xl md:text-4xl font-bold">Profile & Settings</h1>
             <p className="text-[var(--foreground-muted)]">
-              Manage your account information and settings.
+              Manage your account information and preferences.
             </p>
           </div>
 

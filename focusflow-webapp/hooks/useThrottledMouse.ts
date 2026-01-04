@@ -1,32 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
- * Throttled mouse position hook for performance
- * Updates mouse position at most once every 50ms (20fps)
- * 
- * @returns {{ x: number, y: number }} Current mouse position
+ * Throttled mouse position hook for smooth animations
+ * Returns mouse position with throttling to prevent performance issues
  */
 export function useThrottledMouse() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    let lastUpdate = 0;
-    const throttleDelay = 50; // 20fps max update rate
-    
+    let lastTime = 0;
+    const throttleDelay = 16; // ~60fps
+
     const handleMouseMove = (e: MouseEvent) => {
       const now = Date.now();
-      if (now - lastUpdate >= throttleDelay) {
-        setMousePosition({ x: e.clientX, y: e.clientY });
-        lastUpdate = now;
+      if (now - lastTime >= throttleDelay) {
+        setMousePosition({
+          x: e.clientX - window.innerWidth / 2,
+          y: e.clientY - window.innerHeight / 2,
+        });
+        lastTime = now;
       }
     };
-    
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   return mousePosition;

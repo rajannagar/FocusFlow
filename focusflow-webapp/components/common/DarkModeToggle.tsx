@@ -1,9 +1,9 @@
 'use client';
 
-import { useTheme } from '@/hooks/useTheme';
+import { useDarkMode } from '@/hooks/useDarkMode';
 
-export default function ThemeToggle() {
-  const { theme, toggleTheme, mounted } = useTheme();
+export default function DarkModeToggle() {
+  const { theme, toggleTheme, mounted } = useDarkMode();
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
