@@ -15,8 +15,9 @@ import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import DarkModeToggle from '@/components/common/DarkModeToggle';
+import UserMenu from '@/components/common/UserMenu';
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, Target } from 'lucide-react';
+import { Target, Calendar } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -75,126 +76,139 @@ export default function DashboardPage() {
   const dailyGoal = 7200; // 2 hours in seconds
   const goalProgress = Math.min((todayFocusTime / dailyGoal) * 100, 100);
 
+  // Section Divider Component (matching main site style)
+  const SectionDivider = () => (
+    <div className="relative h-px w-full bg-gradient-to-r from-transparent via-[var(--border)] to-transparent my-12 md:my-16" />
+  );
+
   return (
     <div className="min-h-screen flex bg-[var(--background)] relative overflow-hidden">
-      {/* Animated Background */}
+      {/* Animated Background - Matching main site */}
       <AnimatedBackground variant="aurora" showGrid={true} />
       
       <Sidebar />
       
-      <main className="flex-1 flex flex-col lg:ml-0 relative z-10">
-        {/* Top Bar - Enhanced Premium Header */}
+      <main className="flex-1 flex flex-col lg:ml-0 relative z-10 pt-4">
+        {/* Top Bar - Compact Professional Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="sticky top-0 z-30 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)] px-6 lg:px-8 py-4"
+          className="sticky top-4 z-30 bg-[var(--background-elevated)]/90 backdrop-blur-xl border border-[var(--border)] rounded-2xl mx-4 md:mx-6 lg:mx-8 shadow-sm"
         >
-          <div className="max-w-[1600px] mx-auto">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-              <div>
-                  <motion.h1 
-                    className="text-xl md:text-2xl font-bold flex items-center gap-2"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <span>Welcome back</span>
+          <div className="px-4 md:px-6">
+            <div className="flex items-center justify-between h-12 md:h-14">
+              {/* Left: Welcome & Date - Compact */}
+              <div className="flex items-center gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-[var(--foreground)]">Welcome back</span>
                     {user.email && (
-                      <span className="text-[var(--accent-primary)]">
+                      <span className="text-sm font-semibold text-[var(--accent-primary)]">
                         {user.email.split('@')[0]}
                       </span>
                     )}
-                    <Sparkles className="w-5 h-5 text-[var(--accent-secondary)]" />
-                  </motion.h1>
-                  <p className="text-sm text-[var(--foreground-muted)] mt-1 flex items-center gap-2">
-                  {new Date().toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+                  </div>
+                  <p className="text-xs text-[var(--foreground-muted)] flex items-center gap-1.5 mt-0.5">
+                    <Calendar className="w-3 h-3" />
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'short', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
                     <span className="text-[var(--foreground-subtle)]">•</span>
                     <span className="flex items-center gap-1">
-                      <Target className="w-3.5 h-3.5" />
-                      {Math.round(goalProgress)}% of daily goal
+                      <Target className="w-3 h-3" />
+                      {Math.round(goalProgress)}% goal
                     </span>
-                </p>
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              
+              {/* Right: User Menu & Theme Toggle */}
+              <div className="flex items-center gap-2">
+                <UserMenu />
                 <DarkModeToggle />
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Main Content - Enhanced Layout */}
+        {/* Main Content - Premium Layout (matching main site) */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-[1600px] mx-auto p-6 lg:p-8">
-            {/* Hero Timer Section - Full Width */}
-            <motion.div
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
+            
+            {/* Hero Timer Section */}
+            <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="mb-8"
+              className="mb-8 md:mb-12"
             >
               <DashboardHero />
-            </motion.div>
+            </motion.section>
 
-            {/* Two Column Layout for Stats and Quick Actions */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8 mb-8">
-              {/* Left Column - Stats Grid (2/3 width on xl) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-                className="xl:col-span-2"
-            >
-              <StatsGrid
-                stats={{
-                  todayFocusTime,
-                  todaySessions: todaySessions.length,
-                  weeklyFocusTime,
-                  weeklySessions: weeklySessions.length,
-                  totalFocusTime,
-                  totalSessions,
-                  currentStreak: stats?.currentStreak || 0,
-                  currentLevel: stats?.currentLevel || 1,
-                  totalXp: stats?.totalXp || 0,
-                  activeTasks: activeTasks.length,
-                  totalTasks: tasks?.length || 0,
-                }}
-                loading={statsLoading || sessionsLoading}
-              />
-            </motion.div>
+            <SectionDivider />
 
-              {/* Right Column - Quick Actions (1/3 width on xl) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-                className="xl:col-span-1"
-            >
-              <QuickActions 
-                totalTasks={tasks?.length || 0}
-              />
-            </motion.div>
-            </div>
+            {/* Stats and Quick Actions Section */}
+            <section className="mb-8 md:mb-12">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
+                
+                {/* Stats Grid - Left Column (2/3 width on xl) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="xl:col-span-2"
+                >
+                  <StatsGrid
+                    stats={{
+                      todayFocusTime,
+                      todaySessions: todaySessions.length,
+                      weeklyFocusTime,
+                      weeklySessions: weeklySessions.length,
+                      totalFocusTime,
+                      totalSessions,
+                      currentStreak: stats?.currentStreak || 0,
+                      currentLevel: stats?.currentLevel || 1,
+                      totalXp: stats?.totalXp || 0,
+                      activeTasks: activeTasks.length,
+                      totalTasks: tasks?.length || 0,
+                    }}
+                    loading={statsLoading || sessionsLoading}
+                  />
+                </motion.div>
 
-            {/* Recent Activity - Full Width */}
+                {/* Quick Actions - Right Column (1/3 width on xl) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  className="xl:col-span-1"
+                >
+                  <QuickActions 
+                    totalTasks={tasks?.length || 0}
+                  />
+                </motion.div>
+              </div>
+            </section>
+
+            {/* Recent Activity Section */}
             {(recentSessions.length > 0 || activeTasks.length > 0) && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
-                <RecentActivity
-                  sessions={recentSessions}
-                  tasks={activeTasks}
-                  loading={sessionsLoading || tasksLoading}
-                />
-              </motion.div>
+              <>
+                <SectionDivider />
+                <motion.section
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                  <RecentActivity
+                    sessions={recentSessions}
+                    tasks={activeTasks}
+                    loading={sessionsLoading || tasksLoading}
+                  />
+                </motion.section>
+              </>
             )}
           </div>
         </div>

@@ -46,48 +46,19 @@ export function DashboardHero() {
 
   return (
     <div className="relative">
-      {/* Main Timer Card - Premium Gradient */}
-      <div className="card-gradient p-8 md:p-12 lg:p-16 relative overflow-hidden">
-        {/* Animated Gradient Background */}
+      {/* Main Timer Card - Simple Gradient Background */}
+      <div className="card-gradient p-8 md:p-12 lg:p-16 relative overflow-hidden border border-[var(--border)]">
+        {/* Simple Static Gradient Background */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
             background: `var(--accent-gradient)`,
-            opacity: 0.2,
-            animation: 'gradient-shift 8s ease infinite',
-            backgroundSize: '200% 200%',
+            opacity: 0.1,
           }}
         />
         
-        {/* Floating Gradient Orbs */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `
-              radial-gradient(circle at 20% 30%, var(--accent-glow-subtle) 0%, transparent 40%),
-              radial-gradient(circle at 80% 70%, var(--accent-secondary-glow) 0%, transparent 40%),
-              radial-gradient(circle at 50% 50%, var(--accent-glow-subtle) 0%, transparent 60%)
-            `,
-            animation: 'float-gradient 12s ease-in-out infinite',
-            opacity: 0.8,
-          }}
-        />
-        
-        {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 bg-grid opacity-[0.05] pointer-events-none" style={{ zIndex: 1 }} />
-        
-        {/* Animated Border Glow */}
-        <div 
-          className="absolute inset-0 pointer-events-none rounded-2xl"
-          style={{
-            background: `var(--accent-gradient)`,
-            opacity: 0.3,
-            filter: 'blur(30px)',
-            animation: 'glow-pulse 4s ease-in-out infinite',
-            zIndex: 0,
-            margin: '-20px',
-          }}
-        />
+        {/* Subtle Grid Pattern Overlay */}
+        <div className="absolute inset-0 bg-grid opacity-[0.02] pointer-events-none" style={{ zIndex: 1 }} />
         
         <div className="relative z-10" style={{ zIndex: 2 }}>
           <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
@@ -129,38 +100,28 @@ export function DashboardHero() {
                 
                 {/* Time Text */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.div
-                    key={remainingSeconds}
-                    initial={{ scale: 1.1, opacity: 0.8 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-center"
-                  >
+                  <div className="text-center">
                     <div 
                       className="text-6xl md:text-7xl lg:text-8xl font-bold tabular-nums"
                       style={{
-                        background: `linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary))`,
-                        backgroundSize: '200% 100%',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        animation: 'gradient 3s ease infinite',
-                        filter: 'brightness(1.1)'
+                        color: 'var(--foreground)',
+                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                       }}
                     >
                       {getFormattedTime()}
                     </div>
-                    <motion.div 
-                      className="text-sm md:text-base text-[var(--foreground-muted)] mt-3 font-medium"
-                      animate={{ opacity: isRunning ? [1, 0.5, 1] : 1 }}
-                      transition={{ duration: 2, repeat: isRunning ? Infinity : 0 }}
+                    <div 
+                      className="text-sm md:text-base text-[var(--foreground)] mt-3 font-medium"
+                      style={{
+                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                      }}
                     >
                       {isIdle && 'Ready to focus'}
                       {isRunning && 'Focusing...'}
                       {isPaused && 'Paused'}
                       {isCompleted && 'Session complete!'}
-                    </motion.div>
-                  </motion.div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

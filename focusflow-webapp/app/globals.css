@@ -72,16 +72,16 @@
    ───────────────────────────────────────────────────────────── */
 
 [data-theme="light"] {
-  /* Base Colors - Warm Cream & White */
-  --background: #F5F0E8;
+  /* Base Colors - More Contrast for Readability */
+  --background: #FAF9F6;
   --background-elevated: #FFFFFF;
-  --background-subtle: #F9F7F4;
-  --background-muted: #F3EFE7;
+  --background-subtle: #F5F3F0;
+  --background-muted: #EFEDE9;
   
-  /* Text Colors - Deep Warm Brown */
-  --foreground: #1A1612;
-  --foreground-muted: #5A5248;
-  --foreground-subtle: #8A8276;
+  /* Text Colors - Much Darker for Better Readability */
+  --foreground: #0A0908;
+  --foreground-muted: #2A2724;
+  --foreground-subtle: #4A4640;
   
   /* Accent - Electric Violet (same, works beautifully on light) */
   --accent-primary: #8B5CF6;
@@ -105,18 +105,18 @@
   --warning: #F59E0B;
   --error: #EF4444;
   
-  /* Borders & Surfaces */
-  --border: rgba(26, 22, 18, 0.06);
-  --border-hover: rgba(26, 22, 18, 0.12);
-  --surface-glass: rgba(255, 255, 255, 0.9);
+  /* Borders & Surfaces - More Visible */
+  --border: rgba(15, 14, 12, 0.12);
+  --border-hover: rgba(15, 14, 12, 0.2);
+  --surface-glass: rgba(255, 255, 255, 0.95);
   
   /* Theme-aware borders */
   --border-theme: var(--border);
   
-  /* Shadows & Effects - softer for light theme */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.16);
+  /* Shadows & Effects - More Defined for Light Theme */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.2);
   --shadow-glow: 0 0 60px var(--accent-glow);
 }
 
@@ -755,6 +755,12 @@ p {
   background-size: 60px 60px;
 }
 
+[data-theme="light"] .bg-grid {
+  background-image: 
+    linear-gradient(rgba(15, 14, 12, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 14, 12, 0.03) 1px, transparent 1px);
+}
+
 /* Radial Fade */
 .bg-radial-fade {
   background: radial-gradient(ellipse at center, var(--background-elevated) 0%, var(--background) 70%);
@@ -909,10 +915,16 @@ input[type="text"]::placeholder {
    LIGHT MODE ENHANCEMENTS - Theme-Aware
    ───────────────────────────────────────────────────────────── */
 
+[data-theme="light"] .card {
+  border-color: var(--border);
+  background: var(--background-elevated);
+}
+
 [data-theme="light"] .card:hover {
   box-shadow: 
     0 12px 48px rgba(0, 0, 0, 0.15),
     0 0 80px var(--accent-glow-subtle);
+  border-color: var(--border-hover);
 }
 
 [data-theme="light"] .card-gradient::before {
@@ -931,7 +943,7 @@ input[type="text"]::placeholder {
 
 [data-theme="light"] .bg-aurora::before,
 [data-theme="light"] .bg-aurora::after {
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 [data-theme="light"] .btn-accent {
@@ -942,4 +954,27 @@ input[type="text"]::placeholder {
   box-shadow: 
     0 8px 40px var(--accent-glow-strong),
     0 0 60px var(--accent-glow);
+}
+
+/* Better text contrast in light mode */
+[data-theme="light"] p {
+  color: var(--foreground-muted);
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
+  color: var(--foreground);
+}
+
+/* Ensure timer and important text is dark in light mode */
+[data-theme="light"] .card-gradient {
+  background: var(--background-elevated);
+}
+
+[data-theme="light"] .card-gradient * {
+  color: var(--foreground);
 }
