@@ -5,15 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSyncAuth, useOnlineStatus } from '@/hooks';
 import { Sidebar } from '@/components/layout/Sidebar';
-import AnimatedBackground from '@/components/common/AnimatedBackground';
 import { useSessions } from '@/hooks/supabase/useSessions';
 import { useUserStats } from '@/hooks/supabase/useUserStats';
 import { useTasks } from '@/hooks/supabase/useTasks';
 import { useSessionsStore } from '@/stores/useSessionsStore';
-import { DashboardHero } from '@/components/dashboard/DashboardHero';
-import { StatsGrid } from '@/components/dashboard/StatsGrid';
+import { PremiumDashboardHero } from '@/components/dashboard/PremiumDashboardHero';
+import { PremiumStatsGrid } from '@/components/dashboard/PremiumStatsGrid';
+import { XPLevelDisplay } from '@/components/dashboard/XPLevelDisplay';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { PremiumBackground } from '@/components/ui/PremiumBackground';
 import DarkModeToggle from '@/components/common/DarkModeToggle';
 import { motion } from 'framer-motion';
 
@@ -72,9 +73,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex bg-[var(--background)] relative overflow-hidden">
-      {/* Animated Background */}
-      <AnimatedBackground variant="aurora" showGrid={true} />
-      
+      {/* Premium Background */}
+      <PremiumBackground variant="intense" showParticles={true} particleCount={20} />
+
       <Sidebar />
       
       <main className="flex-1 flex flex-col lg:ml-0 relative z-10">
@@ -115,16 +116,29 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <DashboardHero />
+              <PremiumDashboardHero />
             </motion.div>
 
-            {/* Stats Grid */}
+            {/* XP Level Display */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+            >
+              <XPLevelDisplay
+                currentLevel={stats?.currentLevel || 1}
+                totalXp={stats?.totalXp || 0}
+                xpPerLevel={1000}
+              />
+            </motion.div>
+
+            {/* Premium Stats Grid */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <StatsGrid
+              <PremiumStatsGrid
                 stats={{
                   todayFocusTime,
                   todaySessions: todaySessions.length,
