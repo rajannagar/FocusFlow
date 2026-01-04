@@ -1,48 +1,19 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - |
-          echo "=== PreBuild Phase ==="
-          echo "Current directory: $(pwd)"
-          echo "Listing root:"
-          ls -la | head -10
-          echo "Checking focusflow-site:"
-          if [ -d "focusflow-site" ]; then
-            echo "✓ focusflow-site directory found"
-            cd focusflow-site
-            echo "Changed to: $(pwd)"
-            npm ci
-          else
-            echo "✗ focusflow-site directory NOT found"
-            echo "Full directory listing:"
-            ls -la
-            exit 1
-          fi
-    build:
-      commands:
-        - |
-          echo "=== Build Phase ==="
-          echo "Current directory: $(pwd)"
-          echo "Listing root:"
-          ls -la | head -10
-          echo "Checking focusflow-site:"
-          if [ -d "focusflow-site" ]; then
-            echo "✓ focusflow-site directory found"
-            cd focusflow-site
-            echo "Changed to: $(pwd)"
-            npm run build
-          else
-            echo "✗ focusflow-site directory NOT found"
-            echo "Full directory listing:"
-            ls -la
-            exit 1
-          fi
-  artifacts:
-    baseDirectory: focusflow-site/out
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - focusflow-site/node_modules/**/*
+applications:
+  -
+    appRoot: focusflow-site
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: out
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - 'node_modules/**/*'
