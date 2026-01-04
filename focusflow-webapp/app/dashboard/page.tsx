@@ -90,14 +90,14 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-lg md:text-xl font-semibold">
-                  Welcome back{user.email ? `, ${user.email.split('@')[0]}` : ''}
+                  Welcome back{user.email ? `, ${user.email.split('@')[0]}` : ''} ✨
                 </h1>
                 <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
-                  {new Date().toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+                  {new Date().toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  })} • Premium Dashboard
                 </p>
               </div>
               <div className="flex items-center gap-2">

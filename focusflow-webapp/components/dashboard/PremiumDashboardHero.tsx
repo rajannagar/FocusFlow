@@ -23,6 +23,7 @@ const AMBIENT_MODES: AmbientMode[] = [
 ];
 
 export function PremiumDashboardHero() {
+  console.log('🎉 PREMIUM DASHBOARD HERO LOADED!');
   const { phase, remainingSeconds, totalSeconds, getFormattedTime, setPhase, reset, tick } = useTimerStore();
   const router = useRouter();
   const [ambientMode, setAmbientMode] = useState<AmbientMode>('aurora');
