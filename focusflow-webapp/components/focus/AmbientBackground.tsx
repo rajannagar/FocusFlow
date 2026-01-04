@@ -37,15 +37,28 @@ export default function AmbientBackground({
   useEffect(() => {
     if (!isActive || mode === 'none') return;
 
+    let rafId: number;
+    let lastUpdate = 0;
+    const throttleMs = 100; // Throttle to 10fps for mouse tracking
+
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth - 0.5) * 2,
-        y: (e.clientY / window.innerHeight - 0.5) * 2,
+      const now = Date.now();
+      if (now - lastUpdate < throttleMs) return;
+      lastUpdate = now;
+
+      rafId = requestAnimationFrame(() => {
+        setMousePosition({
+          x: (e.clientX / window.innerWidth - 0.5) * 2,
+          y: (e.clientY / window.innerHeight - 0.5) * 2,
+        });
       });
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [isActive, mode]);
 
   if (mode === 'none' || !isActive) {
@@ -79,12 +92,13 @@ export default function AmbientBackground({
         style={{ opacity }}
       />
       
-      {/* Animated gradient overlay */}
+      {/* Animated gradient overlay - Optimized with will-change */}
       <motion.div
         className="absolute inset-0"
         style={{
           opacity: intensity * 0.3,
           background: getGradientAnimation(mode),
+          willChange: 'background',
         }}
         animate={{
           background: getGradientAnimation(mode),
@@ -93,30 +107,32 @@ export default function AmbientBackground({
           duration: 8,
           repeat: Infinity,
           repeatType: 'reverse',
+          ease: 'linear',
         }}
       />
 
-      {/* Parallax particles */}
+      {/* Parallax particles - Reduced from 6 to 3 for performance */}
       {mode !== 'minimal' && (
         <>
-          {[...Array(6)].map((_, i) => (
+          {[...Array(3)].map((_, i) => (
             <motion.div
               key={i}
               className="absolute rounded-full opacity-20 blur-3xl"
               style={{
-                width: `${100 + i * 50}px`,
-                height: `${100 + i * 50}px`,
+                width: `${150 + i * 100}px`,
+                height: `${150 + i * 100}px`,
                 background: getParticleColor(mode, i),
-                left: `${20 + i * 15}%`,
-                top: `${10 + i * 20}%`,
+                left: `${20 + i * 25}%`,
+                top: `${10 + i * 30}%`,
+                willChange: 'transform',
               }}
               animate={{
-                x: mousePosition.x * (20 + i * 10),
-                y: mousePosition.y * (20 + i * 10),
-                scale: [1, 1.2, 1],
+                x: mousePosition.x * (30 + i * 15),
+                y: mousePosition.y * (30 + i * 15),
+                scale: [1, 1.15, 1],
               }}
               transition={{
-                duration: 3 + i * 0.5,
+                duration: 4 + i * 0.5,
                 repeat: Infinity,
                 repeatType: 'reverse',
                 ease: 'easeInOut',

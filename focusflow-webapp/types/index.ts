@@ -72,6 +72,7 @@ export interface TimerState {
   startDate?: Date;
   endDate?: Date;
   presetId?: string;
+  sessionStartDate?: Date; // iOS-like: captured start time for restoration
 }
 
 // Sync state
@@ -81,4 +82,33 @@ export interface SyncState {
   syncError?: Error | null;
   isOnline: boolean;
 }
+
+// Focus Sound (matching iOS)
+export enum FocusSound {
+  angelsByMySide = 'angelsbymyside',
+  fireplace = 'fireplace',
+  floatingGarden = 'floatinggarden',
+  hearty = 'hearty',
+  lightRainAmbient = 'light-rain-ambient',
+  longNight = 'longnight',
+  soundAmbience = 'sound-ambience',
+  streetMarketFrance = 'street-market-gap-france',
+  theLightBetweenUs = 'thelightbetweenus',
+  underwater = 'underwater',
+  yesterday = 'yesterday',
+}
+
+export const FocusSoundDisplayNames: Record<FocusSound, string> = {
+  [FocusSound.angelsByMySide]: 'Angels by My Side',
+  [FocusSound.fireplace]: 'Cozy Fireplace',
+  [FocusSound.floatingGarden]: 'Floating Garden',
+  [FocusSound.hearty]: 'Hearty',
+  [FocusSound.lightRainAmbient]: 'Light Rain (Ambient)',
+  [FocusSound.longNight]: 'Long Night',
+  [FocusSound.soundAmbience]: 'Soft Ambience',
+  [FocusSound.streetMarketFrance]: 'French Street Market',
+  [FocusSound.theLightBetweenUs]: 'The Light Between Us',
+  [FocusSound.underwater]: 'Underwater',
+  [FocusSound.yesterday]: 'Yesterday',
+};
 
