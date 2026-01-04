@@ -3,26 +3,10 @@ frontend:
   phases:
     preBuild:
       commands:
-        - |
-          if [ -d "focusflow-site" ]; then
-            cd focusflow-site
-            npm ci
-          else
-            echo "Error: focusflow-site directory not found"
-            ls -la
-            exit 1
-          fi
+        - cd focusflow-site && npm ci
     build:
       commands:
-        - |
-          if [ -d "focusflow-site" ]; then
-            cd focusflow-site
-            npm run build
-          else
-            echo "Error: focusflow-site directory not found"
-            ls -la
-            exit 1
-          fi
+        - cd focusflow-site && npm run build
   artifacts:
     baseDirectory: focusflow-site/out
     files:
