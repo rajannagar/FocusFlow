@@ -132,13 +132,15 @@ export default function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              href="/signin"
+            <a
+              href="https://webapp.focusflowbepresent.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50 transition-all duration-300 flex items-center gap-2"
             >
               <LogIn className="w-4 h-4" strokeWidth={2} />
               Sign In
-            </Link>
+            </a>
             <a
               href={APP_STORE_URL}
               target="_blank"
@@ -202,14 +204,16 @@ export default function Header() {
               
               {/* Mobile Actions */}
               <div className="pt-6 mt-6 border-t border-[var(--border)] space-y-3">
-                <Link
-                  href="/signin"
+                <a
+                  href="https://webapp.focusflowbepresent.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)] transition-all"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <LogIn className="w-5 h-5" strokeWidth={2} />
                   Sign In
-                </Link>
+                </a>
                 <a
                   href={APP_STORE_URL}
                   target="_blank"

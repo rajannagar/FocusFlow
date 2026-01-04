@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { useThrottledMouse } from '@/hooks';
+import { useThrottledMouse } from '@/hooks/useThrottledMouse';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { APP_STORE_URL } from '@/lib/constants';
+import ThemeToggle from '@/components/common/ThemeToggle';
 import { Mail, Lock, LogIn, UserPlus, Loader2, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function SignInPage() {
+function SignInContent() {
   const mousePosition = useThrottledMouse();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, signUp, signIn, resetPassword } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -21,13 +22,25 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const registered = searchParams.get('registered');
+  const reset = searchParams.get('reset');
 
   // Redirect if already signed in
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [user, router]);
+
+  // Show success message if coming from signup
+  useEffect(() => {
+    if (registered) {
+      setSuccess('Account created! Please check your email to verify your account.');
+    }
+    if (reset) {
+      setSuccess('Check your email for password reset instructions.');
+    }
+  }, [registered, reset]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +64,7 @@ export default function SignInPage() {
           setError(error.message || 'Invalid email or password. Please try again.');
         } else {
           // Success - user will be redirected by useEffect
-          router.push('/');
+          router.push('/dashboard');
         }
       }
     } catch (err: any) {
@@ -99,8 +112,17 @@ export default function SignInPage() {
     }
   };
 
+  if (user) {
+    return null; // Will redirect
+  }
+
   return (
-    <div className="min-h-screen bg-[var(--background)] flex">
+    <div className="min-h-screen bg-[var(--background)] flex relative">
+      {/* Theme Toggle - Fixed Top Right */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       {/* ═══════════════════════════════════════════════════════════════
           LEFT SIDE - Visual & Welcome Message
           ═══════════════════════════════════════════════════════════════ */}
@@ -113,7 +135,7 @@ export default function SignInPage() {
           {/* Top - Logo */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
-              <Image
+              <img
                 src="/focusflow-logo.png"
                 alt="FocusFlow"
                 width={32}
@@ -167,7 +189,7 @@ export default function SignInPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8">
             <Link href="/" className="inline-flex items-center gap-2 group">
-              <Image
+              <img
                 src="/focusflow-logo.png"
                 alt="FocusFlow"
                 width={32}
@@ -353,5 +375,17 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-[var(--foreground-muted)]">Loading...</div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }

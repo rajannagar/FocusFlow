@@ -3,6 +3,7 @@ import { Sora, Inter } from "next/font/google";
 import "./globals.css";
 import { Header, Footer, ScrollToTop } from "@/components";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, CONTACT_EMAIL } from "@/lib/constants";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Premium Display Font - Geometric, Modern
 const sora = Sora({
@@ -177,15 +178,17 @@ export default function RootLayout({
       <body
         className={`${sora.variable} ${inter.variable} antialiased min-h-screen flex flex-col bg-[var(--background)]`}
       >
-        <Header />
-        <main 
-          className="flex-1"
-          style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4rem)',
-          }}
-        >{children}</main>
-        <Footer />
-        <ScrollToTop />
+        <AuthProvider>
+          <Header />
+          <main 
+            className="flex-1"
+            style={{
+              paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4rem)',
+            }}
+          >{children}</main>
+          <Footer />
+          <ScrollToTop />
+        </AuthProvider>
       </body>
     </html>
   );
