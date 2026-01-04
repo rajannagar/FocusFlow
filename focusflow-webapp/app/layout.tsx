@@ -58,6 +58,7 @@ export default function RootLayout({
                 }
                 
                 // Apply color theme (only accent colors, NOT backgrounds)
+                // Full theme application happens in useColorTheme hook for premium effects
                 const colorTheme = localStorage.getItem('focusflow-color-theme') || 'forest';
                 const themes = {
                   forest: { accentPrimary: 'rgb(140, 230, 179)', accentSecondary: 'rgb(107, 199, 158)' },
@@ -75,9 +76,32 @@ export default function RootLayout({
                 if (themes[colorTheme]) {
                   const colors = themes[colorTheme];
                   const root = document.documentElement;
-                  // Only set accent colors, backgrounds stay from main site CSS
+                  const isDark = root.getAttribute('data-theme') === 'dark';
+                  
+                  // Extract RGB for glow calculations
+                  const extractRGB = (rgb) => {
+                    const match = rgb.match(/[0-9]+/g);
+                    if (match && match.length >= 3) {
+                      return [parseInt(match[0]), parseInt(match[1]), parseInt(match[2])];
+                    }
+                    return [139, 92, 246];
+                  };
+                  
+                  const rgb1 = extractRGB(colors.accentPrimary);
+                  const rgb2 = extractRGB(colors.accentSecondary);
+                  const r1 = rgb1[0], g1 = rgb1[1], b1 = rgb1[2];
+                  const r2 = rgb2[0], g2 = rgb2[1], b2 = rgb2[2];
+                  const glowOpacity = isDark ? 0.4 : 0.25;
+                  
+                  // Set accent colors with premium variants (using string concatenation to avoid template literal parsing issues)
                   root.style.setProperty('--accent-primary', colors.accentPrimary);
                   root.style.setProperty('--accent-secondary', colors.accentSecondary);
+                  root.style.setProperty('--accent-glow', 'rgba(' + r1 + ', ' + g1 + ', ' + b1 + ', ' + glowOpacity + ')');
+                  root.style.setProperty('--accent-glow-strong', 'rgba(' + r1 + ', ' + g1 + ', ' + b1 + ', ' + (glowOpacity * 1.5) + ')');
+                  root.style.setProperty('--accent-glow-subtle', 'rgba(' + r1 + ', ' + g1 + ', ' + b1 + ', ' + (glowOpacity * 0.5) + ')');
+                  root.style.setProperty('--accent-secondary-glow', 'rgba(' + r2 + ', ' + g2 + ', ' + b2 + ', ' + (glowOpacity * 0.8) + ')');
+                  root.style.setProperty('--accent-gradient', 'linear-gradient(135deg, ' + colors.accentPrimary + ', ' + colors.accentSecondary + ')');
+                  root.style.setProperty('--accent-gradient-reverse', 'linear-gradient(135deg, ' + colors.accentSecondary + ', ' + colors.accentPrimary + ')');
                 }
               })();
             `,

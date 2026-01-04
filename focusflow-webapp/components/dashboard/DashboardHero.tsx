@@ -46,39 +46,50 @@ export function DashboardHero() {
 
   return (
     <div className="relative">
-      {/* Main Timer Card */}
-      <div 
-        className="card p-8 md:p-12 lg:p-16 relative overflow-hidden transition-all duration-500"
-        style={{
-          borderColor: `var(--accent-primary)30`,
-          background: `linear-gradient(135deg, var(--background-elevated), var(--background-elevated))`,
-          boxShadow: `
-            0 0 0 1px var(--accent-primary)20,
-            0 8px 32px rgba(0, 0, 0, 0.12),
-            0 0 80px var(--accent-primary)08
-          `
-        }}
-      >
-        {/* Gradient Overlay - More prominent theme colors */}
+      {/* Main Timer Card - Premium Gradient */}
+      <div className="card-gradient p-8 md:p-12 lg:p-16 relative overflow-hidden">
+        {/* Animated Gradient Background */}
         <div 
-          className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(135deg, var(--accent-primary)12, transparent 40%, var(--accent-secondary)12)`,
+            background: `var(--accent-gradient)`,
+            opacity: 0.2,
+            animation: 'gradient-shift 8s ease infinite',
+            backgroundSize: '200% 200%',
           }}
         />
         
-        {/* Theme-colored border glow */}
+        {/* Floating Gradient Orbs */}
         <div 
-          className="absolute inset-0 rounded-2xl pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            boxShadow: `inset 0 0 0 1px var(--accent-primary)25`,
+            background: `
+              radial-gradient(circle at 20% 30%, var(--accent-glow-subtle) 0%, transparent 40%),
+              radial-gradient(circle at 80% 70%, var(--accent-secondary-glow) 0%, transparent 40%),
+              radial-gradient(circle at 50% 50%, var(--accent-glow-subtle) 0%, transparent 60%)
+            `,
+            animation: 'float-gradient 12s ease-in-out infinite',
+            opacity: 0.8,
           }}
         />
         
         {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 bg-grid opacity-[0.03] pointer-events-none" />
+        <div className="absolute inset-0 bg-grid opacity-[0.05] pointer-events-none" style={{ zIndex: 1 }} />
         
-        <div className="relative z-10">
+        {/* Animated Border Glow */}
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-2xl"
+          style={{
+            background: `var(--accent-gradient)`,
+            opacity: 0.3,
+            filter: 'blur(30px)',
+            animation: 'glow-pulse 4s ease-in-out infinite',
+            zIndex: 0,
+            margin: '-20px',
+          }}
+        />
+        
+        <div className="relative z-10" style={{ zIndex: 2 }}>
           <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
             {/* Timer Display - Left Side */}
             <div className="flex-1 flex flex-col items-center lg:items-start">
@@ -229,22 +240,12 @@ export function DashboardHero() {
               <button
                 onClick={handleFullScreen}
                 className="w-full lg:w-auto card p-4 transition-all group"
-                style={{
-                  borderColor: 'var(--accent-primary)20'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)40';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)20';
-                }}
               >
                 <div className="flex items-center gap-3">
                   <div 
-                    className="p-2 rounded-xl border group-hover:scale-110 transition-transform"
+                    className="p-2 rounded-xl group-hover:scale-110 transition-transform"
                     style={{
                       background: `linear-gradient(135deg, var(--accent-primary)25, var(--accent-secondary)25)`,
-                      borderColor: `var(--accent-primary)40`
                     }}
                   >
                     <Maximize2 
@@ -266,22 +267,12 @@ export function DashboardHero() {
               <Link
                 href="/focus"
                 className="w-full lg:w-auto card p-4 transition-all group block"
-                style={{
-                  borderColor: 'var(--accent-primary)20'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)40';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)20';
-                }}
               >
                 <div className="flex items-center gap-3">
                   <div 
-                    className="p-2 rounded-xl border group-hover:scale-110 transition-transform"
+                    className="p-2 rounded-xl group-hover:scale-110 transition-transform"
                     style={{
                       background: `linear-gradient(135deg, var(--accent-primary)20, var(--accent-secondary)20)`,
-                      borderColor: `var(--accent-primary)30`
                     }}
                   >
                     <Settings 
@@ -304,7 +295,6 @@ export function DashboardHero() {
                 className="card p-4 transition-all"
                 style={{
                   backgroundColor: 'var(--background-subtle)',
-                  borderColor: 'var(--accent-primary)15'
                 }}
               >
                 <div className="text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-2">

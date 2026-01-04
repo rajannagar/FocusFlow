@@ -45,31 +45,49 @@ const StatCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
       className="card p-6 group transition-all relative overflow-hidden"
-      style={{
-        borderColor: `${color}20`
-      }}
+      whileHover={{ y: -4, scale: 1.02 }}
     >
-      {/* Gradient overlay on hover - more prominent */}
+      {/* Animated gradient background */}
       <div 
-        className="absolute inset-0 transition-all duration-500 pointer-events-none rounded-2xl"
+        className="absolute inset-0 transition-all duration-700 pointer-events-none rounded-2xl"
         style={{
-          background: `linear-gradient(135deg, ${color}05, transparent 50%, ${color}05)`,
+          background: `linear-gradient(135deg, ${color}08, transparent 40%, ${color}08)`,
+          opacity: 0.6,
         }}
       />
       <div 
-        className="absolute inset-0 transition-all duration-500 pointer-events-none rounded-2xl opacity-0 group-hover:opacity-100"
+        className="absolute inset-0 transition-all duration-700 pointer-events-none rounded-2xl opacity-0 group-hover:opacity-100"
         style={{
-          background: `linear-gradient(135deg, ${color}12, transparent 50%, ${color}12)`,
+          background: `linear-gradient(135deg, ${color}20, transparent 50%, ${color}20)`,
+          animation: 'gradient-shift 4s ease infinite',
+          backgroundSize: '200% 200%',
+        }}
+      />
+      
+      {/* Animated glow effect on hover */}
+      <div 
+        className="absolute inset-0 transition-all duration-700 pointer-events-none rounded-2xl opacity-0 group-hover:opacity-100"
+        style={{
+          boxShadow: `0 0 60px ${color}25, 0 0 120px ${color}15`,
+          animation: 'glow-pulse 3s ease-in-out infinite',
+        }}
+      />
+      
+      {/* Floating orb effect */}
+      <div 
+        className="absolute inset-0 transition-all duration-700 pointer-events-none rounded-2xl opacity-0 group-hover:opacity-100"
+        style={{
+          background: `radial-gradient(circle at 50% 50%, ${color}20, transparent 70%)`,
+          animation: 'float-gradient 6s ease-in-out infinite',
         }}
       />
       
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-4">
           <div 
-            className="p-3 rounded-xl border transition-all group-hover:scale-110"
+            className="p-3 rounded-xl transition-all group-hover:scale-110 group-hover:rotate-3"
             style={{
               backgroundColor: `${color}15`,
-              borderColor: `${color}30`
             }}
           >
             <Icon 
@@ -90,12 +108,19 @@ const StatCard = ({
             </>
           ) : (
             <>
-              <div className="text-3xl font-bold">{value}</div>
-              <div className="text-sm font-medium text-[var(--foreground-muted)] uppercase tracking-wide">
+              <motion.div 
+                className="text-3xl md:text-4xl font-bold"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: delay + 0.2, duration: 0.3 }}
+              >
+                {value}
+              </motion.div>
+              <div className="text-sm font-medium text-[var(--foreground-muted)] uppercase tracking-wide mt-1">
                 {label}
               </div>
               {subtitle && (
-                <div className="text-xs text-[var(--foreground-subtle)] mt-1">
+                <div className="text-xs text-[var(--foreground-subtle)] mt-1.5">
                   {subtitle}
                 </div>
               )}
@@ -161,14 +186,19 @@ export function StatsGrid({ stats, loading }: StatsGridProps) {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Your Stats</h2>
-        <p className="text-[var(--foreground-muted)]">
-          Track your progress and stay motivated
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2">
+            <TrendingUp className="w-6 h-6 text-[var(--accent-primary)]" />
+            Your Stats
+          </h2>
+          <p className="text-[var(--foreground-muted)]">
+            Track your progress and stay motivated
+          </p>
+        </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {statsConfig.map((stat, index) => (
           <StatCard
             key={stat.label}

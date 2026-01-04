@@ -20,7 +20,7 @@ export function RecentActivity({ sessions, tasks, loading }: RecentActivityProps
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
       {/* Recent Sessions */}
       {(sessions.length > 0 || loading) && (
         <motion.div
@@ -28,20 +28,23 @@ export function RecentActivity({ sessions, tasks, loading }: RecentActivityProps
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div className="card p-6">
+          <div className="card p-6 lg:p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-xl font-bold mb-1">Recent Sessions</h3>
+                <h3 className="text-xl lg:text-2xl font-bold mb-1 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-[var(--accent-primary)]" />
+                  Recent Sessions
+                </h3>
                 <p className="text-sm text-[var(--foreground-muted)]">
                   Your latest focus sessions
                 </p>
               </div>
               <Link 
                 href="/progress" 
-                className="text-sm text-[var(--accent-primary)] hover:underline flex items-center gap-1"
+                className="text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary-light)] flex items-center gap-1 transition-colors group"
               >
                 View all
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
             
@@ -57,35 +60,50 @@ export function RecentActivity({ sessions, tasks, loading }: RecentActivityProps
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex items-center justify-between p-4 rounded-xl bg-[var(--background-subtle)] border transition-all group"
-                    style={{
-                      borderColor: 'var(--accent-primary)15',
-                    }}
+                    whileHover={{ x: 6, scale: 1.02 }}
+                    className="flex items-center justify-between p-4 rounded-xl bg-[var(--background-subtle)] transition-all group cursor-pointer relative overflow-hidden"
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent-primary)30';
                       e.currentTarget.style.backgroundColor = 'var(--background-muted)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent-primary)15';
                       e.currentTarget.style.backgroundColor = 'var(--background-subtle)';
                     }}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div 
-                        className="p-2 rounded-lg border group-hover:scale-110 transition-transform"
+                    {/* Animated gradient on hover */}
+                    <div 
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                      style={{
+                        background: `linear-gradient(90deg, var(--accent-glow-subtle), transparent)`,
+                      }}
+                    />
+                    
+                    <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
+                      <motion.div 
+                        className="p-2 rounded-lg relative overflow-hidden"
                         style={{
-                          backgroundColor: 'var(--accent-primary)15',
-                          borderColor: 'var(--accent-primary)30'
+                          background: `var(--accent-gradient)`,
+                          backgroundSize: '200% 200%',
                         }}
+                        whileHover={{ scale: 1.2, rotate: 5 }}
+                        transition={{ duration: 0.3 }}
                       >
+                        {/* Animated gradient overlay */}
+                        <div 
+                          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                          style={{
+                            background: `var(--accent-gradient-reverse)`,
+                            animation: 'gradient-shift 2s ease infinite',
+                            backgroundSize: '200% 200%',
+                          }}
+                        />
                         <Clock 
-                          className="w-4 h-4" 
+                          className="w-4 h-4 relative z-10" 
                           style={{ 
-                            color: 'var(--accent-primary)',
-                            filter: 'brightness(1.2)'
+                            color: 'white',
+                            filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.5))'
                           }} 
                         />
-                      </div>
+                      </motion.div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">
                           {session.sessionName || 'Focus Session'}
@@ -118,20 +136,23 @@ export function RecentActivity({ sessions, tasks, loading }: RecentActivityProps
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="card p-6">
+          <div className="card p-6 lg:p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-xl font-bold mb-1">Active Tasks</h3>
+                <h3 className="text-xl lg:text-2xl font-bold mb-1 flex items-center gap-2">
+                  <CheckSquare className="w-5 h-5 text-[var(--accent-secondary)]" />
+                  Active Tasks
+                </h3>
                 <p className="text-sm text-[var(--foreground-muted)]">
                   Tasks you're working on
                 </p>
               </div>
               <Link 
                 href="/tasks" 
-                className="text-sm text-[var(--accent-primary)] hover:underline flex items-center gap-1"
+                className="text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary-light)] flex items-center gap-1 transition-colors group"
               >
                 View all
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
             
@@ -147,34 +168,49 @@ export function RecentActivity({ sessions, tasks, loading }: RecentActivityProps
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-[var(--background-subtle)] border transition-all group"
-                    style={{
-                      borderColor: 'var(--accent-secondary)15',
-                    }}
+                    whileHover={{ x: 6, scale: 1.02 }}
+                    className="flex items-center gap-3 p-4 rounded-xl bg-[var(--background-subtle)] transition-all group cursor-pointer relative overflow-hidden"
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent-secondary)30';
                       e.currentTarget.style.backgroundColor = 'var(--background-muted)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent-secondary)15';
                       e.currentTarget.style.backgroundColor = 'var(--background-subtle)';
                     }}
                   >
+                    {/* Animated gradient on hover */}
                     <div 
-                      className="p-2 rounded-lg border group-hover:scale-110 transition-transform"
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                       style={{
-                        backgroundColor: 'var(--accent-secondary)15',
-                        borderColor: 'var(--accent-secondary)30'
+                        background: `linear-gradient(90deg, var(--accent-secondary-glow), transparent)`,
                       }}
+                    />
+                    
+                    <motion.div 
+                      className="p-2 rounded-lg relative overflow-hidden"
+                      style={{
+                        background: `var(--accent-gradient-reverse)`,
+                        backgroundSize: '200% 200%',
+                      }}
+                      whileHover={{ scale: 1.2, rotate: 5 }}
+                      transition={{ duration: 0.3 }}
                     >
+                      {/* Animated gradient overlay */}
+                      <div 
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                        style={{
+                          background: `var(--accent-gradient)`,
+                          animation: 'gradient-shift 2s ease infinite',
+                          backgroundSize: '200% 200%',
+                        }}
+                      />
                       <CheckSquare 
-                        className="w-4 h-4" 
+                        className="w-4 h-4 relative z-10" 
                         style={{ 
-                          color: 'var(--accent-secondary)',
-                          filter: 'brightness(1.2)'
+                          color: 'white',
+                          filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.5))'
                         }} 
                       />
-                    </div>
+                    </motion.div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{task.title}</p>
                       {task.notes && (
