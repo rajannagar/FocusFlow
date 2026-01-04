@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Timer, CheckSquare, TrendingUp, BookOpen, Settings, User, ArrowRight } from 'lucide-react';
+import { Timer, CheckSquare, TrendingUp, BookOpen, Settings, User, ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface QuickActionsProps {
@@ -42,66 +42,69 @@ const actions = [
 export function QuickActions({ totalTasks }: QuickActionsProps) {
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Quick Actions</h2>
-        <p className="text-[var(--foreground-muted)]">
-          Jump to your favorite features
+      {/* Header - Matching main site style */}
+      <div className="mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] text-sm text-[var(--foreground-muted)] mb-4">
+          <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" strokeWidth={2} />
+          <span>Quick Access</span>
+        </div>
+        <h2 className="text-2xl md:text-3xl font-bold mb-2 leading-tight">
+          Jump to <span className="text-gradient">features</span>
+        </h2>
+        <p className="text-base md:text-lg text-[var(--foreground-muted)] leading-relaxed font-light">
+          Navigate to your favorite tools
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Actions Grid - Premium Cards */}
+      <div className="grid grid-cols-1 gap-4">
         {actions.map((action, index) => {
           const Icon = action.icon;
           return (
             <motion.div
               key={action.href}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Link href={action.href}>
-                <div 
-                  className="card p-6 group cursor-pointer h-full transition-all relative overflow-hidden"
-                  style={{
-                    borderColor: 'var(--accent-primary)20'
-                  }}
+                <motion.div 
+                  className="group relative p-6 rounded-2xl bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 transition-all duration-500 hover:shadow-xl hover:shadow-[var(--accent-primary)]/10"
+                  whileHover={{ x: 4, scale: 1.02 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  {/* Gradient overlay on hover - more prominent */}
+                  {/* Subtle gradient background on hover - matching main site */}
                   <div 
-                    className="absolute inset-0 transition-opacity duration-500 pointer-events-none rounded-2xl opacity-0 group-hover:opacity-100"
+                    className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                     style={{
-                      background: `linear-gradient(135deg, var(--accent-primary)15, var(--accent-secondary)15)`,
+                      background: `var(--accent-gradient)`,
+                      opacity: 0.08,
                     }}
                   />
                   
-                  <div className="relative z-10">
-                    <div className="flex items-start justify-between mb-4">
-                      <div 
-                        className="p-3 rounded-xl border group-hover:scale-110 transition-all"
-                        style={{
-                          background: `linear-gradient(135deg, var(--accent-primary)25, var(--accent-secondary)25)`,
-                          borderColor: `var(--accent-primary)40`
-                        }}
-                      >
-                        <Icon 
-                          className="w-6 h-6" 
-                          style={{ 
-                            color: 'var(--accent-primary)',
-                            filter: 'brightness(1.15) saturate(1.2)'
-                          }} 
-                        />
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] group-hover:translate-x-1 transition-all" />
+                  <div className="relative z-10 flex items-center gap-4">
+                    {/* Icon Container - Premium style */}
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-primary)]/10 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-md">
+                      <Icon 
+                        className="w-6 h-6 text-[var(--accent-primary)]" 
+                        strokeWidth={1.5}
+                      />
                     </div>
                     
-                    <h3 className="font-semibold text-lg mb-1">{action.title}</h3>
-                    <p className="text-sm text-[var(--foreground-muted)]">
-                      {action.href === '/tasks' && totalTasks > 0
-                        ? `${totalTasks} ${totalTasks === 1 ? 'task' : 'tasks'}`
-                        : action.description}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-[var(--foreground)] mb-1 group-hover:text-[var(--accent-primary)] transition-colors">
+                        {action.title}
+                      </h3>
+                      <p className="text-sm text-[var(--foreground-muted)]">
+                        {action.href === '/tasks' && totalTasks > 0
+                          ? `${totalTasks} ${totalTasks === 1 ? 'task' : 'tasks'}`
+                          : action.description}
+                      </p>
+                    </div>
+                    
+                    <ArrowRight className="w-5 h-5 text-[var(--foreground-muted)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-1 transition-all flex-shrink-0" strokeWidth={2} />
                   </div>
-                </div>
+                </motion.div>
               </Link>
             </motion.div>
           );

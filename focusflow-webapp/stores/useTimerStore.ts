@@ -12,6 +12,7 @@ interface TimerStore extends TimerState {
   setEndDate: (date?: Date) => void;
   setPresetId: (id?: string) => void;
   reset: () => void;
+  resetToDefault: () => void;
   tick: () => void;
   
   // Computed getters
@@ -43,10 +44,20 @@ export const useTimerStore = create<TimerStore>()(
         set({ phase: 'running', startDate: new Date() });
       },
       
-      reset: () => set({
+      reset: () => {
+        const state = get();
+        set({
+          phase: 'idle',
+          remainingSeconds: state.totalSeconds,
+          sessionName: '',
+          startDate: undefined,
+          endDate: undefined,
+          presetId: undefined,
+        });
+      },
+      
+      resetToDefault: () => set({
         ...defaultState,
-        totalSeconds: get().totalSeconds, // Keep duration
-        remainingSeconds: get().totalSeconds,
       }),
       
       tick: () => {

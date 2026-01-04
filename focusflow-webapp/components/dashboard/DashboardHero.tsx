@@ -46,39 +46,21 @@ export function DashboardHero() {
 
   return (
     <div className="relative">
-      {/* Main Timer Card */}
-      <div 
-        className="card p-8 md:p-12 lg:p-16 relative overflow-hidden transition-all duration-500"
-        style={{
-          borderColor: `var(--accent-primary)30`,
-          background: `linear-gradient(135deg, var(--background-elevated), var(--background-elevated))`,
-          boxShadow: `
-            0 0 0 1px var(--accent-primary)20,
-            0 8px 32px rgba(0, 0, 0, 0.12),
-            0 0 80px var(--accent-primary)08
-          `
-        }}
-      >
-        {/* Gradient Overlay - More prominent theme colors */}
+      {/* Main Timer Card - Simple Gradient Background */}
+      <div className="card-gradient p-8 md:p-12 lg:p-16 relative overflow-hidden border border-[var(--border)]">
+        {/* Simple Static Gradient Background */}
         <div 
-          className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(135deg, var(--accent-primary)12, transparent 40%, var(--accent-secondary)12)`,
+            background: `var(--accent-gradient)`,
+            opacity: 0.1,
           }}
         />
         
-        {/* Theme-colored border glow */}
-        <div 
-          className="absolute inset-0 rounded-2xl pointer-events-none"
-          style={{
-            boxShadow: `inset 0 0 0 1px var(--accent-primary)25`,
-          }}
-        />
+        {/* Subtle Grid Pattern Overlay */}
+        <div className="absolute inset-0 bg-grid opacity-[0.02] pointer-events-none" style={{ zIndex: 1 }} />
         
-        {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 bg-grid opacity-[0.03] pointer-events-none" />
-        
-        <div className="relative z-10">
+        <div className="relative z-10" style={{ zIndex: 2 }}>
           <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
             {/* Timer Display - Left Side */}
             <div className="flex-1 flex flex-col items-center lg:items-start">
@@ -118,38 +100,28 @@ export function DashboardHero() {
                 
                 {/* Time Text */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.div
-                    key={remainingSeconds}
-                    initial={{ scale: 1.1, opacity: 0.8 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-center"
-                  >
+                  <div className="text-center">
                     <div 
                       className="text-6xl md:text-7xl lg:text-8xl font-bold tabular-nums"
                       style={{
-                        background: `linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary))`,
-                        backgroundSize: '200% 100%',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        animation: 'gradient 3s ease infinite',
-                        filter: 'brightness(1.1)'
+                        color: 'var(--foreground)',
+                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                       }}
                     >
                       {getFormattedTime()}
                     </div>
-                    <motion.div 
-                      className="text-sm md:text-base text-[var(--foreground-muted)] mt-3 font-medium"
-                      animate={{ opacity: isRunning ? [1, 0.5, 1] : 1 }}
-                      transition={{ duration: 2, repeat: isRunning ? Infinity : 0 }}
+                    <div 
+                      className="text-sm md:text-base text-[var(--foreground)] mt-3 font-medium"
+                      style={{
+                        textShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                      }}
                     >
                       {isIdle && 'Ready to focus'}
                       {isRunning && 'Focusing...'}
                       {isPaused && 'Paused'}
                       {isCompleted && 'Session complete!'}
-                    </motion.div>
-                  </motion.div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -229,22 +201,12 @@ export function DashboardHero() {
               <button
                 onClick={handleFullScreen}
                 className="w-full lg:w-auto card p-4 transition-all group"
-                style={{
-                  borderColor: 'var(--accent-primary)20'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)40';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)20';
-                }}
               >
                 <div className="flex items-center gap-3">
                   <div 
-                    className="p-2 rounded-xl border group-hover:scale-110 transition-transform"
+                    className="p-2 rounded-xl group-hover:scale-110 transition-transform"
                     style={{
                       background: `linear-gradient(135deg, var(--accent-primary)25, var(--accent-secondary)25)`,
-                      borderColor: `var(--accent-primary)40`
                     }}
                   >
                     <Maximize2 
@@ -266,22 +228,12 @@ export function DashboardHero() {
               <Link
                 href="/focus"
                 className="w-full lg:w-auto card p-4 transition-all group block"
-                style={{
-                  borderColor: 'var(--accent-primary)20'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)40';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)20';
-                }}
               >
                 <div className="flex items-center gap-3">
                   <div 
-                    className="p-2 rounded-xl border group-hover:scale-110 transition-transform"
+                    className="p-2 rounded-xl group-hover:scale-110 transition-transform"
                     style={{
                       background: `linear-gradient(135deg, var(--accent-primary)20, var(--accent-secondary)20)`,
-                      borderColor: `var(--accent-primary)30`
                     }}
                   >
                     <Settings 
@@ -304,7 +256,6 @@ export function DashboardHero() {
                 className="card p-4 transition-all"
                 style={{
                   backgroundColor: 'var(--background-subtle)',
-                  borderColor: 'var(--accent-primary)15'
                 }}
               >
                 <div className="text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider mb-2">

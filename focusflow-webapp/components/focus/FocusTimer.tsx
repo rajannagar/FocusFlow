@@ -138,11 +138,14 @@ export default function FocusTimer() {
         isActive={isTimerActive} 
       />
       
-      <div className="card p-8 md:p-12 space-y-8 relative z-10">
+      <div className="relative p-8 md:p-12 lg:p-16 rounded-3xl bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 transition-all duration-500 space-y-8 relative z-10">
       {/* Session Name */}
       {sessionName && (
-        <div className="text-center">
-          <h3 className="text-lg md:text-xl font-semibold text-[var(--foreground-muted)]">
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] text-sm text-[var(--foreground-muted)] mb-2">
+            <span>Session</span>
+          </div>
+          <h3 className="text-xl md:text-2xl font-bold text-[var(--foreground)]">
             {sessionName}
           </h3>
         </div>
@@ -181,10 +184,22 @@ export default function FocusTimer() {
           {/* Time Display */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-5xl md:text-6xl font-bold text-[var(--foreground)] mb-2 font-mono">
+              <div 
+                className="text-5xl md:text-6xl lg:text-7xl font-bold mb-2 font-mono tabular-nums"
+                style={{
+                  color: 'var(--foreground)',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                }}
+              >
                 {formattedTime}
               </div>
-              <div className="text-sm text-[var(--foreground-muted)]">
+              <div 
+                className="text-sm md:text-base font-medium"
+                style={{
+                  color: 'var(--foreground)',
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                }}
+              >
                 {phase === 'running' && 'Focusing...'}
                 {phase === 'paused' && 'Paused'}
                 {phase === 'idle' && 'Ready to focus'}
@@ -236,28 +251,40 @@ export default function FocusTimer() {
 
       {/* Preset Selection (when idle) */}
       {phase === 'idle' && presets.length > 0 && (
-        <div className="space-y-4">
-          <div className="text-center">
-            <h4 className="text-sm font-medium text-[var(--foreground-muted)] mb-4">
-              Quick Start Presets
+        <div className="space-y-6 pt-6 border-t border-[var(--border)]">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] text-sm text-[var(--foreground-muted)] mb-4">
+              <span>Quick Start</span>
+            </div>
+            <h4 className="text-lg font-semibold text-[var(--foreground)] mb-4">
+              Select a Preset
             </h4>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {presets.slice(0, 4).map((preset) => {
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {presets.slice(0, 8).map((preset) => {
                 const minutes = Math.floor(preset.durationSeconds / 60);
                 const isSelected = selectedPresetId === preset.id;
                 return (
-                  <button
+                  <motion.button
                     key={preset.id}
                     onClick={() => handlePresetSelect(preset.id)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`p-4 rounded-2xl text-left transition-all duration-300 ${
                       isSelected
-                        ? 'bg-[var(--accent-primary)] text-white'
-                        : 'bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--accent-primary)]/50'
+                        ? 'bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 border-2 border-[var(--accent-primary)] shadow-lg shadow-[var(--accent-primary)]/20'
+                        : 'bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 hover:shadow-md'
                     }`}
                   >
-                    {preset.emoji && <span className="mr-1">{preset.emoji}</span>}
-                    {preset.name} ({minutes}m)
-                  </button>
+                    <div className="flex items-center gap-2 mb-2">
+                      {preset.emoji && <span className="text-xl">{preset.emoji}</span>}
+                      <span className={`text-sm font-semibold ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--foreground)]'}`}>
+                        {preset.name}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--foreground-muted)]">
+                      {minutes} minutes
+                    </p>
+                  </motion.button>
                 );
               })}
             </div>
@@ -267,47 +294,57 @@ export default function FocusTimer() {
 
       {/* Ambient Background Selection (when idle or paused) */}
       {(phase === 'idle' || phase === 'paused') && (
-        <div className="space-y-4 pt-4 border-t border-[var(--border)]">
-          <div className="text-center">
-            <h4 className="text-sm font-medium text-[var(--foreground-muted)] mb-4">
-              Ambient Background
+        <div className="space-y-6 pt-6 border-t border-[var(--border)]">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] text-sm text-[var(--foreground-muted)] mb-4">
+              <span>Ambient</span>
+            </div>
+            <h4 className="text-lg font-semibold text-[var(--foreground)] mb-4">
+              Choose Background
             </h4>
-            <div className="flex flex-wrap gap-2 justify-center max-w-2xl mx-auto">
+            <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-3">
               {([
                 'none', 'minimal', 'aurora', 'ocean', 'forest', 'rain', 
                 'fireplace', 'stars', 'gradientFlow', 'snow', 'underwater', 
                 'clouds', 'sakura', 'lightning', 'lavaLamp'
               ] as AmbientMode[]).map((mode) => {
                 const isSelected = ambientMode === mode;
-                const labels: Record<string, string> = {
-                  none: 'None',
-                  minimal: 'Minimal',
-                  aurora: '🌌 Aurora',
-                  ocean: '🌊 Ocean',
-                  forest: '🌲 Forest',
-                  rain: '🌧️ Rain',
-                  fireplace: '🔥 Fireplace',
-                  stars: '✨ Stars',
-                  gradientFlow: '🌈 Gradient Flow',
-                  snow: '❄️ Snow',
-                  underwater: '🌊 Underwater',
-                  clouds: '☁️ Clouds',
-                  sakura: '🌸 Sakura',
-                  lightning: '⚡ Lightning',
-                  lavaLamp: '🪔 Lava Lamp',
+                const labels: Record<string, { emoji: string; name: string }> = {
+                  none: { emoji: '⚪', name: 'None' },
+                  minimal: { emoji: '⚫', name: 'Minimal' },
+                  aurora: { emoji: '🌌', name: 'Aurora' },
+                  ocean: { emoji: '🌊', name: 'Ocean' },
+                  forest: { emoji: '🌲', name: 'Forest' },
+                  rain: { emoji: '🌧️', name: 'Rain' },
+                  fireplace: { emoji: '🔥', name: 'Fire' },
+                  stars: { emoji: '✨', name: 'Stars' },
+                  gradientFlow: { emoji: '🌈', name: 'Gradient' },
+                  snow: { emoji: '❄️', name: 'Snow' },
+                  underwater: { emoji: '🌊', name: 'Underwater' },
+                  clouds: { emoji: '☁️', name: 'Clouds' },
+                  sakura: { emoji: '🌸', name: 'Sakura' },
+                  lightning: { emoji: '⚡', name: 'Lightning' },
+                  lavaLamp: { emoji: '🪔', name: 'Lava' },
                 };
+                const label = labels[mode] || { emoji: '⚪', name: mode };
                 return (
-                  <button
+                  <motion.button
                     key={mode}
                     onClick={() => setAmbientMode(mode)}
-                    className={`px-3 py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`p-3 rounded-xl text-center transition-all duration-300 ${
                       isSelected
-                        ? 'bg-[var(--accent-primary)] text-white'
-                        : 'bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--accent-primary)]/50'
+                        ? 'bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 border-2 border-[var(--accent-primary)] shadow-md'
+                        : 'bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30'
                     }`}
+                    title={label.name}
                   >
-                    {labels[mode]}
-                  </button>
+                    <div className="text-2xl mb-1">{label.emoji}</div>
+                    <div className={`text-xs font-medium ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--foreground-muted)]'}`}>
+                      {label.name}
+                    </div>
+                  </motion.button>
                 );
               })}
             </div>
