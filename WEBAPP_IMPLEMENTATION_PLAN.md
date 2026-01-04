@@ -130,10 +130,10 @@ Create a completely separate web application at `webapp.focusflowbepresent.com` 
    - Open in new tab: `target="_blank" rel="noopener noreferrer"`
    - File: `focusflow-site/components/layout/Header.tsx`
 
-2. **Remove/Update Sign In Page**
-   - Remove authentication code from `/signin` page
-   - Keep page as simple redirect or placeholder
-   - Add clear link to `https://webapp.focusflowbepresent.com`
+2. **Remove Sign In Page from Marketing Site**
+   - Remove `/signin` route entirely from `focusflow-site/`
+   - Or keep as simple redirect page that immediately redirects to webapp
+   - **Key Point**: Marketing site has NO authentication - it's all on webapp subdomain
 
 ### Phase 5: Deployment Setup
 
