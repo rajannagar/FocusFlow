@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from '@/components/common';
+import { APP_STORE_URL } from '@/lib/constants';
+import { Menu, X, Download, LogIn } from 'lucide-react';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -19,125 +21,136 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Check if current path matches the link
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
+
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/';
     return pathname.startsWith(path);
   };
 
+  const navLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/features', label: 'Features' },
+    { href: '/pricing', label: 'Pricing' },
+    { href: '/about', label: 'About' },
+  ];
+
   return (
     <header 
-      className="fixed top-0 left-0 right-0 z-[9999] bg-[var(--background)] border-b border-[var(--border)] transition-colors duration-300"
+      className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-500 ${
+        scrolled 
+          ? 'bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-lg shadow-black/5' 
+          : 'bg-transparent border-b border-transparent'
+      }`}
       style={{
         paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="flex h-16 md:h-20 items-center justify-between">
-          {/* Logo with Image */}
+        <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
+          
+          {/* Logo */}
           <Link 
             href="/" 
-            className="group relative flex items-center gap-3"
+            className="group relative flex items-center gap-2 md:gap-3 z-50 min-w-0 flex-shrink"
             onClick={() => {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
-            <div className="relative">
+            <div className="relative flex-shrink-0">
+              <div className="absolute -inset-1 bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <Image
                 src="/focusflow-logo.png"
                 alt="FocusFlow"
                 width={32}
                 height={32}
-                className="transition-transform duration-300 group-hover:scale-105"
+                className="relative transition-transform duration-300 group-hover:scale-105 md:w-9 md:h-9"
                 priority
               />
             </div>
-            <span className="text-lg md:text-xl font-bold tracking-tight text-[var(--foreground)] transition-all duration-300 group-hover:text-gradient">
-              FocusFlow
-            </span>
+            <div className="relative min-w-0">
+              {/* Main text with gradient - responsive sizing */}
+              <span className="relative z-10 text-lg md:text-xl lg:text-2xl font-bold tracking-tight block whitespace-nowrap">
+                <span className="bg-gradient-to-r from-[var(--foreground)] via-[var(--accent-primary)] to-[var(--foreground)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                  Focus
+                </span>
+                <span className="bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient" style={{ animationDelay: '0.5s' }}>
+                  Flow
+                </span>
+              </span>
+              {/* Glow effect on hover */}
+              <span className="absolute inset-0 text-lg md:text-xl lg:text-2xl font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm whitespace-nowrap">
+                <span className="bg-gradient-to-r from-[var(--accent-primary)]/60 via-[var(--accent-secondary)]/60 to-[var(--accent-primary)]/60 bg-clip-text text-transparent">
+                  Focus
+                </span>
+                <span className="bg-gradient-to-r from-[var(--accent-secondary)]/60 via-[var(--accent-primary)]/60 to-[var(--accent-secondary)]/60 bg-clip-text text-transparent">
+                  Flow
+                </span>
+              </span>
+              {/* Animated underline accent */}
+              <span className="absolute -bottom-1 md:-bottom-1.5 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] group-hover:w-full transition-all duration-700 rounded-full" />
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            <Link
-              href="/"
-              className={`px-4 py-2.5 rounded-full text-sm transition-all duration-300 ${
-                isActive('/') 
-                  ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                  : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-              }`}
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              Home
-            </Link>
-            <Link
-              href="/features"
-              className={`px-4 py-2.5 rounded-full text-sm transition-all duration-300 ${
-                isActive('/features') 
-                  ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                  : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-              }`}
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              Features
-            </Link>
-            <Link
-              href="/pricing"
-              className={`px-4 py-2.5 rounded-full text-sm transition-all duration-300 ${
-                isActive('/pricing') 
-                  ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                  : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-              }`}
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/about"
-              className={`px-4 py-2.5 rounded-full text-sm transition-all duration-300 ${
-                isActive('/about') 
-                  ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                  : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-              }`}
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              About
-            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  isActive(link.href)
+                    ? 'text-[var(--foreground)] bg-[var(--background-elevated)]' 
+                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50'
+                }`}
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                {link.label}
+                {isActive(link.href) && (
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--accent-primary)]" />
+                )}
+              </Link>
+            ))}
           </nav>
 
-          {/* Desktop CTA */}
+          {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/signin"
-              className="px-5 py-2.5 rounded-full text-sm font-medium text-[var(--foreground)] hover:text-[var(--accent-primary)] transition-colors"
+              className="px-5 py-2.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50 transition-all duration-300 flex items-center gap-2"
             >
+              <LogIn className="w-4 h-4" strokeWidth={2} />
               Sign In
             </Link>
             <a
-              href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
+              href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative px-5 py-2.5 rounded-full text-sm font-medium overflow-hidden flex items-center gap-2"
+              className="group relative px-5 py-2.5 rounded-xl text-sm font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-[var(--accent-primary)]/30"
             >
-              {/* Button gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)] transition-all duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              
-              {/* Glow effect */}
-              <div className="absolute inset-0 rounded-full blur-xl bg-[var(--accent-primary)] opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
-              
-              <svg className="w-4 h-4 relative z-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-              </svg>
-              <span className="relative z-10 text-white">Download</span>
+              <div className="relative z-10 flex items-center gap-2">
+                <Download className="w-4 h-4" strokeWidth={2.5} />
+                <span>Download</span>
+              </div>
             </a>
             <ThemeToggle />
           </div>
@@ -145,112 +158,74 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-[var(--background-subtle)] transition-colors text-[var(--foreground)]"
+            className="md:hidden p-2 rounded-xl hover:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-50"
             aria-label="Menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {isMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {isMenuOpen ? (
+              <X className="w-6 h-6" strokeWidth={2} />
+            ) : (
+              <Menu className="w-6 h-6" strokeWidth={2} />
+            )}
           </button>
         </div>
 
         {/* Mobile Menu */}
-        <div className={`md:hidden overflow-hidden transition-all duration-500 ease-out ${isMenuOpen ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'}`}>
-          <div className="pb-4 pt-3 border-t border-[var(--border)]">
-            <div className="flex flex-col gap-1">
-              <Link 
-                href="/" 
-                className={`px-4 py-3 rounded-xl text-sm transition-all ${
-                  isActive('/') 
-                    ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-                }`}
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              >
-                Home
-              </Link>
-              <Link 
-                href="/features" 
-                className={`px-4 py-3 rounded-xl text-sm transition-all ${
-                  isActive('/features') 
-                    ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-                }`}
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              >
-                Features
-              </Link>
-              <Link 
-                href="/pricing" 
-                className={`px-4 py-3 rounded-xl text-sm transition-all ${
-                  isActive('/pricing') 
-                    ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-                }`}
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              >
-                Pricing
-              </Link>
-              <Link 
-                href="/about" 
-                className={`px-4 py-3 rounded-xl text-sm transition-all ${
-                  isActive('/about') 
-                    ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-                }`}
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              >
-                About
-              </Link>
-              <Link 
-                href="/signin" 
-                className={`px-4 py-3 rounded-xl text-sm transition-all ${
-                  isActive('/signin') 
-                    ? 'text-[var(--foreground)] bg-[var(--background-subtle)]' 
-                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-subtle)]'
-                }`}
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              >
-                Sign In
-              </Link>
+        <div 
+          className={`md:hidden fixed inset-0 top-16 bg-[var(--background)] border-t border-[var(--border)] transition-all duration-500 ease-out z-40 ${
+            isMenuOpen 
+              ? 'opacity-100 translate-y-0' 
+              : 'opacity-0 -translate-y-full pointer-events-none'
+          }`}
+          style={{
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+          }}
+        >
+          <div className="h-full overflow-y-auto">
+            <div className="px-4 py-6 space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`block px-4 py-3.5 rounded-xl text-base font-medium transition-all ${
+                    isActive(link.href)
+                      ? 'text-[var(--foreground)] bg-[var(--background-elevated)]' 
+                      : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]'
+                  }`}
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  {link.label}
+                </Link>
+              ))}
               
-              {/* Mobile CTA */}
-              <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-3">
-                <div className="flex items-center justify-between px-4 py-2">
+              {/* Mobile Actions */}
+              <div className="pt-6 mt-6 border-t border-[var(--border)] space-y-3">
+                <Link
+                  href="/signin"
+                  className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)] transition-all"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <LogIn className="w-5 h-5" strokeWidth={2} />
+                  Sign In
+                </Link>
+                <a
+                  href={APP_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-semibold text-white overflow-hidden transition-all duration-300"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Download className="w-5 h-5 relative z-10" strokeWidth={2.5} />
+                  <span className="relative z-10">Download FocusFlow</span>
+                </a>
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--background-elevated)]">
                   <span className="text-sm font-medium text-[var(--foreground-muted)]">Theme</span>
                   <ThemeToggle />
                 </div>
-                <a 
-                  href="https://apps.apple.com/app/focusflow-be-present/id6739000000"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-accent w-full justify-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                  </svg>
-                  Download FocusFlow
-                </a>
               </div>
             </div>
           </div>

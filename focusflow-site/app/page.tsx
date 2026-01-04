@@ -1,13 +1,49 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Container, PhoneSimulator } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { APP_STORE_URL, FOCUSFLOW } from '@/lib/constants';
+import { 
+  Smartphone, Globe, Timer, CheckSquare, TrendingUp, 
+  Shield, Palette, Zap, Moon, Star, ArrowRight, Download,
+  Sparkles
+} from 'lucide-react';
 
 export default function Home() {
   const mousePosition = useThrottledMouse();
+  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
+
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -100px 0px',
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-fade-in');
+        }
+      });
+    }, observerOptions);
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      sectionRefs.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, []);
+
+  const SectionDivider = () => (
+    <div className="relative h-px w-full bg-gradient-to-r from-transparent via-[var(--border)] to-transparent my-16 md:my-24" />
+  );
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -46,15 +82,11 @@ export default function Home() {
                   {/* Badge */}
                 <div className="flex flex-wrap items-center gap-2 justify-center lg:justify-start">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-elevated)] border border-[var(--border)] text-sm text-[var(--foreground-muted)]">
-                    <svg className="w-4 h-4 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                    <Smartphone className="w-4 h-4 text-[var(--accent-primary)]" strokeWidth={2} />
                     <span>Available on iOS</span>
                   </div>
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-elevated)] border border-[var(--border)] text-sm text-[var(--foreground-muted)]">
-                    <svg className="w-4 h-4 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                    </svg>
+                    <Globe className="w-4 h-4 text-[var(--accent-primary)]" strokeWidth={2} />
                     <span>Web Coming Soon</span>
                   </div>
                   </div>
@@ -102,9 +134,7 @@ export default function Home() {
                 <div className="flex items-center justify-center lg:justify-start gap-6 pt-4">
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
+                      <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" strokeWidth={0} />
                     ))}
                     <span className="ml-2 text-sm text-[var(--foreground-muted)]">5.0 App Store</span>
                   </div>
@@ -143,10 +173,19 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           WHAT IS FOCUSFLOW - Thoughtful Introduction
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40 overflow-hidden">
+      <section 
+        ref={(el) => { sectionRefs.current[0] = el; }}
+        className="relative py-16 md:py-24 overflow-hidden opacity-0 transition-opacity duration-1000"
+      >
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--accent-primary)]/5 via-transparent to-transparent pointer-events-none" />
+        
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-5xl mx-auto px-4 md:px-6">
-            <div className="text-center mb-16 md:mb-24">
+            <div className="text-center mb-12 md:mb-16">
               <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8 leading-tight">
                 One app. <span className="text-gradient">Three tools.</span> Infinite focus.
               </h2>
@@ -159,39 +198,42 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-6 md:gap-8">
               {[
                 {
-                  icon: '⏱️',
+                  icon: Timer,
                   title: 'Focus Timer',
                   description: 'Start timed sessions with beautiful ambient backgrounds. Stay anchored in the present moment.',
                   color: 'violet',
                 },
                 {
-                  icon: '✅',
+                  icon: CheckSquare,
                   title: 'Smart Tasks',
                   description: 'Organize your to-dos with recurring schedules and reminders. Never miss what matters.',
                   color: 'emerald',
                 },
                 {
-                  icon: '📈',
+                  icon: TrendingUp,
                   title: 'Progress Tracking',
                   description: 'Earn XP, level up, and unlock achievements. See your growth over time.',
                   color: 'amber',
                 },
-              ].map((feature, i) => (
-                <div 
-                  key={i}
-                  className="group relative p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 transition-all duration-500 hover:shadow-xl hover:shadow-[var(--accent-primary)]/10"
-                >
-                  <div className="text-5xl md:text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">
-                    {feature.icon}
+              ].map((feature, i) => {
+                const Icon = feature.icon;
+                return (
+                  <div 
+                    key={i}
+                    className="group relative p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 transition-all duration-500 hover:shadow-xl hover:shadow-[var(--accent-primary)]/10"
+                  >
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-primary)]/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                      <Icon className="w-8 h-8 md:w-10 md:h-10 text-[var(--accent-primary)]" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-bold text-[var(--foreground)] mb-4">
+                      {feature.title}
+                    </h3>
+                    <p className="text-base md:text-lg text-[var(--foreground-muted)] leading-relaxed">
+                      {feature.description}
+                    </p>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-bold text-[var(--foreground)] mb-4">
-                    {feature.title}
-                  </h3>
-                  <p className="text-base md:text-lg text-[var(--foreground-muted)] leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </Container>
@@ -200,14 +242,21 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           WHY FOCUSFLOW - The Philosophy
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40 bg-[var(--background-elevated)] overflow-hidden">
+      <section 
+        ref={(el) => { sectionRefs.current[1] = el; }}
+        className="relative py-16 md:py-24 bg-[var(--background-elevated)] overflow-hidden opacity-0 transition-opacity duration-1000"
+      >
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-6xl mx-auto px-4 md:px-6">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
               {/* Left - Philosophy Text */}
               <div className="space-y-6 md:space-y-8">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] text-sm text-[var(--foreground-muted)] mb-4">
-                  Our Philosophy
+                  <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
+                  <span>Our Philosophy</span>
                 </div>
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                   Built for <span className="text-gradient">deep work</span>
@@ -228,28 +277,31 @@ export default function Home() {
                   className="inline-flex items-center gap-2 text-[var(--accent-primary)] font-semibold hover:gap-3 transition-all duration-300 group"
                 >
                   Learn more about FocusFlow
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2} />
                 </Link>
-            </div>
+              </div>
 
               {/* Right - Feature Showcase */}
-            <div className="space-y-6">
-              {[
-                  { icon: '🔒', title: 'Privacy First', desc: 'Your data stays yours. Always encrypted, never sold.' },
-                  { icon: '🎨', title: 'Beautiful Design', desc: 'Every pixel crafted for clarity and calm.' },
-                  { icon: '⚡', title: 'Lightning Fast', desc: 'Instant sync. Smooth animations. Zero lag.' },
-                  { icon: '🌙', title: 'Works Offline', desc: 'No internet? No problem. Full functionality offline.' },
-              ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-4 p-6 rounded-2xl bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 transition-all">
-                    <div className="text-3xl flex-shrink-0">{item.icon}</div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-[var(--foreground)] mb-1">{item.title}</h3>
-                      <p className="text-[var(--foreground-muted)]">{item.desc}</p>
+              <div className="space-y-6">
+                {[
+                  { icon: Shield, title: 'Privacy First', desc: 'Your data stays yours. Always encrypted, never sold.' },
+                  { icon: Palette, title: 'Beautiful Design', desc: 'Every pixel crafted for clarity and calm.' },
+                  { icon: Zap, title: 'Lightning Fast', desc: 'Instant sync. Smooth animations. Zero lag.' },
+                  { icon: Moon, title: 'Works Offline', desc: 'No internet? No problem. Full functionality offline.' },
+                ].map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={i} className="flex items-start gap-4 p-6 rounded-2xl bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent-primary)]/30 transition-all group">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-primary)]/10 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-md">
+                        <Icon className="w-6 h-6 text-[var(--accent-primary)]" strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-[var(--foreground)] mb-1">{item.title}</h3>
+                        <p className="text-[var(--foreground-muted)]">{item.desc}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -259,16 +311,20 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           WEB APP - Coming Soon
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40 overflow-hidden">
+      <section 
+        ref={(el) => { sectionRefs.current[2] = el; }}
+        className="relative py-16 md:py-24 overflow-hidden opacity-0 transition-opacity duration-1000"
+      >
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-6xl mx-auto px-4 md:px-6">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
               {/* Left - Content */}
               <div className="space-y-6 md:space-y-8">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] text-sm text-[var(--foreground-muted)]">
-                  <svg className="w-4 h-4 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
+                  <Globe className="w-4 h-4 text-[var(--accent-primary)]" strokeWidth={2} />
                   <span>Coming Soon</span>
                 </div>
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
@@ -296,7 +352,7 @@ export default function Home() {
                     Learn More
                   </Link>
                 </div>
-              </div>
+            </div>
 
               {/* Right - Browser Mockup */}
               <div className="relative">
@@ -313,7 +369,7 @@ export default function Home() {
                   {/* Browser Content */}
                   <div className="aspect-video bg-gradient-to-br from-[var(--accent-primary)]/10 to-[var(--accent-secondary)]/10 rounded-2xl flex items-center justify-center border border-[var(--border)]">
                     <div className="text-center">
-                      <div className="text-6xl mb-4">🌐</div>
+                      <Globe className="w-16 h-16 text-[var(--accent-primary)] mx-auto mb-4" strokeWidth={1.5} />
                       <p className="text-lg text-[var(--foreground-muted)]">Web App Preview</p>
                     </div>
                   </div>
@@ -329,7 +385,13 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           TESTIMONIAL - Social Proof
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40 bg-[var(--background-elevated)]">
+      <section 
+        ref={(el) => { sectionRefs.current[3] = el; }}
+        className="relative py-16 md:py-24 bg-[var(--background-elevated)] overflow-hidden opacity-0 transition-opacity duration-1000"
+      >
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-4xl mx-auto px-4 md:px-6">
             <div className="relative p-12 md:p-16 rounded-3xl bg-[var(--background)] border border-[var(--border)]">
@@ -340,9 +402,7 @@ export default function Home() {
               <div className="flex items-center gap-4">
                 <div className="flex gap-1">
                   {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-6 h-6 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
+                    <Star key={i} className="w-6 h-6 text-amber-400 fill-amber-400" strokeWidth={0} />
                   ))}
                 </div>
                 <div className="text-sm text-[var(--foreground-muted)]">App Store Review</div>
@@ -355,7 +415,13 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           PRICING PREVIEW - Thoughtful CTA
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40 bg-[var(--background-elevated)] overflow-hidden">
+      <section 
+        ref={(el) => { sectionRefs.current[4] = el; }}
+        className="relative py-16 md:py-24 overflow-hidden opacity-0 transition-opacity duration-1000"
+      >
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-4xl mx-auto text-center px-4 md:px-6">
             <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8">
@@ -387,7 +453,10 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           FINAL CTA - Premium Close
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40 overflow-hidden">
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-5xl mx-auto text-center px-4 md:px-6">
             <div className="relative inline-block mb-12">
@@ -413,17 +482,32 @@ export default function Home() {
               href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)] text-white font-semibold text-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-[var(--accent-primary)]/40"
+              className="group relative inline-flex items-center gap-3 px-8 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)] text-white font-semibold text-lg md:text-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-[var(--accent-primary)]/40"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <svg className="w-6 h-6 relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-              </svg>
+              <Download className="w-6 h-6 relative z-10" strokeWidth={2} />
               <span className="relative z-10">Download on App Store</span>
             </a>
           </div>
         </Container>
       </section>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fadeIn 0.8s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }

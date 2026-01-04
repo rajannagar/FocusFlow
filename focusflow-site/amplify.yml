@@ -3,17 +3,16 @@ frontend:
   phases:
     preBuild:
       commands:
-        - cd softcomputers-site
+        - cd focusflow-site
         - npm ci
     build:
       commands:
-        - cd softcomputers-site
+        - cd focusflow-site
         - npm run build
   artifacts:
-    baseDirectory: softcomputers-site/out
+    baseDirectory: focusflow-site/out
     files:
       - '**/*'
   cache:
     paths:
-      - softcomputers-site/node_modules/**/*
-
+      - focusflow-site/node_modules/**/*

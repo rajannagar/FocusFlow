@@ -1,22 +1,55 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Container, CurrencySelector } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { APP_STORE_URL, PRICING } from '@/lib/constants';
+import { Check, DollarSign, HelpCircle } from 'lucide-react';
 
 export default function PricingPage() {
   const mousePosition = useThrottledMouse();
   const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'CAD'>('CAD');
+  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
+
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -100px 0px',
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-fade-in');
+        }
+      });
+    }, observerOptions);
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      sectionRefs.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, []);
+
+  const proMonthlyPrice = PRICING.pro.monthly[selectedCurrency];
+  const proYearlyPrice = PRICING.pro.yearly[selectedCurrency];
+  const monthlyEquivalentYearly = proMonthlyPrice * 12;
+  const savings = monthlyEquivalentYearly - proYearlyPrice;
+  const savingsPercentage = ((savings / monthlyEquivalentYearly) * 100).toFixed(0);
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
       
       {/* ═══════════════════════════════════════════════════════════════
-          HERO - Dynamic & Premium
+          HERO - Premium & Beautiful
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-24 md:pt-32 pb-20 md:pb-28 overflow-hidden">
+      <section className="relative pt-24 md:pt-32 pb-16 md:pb-24 overflow-hidden">
         <div className="absolute inset-0">
           <div 
             className="absolute top-1/3 left-1/4 w-[500px] md:w-[1000px] h-[500px] md:h-[1000px] rounded-full blur-[120px] md:blur-[200px] opacity-[0.06] transition-transform duration-[4000ms] ease-out"
@@ -29,23 +62,19 @@ export default function PricingPage() {
         <div className="absolute inset-0 bg-grid opacity-[0.02]" />
 
         <Container>
-          <div className="relative z-10 max-w-5xl mx-auto text-center px-4 md:px-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-elevated)] border border-[var(--border)] text-sm text-[var(--foreground-muted)] mb-6 md:mb-8">
-              <svg className="w-4 h-4 text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span>Premium Experience</span>
-            </div>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 md:mb-8 leading-tight">
-              Choose your <span className="text-gradient">plan</span>
-            </h1>
-            <p className="text-xl md:text-2xl lg:text-3xl text-[var(--foreground-muted)] leading-relaxed font-light max-w-3xl mx-auto mb-8 md:mb-12">
-              Start free, upgrade when you're ready. Unlock the full potential of FocusFlow.
-            </p>
-            
-            {/* Currency Selector */}
-            <div className="flex justify-center">
-              <CurrencySelector onCurrencyChange={setSelectedCurrency} defaultCurrency="CAD" />
+          <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
+            <div className="text-center mb-12 md:mb-16">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 md:mb-8 leading-tight">
+                Choose your <span className="text-gradient">plan</span>
+              </h1>
+              <p className="text-xl md:text-2xl lg:text-3xl text-[var(--foreground-muted)] leading-relaxed font-light max-w-3xl mx-auto mb-8 md:mb-12">
+                Start free, upgrade when you're ready. Unlock the full potential of FocusFlow.
+              </p>
+              
+              {/* Currency Selector */}
+              <div className="flex justify-center">
+                <CurrencySelector onCurrencyChange={setSelectedCurrency} defaultCurrency="CAD" />
+              </div>
             </div>
           </div>
         </Container>
@@ -54,10 +83,15 @@ export default function PricingPage() {
       {/* ═══════════════════════════════════════════════════════════════
           PRICING CARDS - Premium Layout
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-16 md:py-32 overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full blur-[150px] opacity-[0.05] bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)]" />
-        </div>
+      <section 
+        ref={(el) => { sectionRefs.current[0] = el; }}
+        className="relative py-16 md:py-24 overflow-hidden opacity-0 transition-opacity duration-1000"
+      >
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--accent-primary)]/5 via-transparent to-transparent pointer-events-none" />
+        
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
         
         <Container>
           <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6">
@@ -65,7 +99,7 @@ export default function PricingPage() {
               
               {/* Free Plan */}
               <div className="relative group">
-                <div className="h-full p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border-2 border-[var(--border)] flex flex-col transition-all duration-300 hover:border-[var(--accent-primary)]/30">
+                <div className="h-full p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border-2 border-[var(--border)] flex flex-col transition-all duration-300 hover:border-[var(--accent-primary)]/30 hover:shadow-xl">
                   <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-subtle)] border border-[var(--border)] text-sm text-[var(--foreground-muted)] mb-4">
                       Free Forever
@@ -87,9 +121,7 @@ export default function PricingPage() {
                       'View-only widgets',
                     ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-[var(--foreground-subtle)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Check className="w-6 h-6 text-[var(--foreground-subtle)] flex-shrink-0 mt-0.5" strokeWidth={2} />
                         <span className="text-[var(--foreground-muted)]">{feature}</span>
                       </li>
                     ))}
@@ -114,11 +146,12 @@ export default function PricingPage() {
                   <div className="text-center mb-8">
                     <h3 className="text-3xl md:text-4xl font-bold text-gradient mb-3">Pro Yearly</h3>
                     <div className="text-6xl md:text-7xl font-bold text-[var(--foreground)] mb-2">
-                      ${selectedCurrency === 'USD' ? PRICING.pro.yearly.USD : PRICING.pro.yearly.CAD}
+                      ${proYearlyPrice}
                     </div>
                     <p className="text-[var(--foreground-muted)] mb-4">per year</p>
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--success)]/20 text-[var(--success)] text-sm font-semibold border border-[var(--success)]/30">
-                      💰 Save ${selectedCurrency === 'USD' ? '2.89' : '11.88'}/year
+                      <DollarSign className="w-4 h-4" />
+                      Save {savingsPercentage}% ({selectedCurrency === 'USD' ? '$' : 'C$'}{savings.toFixed(2)}/year)
                     </div>
                   </div>
                   
@@ -139,9 +172,7 @@ export default function PricingPage() {
                       'Music integration',
                     ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Check className="w-6 h-6 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" strokeWidth={2} />
                         <span className="text-[var(--foreground-muted)] font-medium">{feature}</span>
                       </li>
                     ))}
@@ -161,14 +192,14 @@ export default function PricingPage() {
 
               {/* Pro Monthly */}
               <div className="relative group">
-                <div className="h-full p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border-2 border-[var(--border)] flex flex-col transition-all duration-300 hover:border-[var(--accent-primary)]/30">
+                <div className="h-full p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border-2 border-[var(--border)] flex flex-col transition-all duration-300 hover:border-[var(--accent-primary)]/30 hover:shadow-xl">
                   <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 text-sm text-[var(--accent-primary)] mb-4">
                       Pro
                     </div>
                     <h3 className="text-3xl md:text-4xl font-bold text-gradient mb-3">Pro Monthly</h3>
                     <div className="text-6xl md:text-7xl font-bold text-[var(--foreground)] mb-2">
-                      ${selectedCurrency === 'USD' ? PRICING.pro.monthly.USD : PRICING.pro.monthly.CAD}
+                      ${proMonthlyPrice}
                     </div>
                     <p className="text-[var(--foreground-muted)]">per month</p>
                   </div>
@@ -190,9 +221,7 @@ export default function PricingPage() {
                       'Music integration',
                     ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Check className="w-6 h-6 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" strokeWidth={2} />
                         <span className="text-[var(--foreground-muted)]">{feature}</span>
                       </li>
                     ))}
@@ -216,19 +245,25 @@ export default function PricingPage() {
       {/* ═══════════════════════════════════════════════════════════════
           FEATURE COMPARISON - Visual Table
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40 bg-[var(--background-elevated)]">
+      <section 
+        ref={(el) => { sectionRefs.current[1] = el; }}
+        className="relative py-16 md:py-24 bg-[var(--background-elevated)] overflow-hidden opacity-0 transition-opacity duration-1000"
+      >
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-6xl mx-auto px-4 md:px-6">
-            <h2 className="text-4xl md:text-6xl font-bold text-center mb-16 md:mb-24">Feature Comparison</h2>
+            <h2 className="text-4xl md:text-6xl font-bold text-center mb-12 md:mb-16">Feature Comparison</h2>
             
             <div className="rounded-3xl bg-[var(--background)] border border-[var(--border)] overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+                <table className="w-full min-w-[500px] md:min-w-0">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--background-elevated)]">
-                      <th className="text-left py-6 px-6 md:px-8 text-lg font-bold text-[var(--foreground)]">Feature</th>
-                      <th className="text-center py-6 px-6 md:px-8 text-lg font-bold text-[var(--foreground)]">Free</th>
-                      <th className="text-center py-6 px-6 md:px-8 text-lg font-bold text-gradient">Pro</th>
+                      <th className="text-left py-4 md:py-6 px-4 md:px-6 lg:px-8 text-sm md:text-lg font-bold text-[var(--foreground)]">Feature</th>
+                      <th className="text-center py-4 md:py-6 px-4 md:px-6 lg:px-8 text-sm md:text-lg font-bold text-[var(--foreground)]">Free</th>
+                      <th className="text-center py-4 md:py-6 px-4 md:px-6 lg:px-8 text-sm md:text-lg font-bold text-gradient">Pro</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -249,9 +284,9 @@ export default function PricingPage() {
                       { feature: 'Music Integration', free: '—', pro: '✓' },
                     ].map((row, i) => (
                       <tr key={i} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--background-elevated)] transition-colors">
-                        <td className="py-6 px-6 md:px-8 text-lg text-[var(--foreground)] font-medium">{row.feature}</td>
-                        <td className="py-6 px-6 md:px-8 text-center text-lg text-[var(--foreground-muted)]">{row.free}</td>
-                        <td className="py-6 px-6 md:px-8 text-center text-lg text-[var(--accent-primary)] font-semibold">{row.pro}</td>
+                        <td className="py-4 md:py-6 px-4 md:px-6 lg:px-8 text-sm md:text-lg text-[var(--foreground)] font-medium">{row.feature}</td>
+                        <td className="py-4 md:py-6 px-4 md:px-6 lg:px-8 text-center text-sm md:text-lg text-[var(--foreground-muted)]">{row.free}</td>
+                        <td className="py-4 md:py-6 px-4 md:px-6 lg:px-8 text-center text-sm md:text-lg text-[var(--accent-primary)] font-semibold">{row.pro}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -265,10 +300,22 @@ export default function PricingPage() {
       {/* ═══════════════════════════════════════════════════════════════
           FAQ - Premium Cards
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40">
+      <section 
+        ref={(el) => { sectionRefs.current[2] = el; }}
+        className="relative py-16 md:py-24 overflow-hidden opacity-0 transition-opacity duration-1000"
+      >
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-4xl mx-auto px-4 md:px-6">
-            <h2 className="text-4xl md:text-6xl font-bold text-center mb-16 md:mb-24">Frequently Asked Questions</h2>
+            <div className="text-center mb-12 md:mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-elevated)] border border-[var(--border)] text-sm text-[var(--foreground-muted)] mb-6">
+                <HelpCircle className="w-4 h-4 text-[var(--accent-primary)]" />
+                <span>Got Questions?</span>
+              </div>
+              <h2 className="text-4xl md:text-6xl font-bold">Frequently Asked Questions</h2>
+            </div>
             
             <div className="space-y-6">
               {[
@@ -293,7 +340,7 @@ export default function PricingPage() {
                   a: 'Yes! With Pro, you can sign in and sync your data across all your devices (iOS, Web, macOS).',
                 },
               ].map((faq, i) => (
-                <div key={i} className="group p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/50 transition-all hover:scale-[1.01]">
+                <div key={i} className="group p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/50 transition-all hover:scale-[1.01] hover:shadow-lg">
                   <h3 className="text-2xl md:text-3xl font-bold text-[var(--foreground)] mb-4">{faq.q}</h3>
                   <p className="text-lg md:text-xl text-[var(--foreground-muted)] leading-relaxed font-light">{faq.a}</p>
                 </div>
@@ -306,7 +353,10 @@ export default function PricingPage() {
       {/* ═══════════════════════════════════════════════════════════════
           FINAL CTA
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative py-24 md:py-40 bg-[var(--background-elevated)]">
+      <section className="relative py-16 md:py-24 bg-[var(--background-elevated)]">
+        {/* Section divider */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+        
         <Container>
           <div className="max-w-4xl mx-auto text-center px-4 md:px-6">
             <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8">
@@ -319,7 +369,7 @@ export default function PricingPage() {
               href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)] text-white font-semibold text-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-[var(--accent-primary)]/40"
+              className="group relative inline-flex items-center gap-3 px-8 md:px-10 py-4 md:py-5 rounded-2xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)] text-white font-semibold text-lg md:text-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-[var(--accent-primary)]/40"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <svg className="w-6 h-6 relative z-10" fill="currentColor" viewBox="0 0 24 24">
@@ -330,6 +380,23 @@ export default function PricingPage() {
           </div>
         </Container>
       </section>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fadeIn 0.8s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }
