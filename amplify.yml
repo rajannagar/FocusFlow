@@ -3,16 +3,42 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "Current directory:" && pwd
-        - echo "Listing root directory:" && ls -la
-        - echo "Checking for focusflow-site:" && ls -la focusflow-site/ | head -5 || echo "Directory not found"
-        - cd focusflow-site && npm ci
+        - |
+          echo "=== PreBuild Phase ==="
+          echo "Current directory: $(pwd)"
+          echo "Listing root:"
+          ls -la | head -10
+          echo "Checking focusflow-site:"
+          if [ -d "focusflow-site" ]; then
+            echo "✓ focusflow-site directory found"
+            cd focusflow-site
+            echo "Changed to: $(pwd)"
+            npm ci
+          else
+            echo "✗ focusflow-site directory NOT found"
+            echo "Full directory listing:"
+            ls -la
+            exit 1
+          fi
     build:
       commands:
-        - echo "Current directory:" && pwd
-        - echo "Listing root directory:" && ls -la
-        - echo "Checking for focusflow-site:" && ls -la focusflow-site/ | head -5 || echo "Directory not found"
-        - cd focusflow-site && npm run build
+        - |
+          echo "=== Build Phase ==="
+          echo "Current directory: $(pwd)"
+          echo "Listing root:"
+          ls -la | head -10
+          echo "Checking focusflow-site:"
+          if [ -d "focusflow-site" ]; then
+            echo "✓ focusflow-site directory found"
+            cd focusflow-site
+            echo "Changed to: $(pwd)"
+            npm run build
+          else
+            echo "✗ focusflow-site directory NOT found"
+            echo "Full directory listing:"
+            ls -la
+            exit 1
+          fi
   artifacts:
     baseDirectory: focusflow-site/out
     files:
