@@ -192,9 +192,9 @@ export function StatsGrid({ stats, loading }: StatsGridProps) {
             <TrendingUp className="w-6 h-6 text-[var(--accent-primary)]" />
             Your Stats
           </h2>
-          <p className="text-[var(--foreground-muted)]">
-            Track your progress and stay motivated
-          </p>
+        <p className="text-[var(--foreground-muted)]">
+          Track your progress and stay motivated
+        </p>
         </div>
       </div>
       

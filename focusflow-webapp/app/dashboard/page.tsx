@@ -93,7 +93,7 @@ export default function DashboardPage() {
           <div className="max-w-[1600px] mx-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div>
+              <div>
                   <motion.h1 
                     className="text-xl md:text-2xl font-bold flex items-center gap-2"
                     initial={{ opacity: 0, x: -10 }}
@@ -109,17 +109,17 @@ export default function DashboardPage() {
                     <Sparkles className="w-5 h-5 text-[var(--accent-secondary)]" />
                   </motion.h1>
                   <p className="text-sm text-[var(--foreground-muted)] mt-1 flex items-center gap-2">
-                    {new Date().toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
                     <span className="text-[var(--foreground-subtle)]">•</span>
                     <span className="flex items-center gap-1">
                       <Target className="w-3.5 h-3.5" />
                       {Math.round(goalProgress)}% of daily goal
                     </span>
-                  </p>
+                </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -145,41 +145,41 @@ export default function DashboardPage() {
             {/* Two Column Layout for Stats and Quick Actions */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8 mb-8">
               {/* Left Column - Stats Grid (2/3 width on xl) */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
                 className="xl:col-span-2"
-              >
-                <StatsGrid
-                  stats={{
-                    todayFocusTime,
-                    todaySessions: todaySessions.length,
-                    weeklyFocusTime,
-                    weeklySessions: weeklySessions.length,
-                    totalFocusTime,
-                    totalSessions,
-                    currentStreak: stats?.currentStreak || 0,
-                    currentLevel: stats?.currentLevel || 1,
-                    totalXp: stats?.totalXp || 0,
-                    activeTasks: activeTasks.length,
-                    totalTasks: tasks?.length || 0,
-                  }}
-                  loading={statsLoading || sessionsLoading}
-                />
-              </motion.div>
+            >
+              <StatsGrid
+                stats={{
+                  todayFocusTime,
+                  todaySessions: todaySessions.length,
+                  weeklyFocusTime,
+                  weeklySessions: weeklySessions.length,
+                  totalFocusTime,
+                  totalSessions,
+                  currentStreak: stats?.currentStreak || 0,
+                  currentLevel: stats?.currentLevel || 1,
+                  totalXp: stats?.totalXp || 0,
+                  activeTasks: activeTasks.length,
+                  totalTasks: tasks?.length || 0,
+                }}
+                loading={statsLoading || sessionsLoading}
+              />
+            </motion.div>
 
               {/* Right Column - Quick Actions (1/3 width on xl) */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
                 className="xl:col-span-1"
-              >
-                <QuickActions 
-                  totalTasks={tasks?.length || 0}
-                />
-              </motion.div>
+            >
+              <QuickActions 
+                totalTasks={tasks?.length || 0}
+              />
+            </motion.div>
             </div>
 
             {/* Recent Activity - Full Width */}
