@@ -1,0 +1,19 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd focusflow-site
+        - npm ci
+    build:
+      commands:
+        - cd focusflow-site
+        - npm run build
+  artifacts:
+    baseDirectory: focusflow-site/out
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - focusflow-site/node_modules/**/*
+
