@@ -1,6 +1,6 @@
 # FocusFlow Launch Implementation Plan
 **Created:** January 2, 2026  
-**Last Updated:** January 2, 2026 (P1-14, P1-15, P2-1, P3-2 completed, P1-4 deferred)  
+**Last Updated:** January 2, 2026 (P1-14, P1-15, P2-1, P3-2 completed, Badges gating completed, P1-4 deferred)  
 **Status:** 🟡 In Progress (15/17 P1 tasks completed, 1 skipped, 1 deferred; P3-2 completed)  
 **Estimated Time:** 5-7 days
 
@@ -384,10 +384,12 @@ private func startAllEngines(userId: UUID) {
 - ✅ Hidden LevelBadge for free users
 - ✅ Hidden level title (currentTitle) and info button for free users
 - ✅ Hidden XPProgressBar and XP text for free users
-- ✅ Hidden badges section for free users
-- ✅ Added teaser card for free users with trophy icon, crown badge, and paywall trigger
+- ✅ Hidden badges section for free users (badges are Pro-only feature)
+- ✅ Badge calculations only run for Pro users (lazy evaluation - returns empty array for free users)
+- ✅ Added badge teaser card for free users with trophy icon, crown badge, and paywall trigger
 - ✅ Gated LevelInfoSheet - shows paywall for free users
 - ✅ Gated AllBadgesSheet - shows paywall for free users
+- ✅ Gated BadgeDetailSheet - only accessible from badges section (Pro-only)
 - ✅ Paywall context set to `.xpLevels`
 - ✅ Added ProGatingHelper integration and `.onChange(of: pro.isPro)` for view refresh
 
@@ -636,6 +638,7 @@ enum PaywallContext: String {
 - ✅ Tasks (3 total max)
 - ✅ Progress History (3 days max)
 - ✅ XP/Levels (Pro only - hidden for free users)
+- ✅ Badges (Pro only - teaser card for free users, calculations only for Pro)
 - ✅ Journey View (Pro only - locked for free users)
 - ✅ Widgets (Pro only for interactivity)
 - ✅ Live Activity (Pro only)

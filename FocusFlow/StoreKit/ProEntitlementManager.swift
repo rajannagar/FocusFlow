@@ -9,7 +9,7 @@ final class ProEntitlementManager: ObservableObject {
 
     static let monthlyID = "com.softcomputers.focusflow.pro.monthly"
     static let yearlyID  = "com.softcomputers.focusflow.pro.yearly"
-    
+
     /// Shared singleton instance - use this everywhere to ensure single source of truth
     static let shared = ProEntitlementManager()
 

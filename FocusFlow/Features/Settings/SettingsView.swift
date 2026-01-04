@@ -779,14 +779,14 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         SettingsSectionView(title: "ABOUT") {
-            Link(destination: URL(string: "https://rajannagar.github.io/FocusFlow/privacy.html")!) {
+            Link(destination: URL(string: "https://www.softcomputers.ca/privacy")!) {
                 HStack {
                     Text("Privacy Policy").foregroundColor(.white)
                     Spacer()
                     Image(systemName: "arrow.up.right").foregroundColor(.white.opacity(0.3))
                 }
             }
-            Link(destination: URL(string: "https://rajannagar.github.io/FocusFlow/terms.html")!) {
+            Link(destination: URL(string: "https://www.softcomputers.ca/terms")!) {
                 HStack {
                     Text("Terms of Service").foregroundColor(.white)
                     Spacer()

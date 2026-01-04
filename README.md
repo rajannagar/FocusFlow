@@ -104,6 +104,7 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ### Progress & Gamification
 - **XP & Levels** – 50 levels to unlock, earn XP for sessions & tasks (Pro only)
+- **Achievement Badges** – Unlock badges for milestones (Pro only)
 - **Journey View** – Daily summaries & weekly reviews (Pro only)
 - **Progress History** – Free: Last 3 days | Pro: Full history
 
@@ -140,6 +141,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Tasks** | 3 total | Unlimited |
 | **Progress History** | Last 3 days | Full history |
 | **XP & Levels** | ❌ Hidden | ✅ 50 levels |
+| **Achievement Badges** | ❌ Hidden | ✅ All badges |
 | **Journey View** | ❌ Locked | ✅ Full access |
 | **Cloud Sync** | ❌ | ✅ (requires sign-in) |
 | **Widgets** | View-only | Full interactivity |
@@ -179,6 +181,7 @@ Open [http://localhost:3000](http://localhost:3000)
 - ✅ Task Gating (3 max free, unlimited Pro)
 - ✅ Progress History Gating (3 days free)
 - ✅ XP/Levels Gating (Pro only)
+- ✅ Badges Gating (Pro only - teaser card for free users)
 - ✅ Journey View Gating (Pro only)
 - ✅ Widget Gating (Pro only for interactivity)
 - ✅ Live Activity Gating (Pro only)

@@ -215,8 +215,17 @@ struct FocusView: View {
                         soundChangedWhilePaused = false
                         FocusSoundManager.shared.play(sound: selected)
                     } else {
-                        // Sound is already set - make sure it's playing (might have stopped when app was killed)
-                        FocusSoundManager.shared.play(sound: selected)
+                        // Sound is already set - check if it's already playing
+                        // If it's already playing, don't restart it (fixes bug where music restarts when returning to view)
+                        if FocusSoundManager.shared.isPlaying(sound: selected) {
+                            // Already playing, do nothing
+                        } else if FocusSoundManager.shared.isLoaded(sound: selected) {
+                            // Sound is loaded but paused - resume it
+                            FocusSoundManager.shared.resume()
+                        } else {
+                            // Sound stopped (e.g., app was killed or view was deallocated) - restart it
+                            FocusSoundManager.shared.play(sound: selected)
+                        }
                     }
                 }
                 
@@ -1370,15 +1379,38 @@ struct FocusView: View {
             if #available(iOS 18.0, *) { FocusLiveActivityManager.shared.endActivity() }
 
         case .running:
-            if appSettings.soundEnabled, let selected = appSettings.selectedFocusSound {
+            print("🎵 [FocusView] Phase transition to .running, old phase: \(old)")
+            print("🎵 [FocusView] soundEnabled: \(appSettings.soundEnabled), selectedSound: \(appSettings.selectedFocusSound?.fileName ?? "nil")")
+            print("🎵 [FocusView] activeSessionSound: \(activeSessionSound?.fileName ?? "nil"), soundChangedWhilePaused: \(soundChangedWhilePaused)")
+            
+            // If a sound is selected, automatically enable sounds (user intent is clear)
+            if let selected = appSettings.selectedFocusSound {
+                if !appSettings.soundEnabled {
+                    print("🎵 [FocusView] Sound selected but soundEnabled is false, enabling sounds")
+                    appSettings.soundEnabled = true
+                }
+                
+                // If resuming from paused and sound hasn't changed, try to resume
                 if old == .paused, !soundChangedWhilePaused, activeSessionSound == selected {
-                    FocusSoundManager.shared.resume()
+                    print("🎵 [FocusView] Resuming from paused")
+                    // Check if sound is loaded - if so, resume; otherwise play
+                    if FocusSoundManager.shared.isLoaded(sound: selected) {
+                        FocusSoundManager.shared.resume()
+                    } else {
+                        // Sound was stopped (e.g., app was killed) - restart it
+                        activeSessionSound = selected
+                        soundChangedWhilePaused = false
+                        FocusSoundManager.shared.play(sound: selected)
+                    }
                 } else {
+                    // Starting from idle or sound changed - always play
+                    print("🎵 [FocusView] Starting from idle or sound changed, calling play()")
                     activeSessionSound = selected
                     soundChangedWhilePaused = false
                     FocusSoundManager.shared.play(sound: selected)
                 }
             } else {
+                print("🎵 [FocusView] No sound selected")
                 FocusSoundManager.shared.stop()
                 activeSessionSound = nil
                 soundChangedWhilePaused = false
@@ -1619,14 +1651,22 @@ struct FocusView: View {
             return
         }
 
-        if isRunning {
+        // Always update activeSessionSound when sound is selected
+        // This ensures it's set even if timer hasn't started yet
+        if activeSessionSound != sound {
             activeSessionSound = sound
             soundChangedWhilePaused = false
+        }
+
+        if isRunning {
+            // Timer is running - play the sound
             FocusSoundManager.shared.play(sound: sound)
         } else if showingSoundSheet {
+            // Preview sound in picker
             soundChangedWhilePaused = true
             FocusSoundManager.shared.play(sound: sound)
         } else {
+            // Timer not running and not in picker - stop sound
             FocusSoundManager.shared.stop()
         }
     }

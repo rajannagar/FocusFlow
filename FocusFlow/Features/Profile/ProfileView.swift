@@ -458,7 +458,10 @@ struct ProfileView: View {
         return streak
     }
 
+    // ✅ Only calculate badges for Pro users (lazy evaluation)
     private var allBadges: [Badge] {
+        guard pro.isPro else { return [] } // Return empty array for free users
+        
         let totalMinutes = Int(progressStore.lifetimeFocusSeconds / 60)
         let longestSession = Int((progressStore.sessions.map { $0.duration }.max() ?? 0) / 60)
         let morningCount = progressStore.sessions.filter { cal.component(.hour, from: $0.date) < 8 && $0.duration >= 300 }.count
@@ -518,6 +521,8 @@ struct ProfileView: View {
                             journeyButton
                             if pro.isPro {
                                 badgesSection
+                            } else {
+                                badgeTeaserCard
                             }
                             allTimeSection
                             weekCard
@@ -1229,6 +1234,102 @@ struct ProfileView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+    
+    // MARK: - Badge Teaser Card (Free Users)
+    
+    private var badgeTeaserCard: some View {
+        Button {
+            Haptics.impact(.medium)
+            paywallContext = .xpLevels
+            showingPaywall = true
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 44, height: 44)
+                        .opacity(0.5)
+
+                    Image(systemName: "trophy.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(theme.accentPrimary)
+                        .opacity(0.5)
+                    
+                    // Crown overlay
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.yellow, .orange],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .offset(x: 2, y: 2)
+                        }
+                    }
+                    .frame(width: 44, height: 44)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text("Badges")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                        
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.yellow, .orange],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
+
+                    Text("Unlock with Pro")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.2))
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.white.opacity(0.02))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [theme.accentPrimary.opacity(0.15), theme.accentSecondary.opacity(0.1)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Badges, requires Pro upgrade")
+        .accessibilityHint("Upgrade to Pro to unlock achievement badges")
     }
     
     // MARK: - Rate App Section

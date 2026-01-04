@@ -1079,9 +1079,9 @@ struct PaywallView: View {
             .foregroundColor(.white.opacity(0.5))
             
             HStack(spacing: 16) {
-                Link("Privacy", destination: URL(string: "https://rajannagar.github.io/FocusFlow/privacy.html")!)
+                Link("Privacy", destination: URL(string: "https://www.softcomputers.ca/privacy")!)
                 Text("·").foregroundColor(.white.opacity(0.2))
-                Link("Terms", destination: URL(string: "https://rajannagar.github.io/FocusFlow/terms.html")!)
+                Link("Terms", destination: URL(string: "https://www.softcomputers.ca/terms")!)
             }
             .font(.system(size: 12, weight: .medium))
             .foregroundColor(.white.opacity(0.35))
