@@ -1,0 +1,11 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow internal paths
+Disallow: /api/
+Disallow: /_next/
+
+# Sitemap
+Sitemap: https://www.softcomputers.ca/sitemap.xml
+
