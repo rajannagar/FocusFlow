@@ -53,18 +53,19 @@ export default function Header() {
   ];
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-[10002] transition-all duration-500 ${
-        scrolled 
-          ? 'bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-lg shadow-black/5' 
-          : 'bg-transparent border-b border-transparent'
-      }`}
-      style={{
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative">
-        <div className="flex h-14 sm:h-16 md:h-20 items-center justify-between gap-2 sm:gap-3 md:gap-4 relative">
+    <>
+      <header 
+        className={`fixed top-0 left-0 right-0 z-[10002] transition-all duration-500 ${
+          scrolled 
+            ? 'bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-lg shadow-black/5' 
+            : 'bg-transparent border-b border-transparent'
+        }`}
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative">
+          <div className="flex h-14 sm:h-16 md:h-20 items-center justify-between gap-2 sm:gap-3 md:gap-4 relative">
           
           {/* Logo */}
           <Link 
@@ -167,38 +168,8 @@ export default function Header() {
             <ThemeToggle />
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="lg:hidden relative" style={{ zIndex: 10004, pointerEvents: 'auto' }}>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsMenuOpen((prev) => !prev);
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-              }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-              }}
-              className="relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] touch-manipulation"
-              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={isMenuOpen}
-              style={{ 
-                minWidth: '44px', 
-                minHeight: '44px',
-                WebkitTapHighlightColor: 'transparent',
-                position: 'relative',
-                pointerEvents: 'auto',
-              }}
-            >
-              {isMenuOpen ? (
-                <X className="w-6 h-6" strokeWidth={2} />
-              ) : (
-                <Menu className="w-6 h-6" strokeWidth={2} />
-              )}
-            </button>
-          </div>
+          {/* Mobile Menu Button - Placeholder for layout */}
+          <div className="lg:hidden" style={{ width: '44px', height: '44px' }} />
         </div>
 
         {/* Mobile Menu Backdrop - Only shows when menu is open and doesn't cover header */}
@@ -300,5 +271,43 @@ export default function Header() {
         </div>
       </div>
     </header>
+
+    {/* Mobile Menu Button - Fixed outside header to escape stacking context */}
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsMenuOpen((prev) => !prev);
+      }}
+      onTouchStart={(e) => {
+        e.stopPropagation();
+      }}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+      }}
+      className="lg:hidden fixed p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-all text-[var(--foreground)] touch-manipulation"
+      aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+      aria-expanded={isMenuOpen}
+      style={{ 
+        top: `calc(env(safe-area-inset-top, 0px) + 0.5rem)`,
+        right: '0.75rem',
+        minWidth: '44px', 
+        minHeight: '44px',
+        WebkitTapHighlightColor: 'transparent',
+        zIndex: 10005,
+        pointerEvents: 'auto',
+        backgroundColor: scrolled ? 'var(--background)' : 'transparent',
+        opacity: scrolled ? 0.9 : 1,
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
+      }}
+    >
+      {isMenuOpen ? (
+        <X className="w-6 h-6" strokeWidth={2} />
+      ) : (
+        <Menu className="w-6 h-6" strokeWidth={2} />
+      )}
+    </button>
+    </>
   );
 }
