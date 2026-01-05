@@ -570,12 +570,11 @@ struct TasksView: View {
     }
     
     private var tasksList: some View {
-        // Lock based on TOTAL task count (completed + incomplete), not just incomplete
-        // Use original order index for locking (not sorted visibleTasks index)
+        // Lock based on VISIBLE sorted index (not original index)
+        // This ensures tasks show in correct order and lock state matches what user sees
         return List {
-            ForEach(visibleTasks, id: \.id) { task in
-                let originalIndex = originalIndex(of: task) ?? Int.max
-                let isLocked = ProGatingHelper.shared.isTaskLockedByIndex(index: originalIndex)
+            ForEach(Array(visibleTasks.enumerated()), id: \.element.id) { visibleIndex, task in
+                let isLocked = ProGatingHelper.shared.isTaskLockedByIndex(index: visibleIndex)
                 let done = isCompleted(task, on: day)
                 
                 Button {

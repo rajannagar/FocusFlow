@@ -199,25 +199,24 @@ final class FocusLocalNotificationManager {
 
     // MARK: - User-configurable daily reminder
 
-    func applyDailyReminderSettings(enabled: Bool, time: Date) {
+    func applyDailyReminderSettings(enabled: Bool, hour: Int, minute: Int) {
         if enabled {
             checkAuthorizationAndSchedule { [weak self] auth in
                 guard let self else { return }
                 guard self.isAllowedToSchedule(auth) else { return }
-                self.scheduleDailyReminder(at: time)
+                self.scheduleDailyReminder(hour: hour, minute: minute)
             }
         } else {
             cancelDailyReminder()
         }
     }
 
-    private func scheduleDailyReminder(at time: Date) {
+    private func scheduleDailyReminder(hour: Int, minute: Int) {
         cancelDailyReminder()
 
-        let comps = Calendar.current.dateComponents([.hour, .minute], from: time)
         var dateComponents = DateComponents()
-        dateComponents.hour = comps.hour ?? 9
-        dateComponents.minute = comps.minute ?? 0
+        dateComponents.hour = hour
+        dateComponents.minute = minute
 
         let content = UNMutableNotificationContent()
         content.title = "Time to focus"

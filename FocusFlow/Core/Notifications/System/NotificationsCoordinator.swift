@@ -90,10 +90,11 @@ final class NotificationsCoordinator: ObservableObject {
     
     private func reconcileDailyReminder(prefs: NotificationPreferences) async {
         if prefs.dailyReminderEnabled {
-            // Schedule using legacy manager (it handles the actual UNNotificationRequest)
+            // Schedule using hour/minute integers directly (no Date extraction)
             legacyManager.applyDailyReminderSettings(
                 enabled: true,
-                time: prefs.dailyReminderTime
+                hour: prefs.dailyReminderHour,
+                minute: prefs.dailyReminderMinute
             )
         } else {
             legacyManager.cancelDailyReminder()

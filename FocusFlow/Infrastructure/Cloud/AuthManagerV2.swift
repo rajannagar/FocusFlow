@@ -328,14 +328,27 @@ final class AuthManagerV2: ObservableObject {
         defer { isLoading = false }
         
         do {
-            try await supabase.auth.signOut()
-            UserDefaults.standard.set(false, forKey: guestModeKey)
-            state = .signedOut
+            // 1. Push any pending sync changes before signing out
+            await SyncCoordinator.shared.forcePushAllPending()
             
-            // ✅ Clear widget data on logout to prevent data leaking between accounts
+            // 2. Cancel all notifications to prevent old account notifications
+            await NotificationsCoordinator.shared.cancelAll()
+            
+            // 3. Sign out from Supabase
+            try await supabase.auth.signOut()
+            
+            // 4. Clear widget data on logout to prevent data leaking between accounts
             await MainActor.run {
                 WidgetDataManager.shared.clearAllData()
             }
+            
+            // 5. Return to guest mode (not signedOut) so user can continue using app
+            UserDefaults.standard.set(true, forKey: guestModeKey)
+            state = .guest
+            
+            #if DEBUG
+            print("[AuthManagerV2] Signed out and returned to guest mode")
+            #endif
         } catch {
             self.error = error
             #if DEBUG

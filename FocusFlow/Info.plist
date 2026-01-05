@@ -12,6 +12,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>ca.softcomputers.FocusFlow</string>
+				<string>focusflow</string>
 			</array>
 		</dict>
 		<dict>
