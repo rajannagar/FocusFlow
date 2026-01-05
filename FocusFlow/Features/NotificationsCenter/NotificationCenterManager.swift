@@ -21,13 +21,48 @@ final class NotificationCenterManager: ObservableObject {
     /// Posted when user taps a notification that should navigate somewhere
     static let navigateToDestination = Notification.Name("NotificationCenterManager.navigateToDestination")
 
-    private let storageKey = "focusflow.notifications"
+    private let storageKeyBase = "focusflow.notifications"
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
+    private var activeNamespace: String = "guest"
+    private var cancellables = Set<AnyCancellable>()
 
     private init() {
         encoder.dateEncodingStrategy = .iso8601
         decoder.dateDecodingStrategy = .iso8601
+        observeAuthChanges()
+        applyNamespace(for: AuthManagerV2.shared.state)
+    }
+    
+    // MARK: - Namespace Management
+    
+    private func namespace(for state: CloudAuthState) -> String {
+        switch state {
+        case .signedIn(let userId): return userId.uuidString
+        case .guest, .unknown, .signedOut: return "guest"
+        }
+    }
+    
+    private func storageKey() -> String {
+        "\(storageKeyBase)_\(activeNamespace)"
+    }
+    
+    private func observeAuthChanges() {
+        AuthManagerV2.shared.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.applyNamespace(for: state)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func applyNamespace(for state: CloudAuthState) {
+        let newNamespace = namespace(for: state)
+        
+        if activeNamespace == newNamespace { return }
+        
+        print("[NotificationCenterManager] Namespace switch: \(activeNamespace) → \(newNamespace)")
+        activeNamespace = newNamespace
         load()
     }
 
@@ -124,7 +159,10 @@ final class NotificationCenterManager: ObservableObject {
     // MARK: - Persistence
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
+        guard let data = UserDefaults.standard.data(forKey: storageKey()) else {
+            notifications = []
+            return
+        }
         do {
             let decoded = try decoder.decode([FocusNotification].self, from: data)
             notifications = decoded.sorted(by: { $0.date > $1.date })
@@ -137,7 +175,7 @@ final class NotificationCenterManager: ObservableObject {
     private func persist() {
         do {
             let data = try encoder.encode(notifications)
-            UserDefaults.standard.set(data, forKey: storageKey)
+            UserDefaults.standard.set(data, forKey: storageKey())
         } catch {
             print("⚠️ Failed to encode notifications: \(error)")
         }

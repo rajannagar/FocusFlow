@@ -48,6 +48,15 @@ final class NotificationPreferencesStore: ObservableObject {
 
         if hasInitialized, newNamespace == activeNamespace { return }
 
+        // ✅ CRITICAL: Cancel ALL notifications BEFORE switching namespace
+        // This prevents old account's notifications from showing to new account
+        if hasInitialized && activeNamespace != newNamespace {
+            Task {
+                print("🔔 Cancelling all notifications before namespace switch: \(activeNamespace) → \(newNamespace)")
+                await NotificationsCoordinator.shared.cancelAll()
+            }
+        }
+
         activeNamespace = newNamespace
         isApplyingNamespace = true
         defer { isApplyingNamespace = false }
@@ -55,8 +64,13 @@ final class NotificationPreferencesStore: ObservableObject {
         load()
         print("NotificationPreferencesStore: namespace → \(activeNamespace)")
 
-        // Optional: reconcile on namespace switch so scheduled notifications match the new prefs.
-        Task { await NotificationsCoordinator.shared.reconcileAll(reason: "namespace changed") }
+        // Reconcile AFTER namespace switch completes
+        // This ensures notifications are scheduled with the new account's preferences and tasks
+        Task {
+            // Wait a bit to ensure all stores have switched namespaces
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            await NotificationsCoordinator.shared.reconcileAll(reason: "namespace changed")
+        }
     }
 
     // MARK: - Persistence

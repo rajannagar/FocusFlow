@@ -26,8 +26,29 @@ final class TaskReminderScheduler {
     }
 
     private var lastScheduled: [UUID: Signature] = [:]
+    private var currentNamespace: String = "guest"
 
     private init() {
+        // Observe auth state to clear scheduled notifications when switching accounts
+        AuthManagerV2.shared.$state
+            .receive(on: queue)
+            .sink { [weak self] state in
+                guard let self else { return }
+                let newNamespace: String
+                switch state {
+                case .signedIn(let userId): newNamespace = userId.uuidString
+                case .guest, .unknown, .signedOut: newNamespace = "guest"
+                }
+                
+                if self.currentNamespace != newNamespace {
+                    print("🔔 TaskReminderScheduler: namespace changed \(self.currentNamespace) → \(newNamespace), clearing state")
+                    self.currentNamespace = newNamespace
+                    // Clear tracking when switching accounts
+                    self.lastScheduled.removeAll()
+                }
+            }
+            .store(in: &cancellables)
+        
         store.$tasks
             .receive(on: queue)
             .debounce(for: .milliseconds(250), scheduler: queue)
