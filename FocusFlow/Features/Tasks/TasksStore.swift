@@ -241,12 +241,15 @@ final class TasksStore: ObservableObject {
         isApplyingState = true
         defer { isApplyingState = false }
 
-        // ✅ Clear timestamps for OLD namespace when switching accounts (not new)
+        // ✅ Clear timestamps for OLD namespace when switching accounts
         // This prevents timestamp data from bleeding across accounts
         if let oldKey = lastStorageKey, oldKey != nextKey {
-            // Extract namespace from old key
-            if oldKey != Keys.guest, let oldNamespace = extractNamespace(from: oldKey) {
+            // Extract namespace from old key (for signed-in users)
+            if let oldNamespace = extractNamespace(from: oldKey) {
                 LocalTimestampTracker.shared.clearAllTimestamps(namespace: oldNamespace)
+            } else if oldKey == Keys.guest {
+                // Switching away from guest - clear guest timestamps
+                LocalTimestampTracker.shared.clearAllTimestamps(namespace: "guest")
             }
         }
 

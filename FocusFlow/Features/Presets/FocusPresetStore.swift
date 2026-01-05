@@ -169,14 +169,14 @@ final class FocusPresetStore: ObservableObject {
         // This ensures the preset stays active when the app relaunches during a session
         restoreActivePresetIfSessionRunning()
 
+        // ✅ Clear timestamps for OLD namespace when switching accounts
+        // This prevents timestamp data from bleeding across accounts
+        if let oldNamespace = lastNamespace, oldNamespace != newNamespace {
+            LocalTimestampTracker.shared.clearAllTimestamps(namespace: oldNamespace)
+        }
+        
         if newNamespace == "guest" {
             _ = seedDefaultsIfNeeded()
-        } else {
-            // ✅ Clear timestamps for OLD namespace when switching (not new)
-            // This prevents timestamp data from bleeding across accounts
-            if let oldNamespace = lastNamespace, oldNamespace != "guest", oldNamespace != newNamespace {
-                LocalTimestampTracker.shared.clearAllTimestamps(namespace: oldNamespace)
-            }
         }
 
         print("FocusPresetStore: active namespace -> \(activeNamespace)")

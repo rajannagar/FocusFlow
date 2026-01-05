@@ -88,9 +88,9 @@ final class ProgressStore: ObservableObject {
         // Isolation is guaranteed by namespacing + race-safe switching.
         if newNamespace == activeNamespace, lastNamespace != nil { return }
 
-        // ✅ Clear timestamps for OLD namespace when switching accounts (not new)
+        // ✅ Clear timestamps for OLD namespace when switching accounts
         // This prevents timestamp data from bleeding across accounts
-        if let oldNamespace = lastNamespace, oldNamespace != "guest", oldNamespace != newNamespace {
+        if let oldNamespace = lastNamespace, oldNamespace != newNamespace {
             LocalTimestampTracker.shared.clearAllTimestamps(namespace: oldNamespace)
         }
 
