@@ -172,11 +172,18 @@ export default function Header() {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setIsMenuOpen(!isMenuOpen);
+              setIsMenuOpen((prev) => !prev);
             }}
-            className="md:hidden relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10001] touch-manipulation"
+            onTouchStart={(e) => {
+              e.stopPropagation();
+            }}
+            className="md:hidden relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10001] touch-manipulation"
             aria-label="Menu"
-            style={{ minWidth: '44px', minHeight: '44px', position: 'relative' }}
+            style={{ 
+              minWidth: '44px', 
+              minHeight: '44px',
+              WebkitTapHighlightColor: 'transparent',
+            }}
           >
             {isMenuOpen ? (
               <X className="w-6 h-6" strokeWidth={2} />
