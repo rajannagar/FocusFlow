@@ -27,10 +27,11 @@ const siteUrl = SITE_URL;
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "FocusFlow - Be Present",
+    default: "FocusFlow - Be Present | Focus Timer & Productivity App",
     template: "%s | FocusFlow",
   },
-  description: "The all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.",
+  description: "FocusFlow is the all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work. Available on iOS.",
+  applicationName: "FocusFlow",
   keywords: [
     "focus timer",
     "productivity app",
@@ -54,8 +55,8 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "FocusFlow - Be Present",
-    description: "The all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.",
+    title: "FocusFlow - Be Present | Focus Timer & Productivity App",
+    description: "FocusFlow is the all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work. Available on iOS.",
     url: siteUrl,
     siteName: "FocusFlow",
     images: [
@@ -71,8 +72,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FocusFlow - Be Present",
-    description: "The all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.",
+    title: "FocusFlow - Be Present | Focus Timer & Productivity App",
+    description: "FocusFlow is the all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work. Available on iOS.",
     images: ["/focusflow_app_icon.png"],
     creator: "@focusflow",
   },
@@ -104,11 +105,57 @@ const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "FocusFlow",
+  legalName: "Soft Computers",
   url: siteUrl,
-  logo: `${siteUrl}/focusflow_app_icon.png`,
+  logo: {
+    "@type": "ImageObject",
+    url: `${siteUrl}/focusflow_app_icon.png`,
+    width: 512,
+    height: 512,
+  },
   description: "The all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.",
   email: "support@focusflowbepresent.com",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Toronto",
+    addressRegion: "Ontario",
+    addressCountry: "CA",
+  },
   sameAs: [],
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${siteUrl}/?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
+// JSON-LD Structured Data for Website
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "FocusFlow",
+  alternateName: "FocusFlow - Be Present",
+  url: siteUrl,
+  description: "The all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.",
+  publisher: {
+    "@type": "Organization",
+    name: "FocusFlow",
+    logo: {
+      "@type": "ImageObject",
+      url: `${siteUrl}/focusflow_app_icon.png`,
+    },
+  },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${siteUrl}/?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
 };
 
 // JSON-LD Structured Data for Software Application (FocusFlow)
@@ -150,6 +197,9 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#0A0A0B" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="canonical" href={siteUrl} />
+        <meta name="author" content="FocusFlow" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
         {/* Prevent flash of unstyled content - set theme before React hydrates */}
         <script
           dangerouslySetInnerHTML={{
@@ -166,6 +216,10 @@ export default function RootLayout({
           }}
         />
         {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
