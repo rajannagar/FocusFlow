@@ -264,9 +264,11 @@ final class FocusTimerViewModel: ObservableObject {
         stopTimer(keepRemaining: true)
         phase = .completed
 
-        // ✅ Completed sessions ALWAYS record
-        let planned = plannedSessionTotalSeconds > 0 ? plannedSessionTotalSeconds : max(totalSeconds, 1)
-        logSessionIfNeeded(durationSeconds: planned)
+        // ✅ Completed sessions ALWAYS record the ACTUAL elapsed time
+        // This ensures accuracy even if session is stopped immediately after starting
+        let elapsed = computeElapsedSeconds()
+        let durationToLog = max(elapsed, 0)
+        logSessionIfNeeded(durationSeconds: durationToLog)
 
         // ✅ Clear active preset when session completes
         clearActivePresetIfSetBySession()
