@@ -261,16 +261,34 @@ final class FocusTimerViewModel: ObservableObject {
         guard phase != .completed else { return }
 
         // ✅ Compute elapsed time BEFORE changing phase (while still .running)
-        // This ensures accuracy for all completion scenarios
         let elapsed = computeElapsedSeconds()
-        let durationToLog = max(elapsed, 0)
 
         remainingSeconds = 0
         stopTimer(keepRemaining: true)
         phase = .completed
 
-        // ✅ Completed sessions ALWAYS record the ACTUAL elapsed time
-        logSessionIfNeeded(durationSeconds: durationToLog)
+        // ✅ Apply early-end rules even for completion (prevents logging accidental 2-second sessions)
+        // Only log if:
+        // - elapsed >= 60s (hard floor) AND
+        // - (elapsed >= 5 minutes OR ratio >= 40%)
+        guard elapsed >= earlyEndHardFloorSeconds else {
+            clearActivePresetIfSetBySession()
+            clearPersistedSession()
+            return
+        }
+
+        if plannedSessionTotalSeconds > 0 {
+            let ratio = Double(elapsed) / Double(plannedSessionTotalSeconds)
+            let meetsRule = (elapsed >= earlyEndMinimumSeconds) || (ratio >= earlyEndMinimumCompletionRatio)
+            guard meetsRule else {
+                clearActivePresetIfSetBySession()
+                clearPersistedSession()
+                return
+            }
+        }
+
+        // ✅ Log the actual elapsed time
+        logSessionIfNeeded(durationSeconds: elapsed)
 
         // ✅ Clear active preset when session completes
         clearActivePresetIfSetBySession()
