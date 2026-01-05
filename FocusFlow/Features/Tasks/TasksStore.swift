@@ -129,9 +129,9 @@ final class TasksStore: ObservableObject {
         let prefix = "\(taskID.uuidString)|"
         completedOccurrenceKeys = Set(completedOccurrenceKeys.filter { !$0.hasPrefix(prefix) })
 
-        // ✅ Record timestamp for deleted task (for conflict resolution)
+        // ✅ Record deletion timestamp to prevent task from reappearing on sync
         let namespace = getActiveNamespace()
-        LocalTimestampTracker.shared.recordLocalChange(field: "task_\(taskID.uuidString)", namespace: namespace)
+        LocalTimestampTracker.shared.recordLocalChange(field: "task_deleted_\(taskID.uuidString)", namespace: namespace)
 
         var ordered = orderedTasks()
         for i in ordered.indices { ordered[i].sortIndex = i }

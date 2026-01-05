@@ -599,11 +599,25 @@ final class PresetsSyncEngine {
                 
                 mergedPresets.append(mergedPreset)
             } else {
-                // New preset from remote - add it
-                mergedPresets.append(remotePreset)
-                #if DEBUG
-                print("[PresetsSyncEngine] Adding new remote preset '\(remotePreset.name)'")
-                #endif
+                // Preset doesn't exist locally - check if it was deleted
+                let deletionFieldKey = "preset_deleted_\(dto.id.uuidString)"
+                let wasDeletedLocally = LocalTimestampTracker.shared.getLocalTimestamp(
+                    field: deletionFieldKey,
+                    namespace: namespace
+                ) != nil
+                
+                if wasDeletedLocally {
+                    // Preset was deleted locally - don't add it back
+                    #if DEBUG
+                    print("[PresetsSyncEngine] Skipping remote preset '\(remotePreset.name)' (deleted locally)")
+                    #endif
+                } else {
+                    // New preset from remote - add it
+                    mergedPresets.append(remotePreset)
+                    #if DEBUG
+                    print("[PresetsSyncEngine] Adding new remote preset '\(remotePreset.name)'")
+                    #endif
+                }
             }
             
             // Remove from local map (so we know which local presets weren't in remote)

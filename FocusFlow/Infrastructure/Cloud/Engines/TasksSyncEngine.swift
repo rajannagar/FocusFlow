@@ -536,11 +536,25 @@ final class TasksSyncEngine {
                     #endif
                 }
             } else {
-                // New task from remote - add it
-                mergedTasks.append(remoteTask)
-                #if DEBUG
-                print("[TasksSyncEngine] Adding new remote task '\(remoteTask.title)'")
-                #endif
+                // Task doesn't exist locally - check if it was deleted
+                let deletionFieldKey = "task_deleted_\(dto.id.uuidString)"
+                let wasDeletedLocally = LocalTimestampTracker.shared.getLocalTimestamp(
+                    field: deletionFieldKey,
+                    namespace: namespace
+                ) != nil
+                
+                if wasDeletedLocally {
+                    // Task was deleted locally - don't add it back
+                    #if DEBUG
+                    print("[TasksSyncEngine] Skipping remote task '\(remoteTask.title)' (deleted locally)")
+                    #endif
+                } else {
+                    // New task from remote - add it
+                    mergedTasks.append(remoteTask)
+                    #if DEBUG
+                    print("[TasksSyncEngine] Adding new remote task '\(remoteTask.title)'")
+                    #endif
+                }
             }
             
             // Remove from local map (so we know which local tasks weren't in remote)

@@ -94,8 +94,8 @@ final class FocusPresetStore: ObservableObject {
         if activePresetID == preset.id {
             activePresetID = nil
         }
-        // Record timestamp for deleted preset (for conflict resolution)
-        LocalTimestampTracker.shared.recordLocalChange(field: "preset_\(preset.id.uuidString)", namespace: activeNamespace)
+        // ✅ Record deletion timestamp to prevent preset from reappearing on sync
+        LocalTimestampTracker.shared.recordLocalChange(field: "preset_deleted_\(preset.id.uuidString)", namespace: activeNamespace)
         
         // ✅ Enqueue deletion for sync
         if AuthManagerV2.shared.state.userId != nil {
