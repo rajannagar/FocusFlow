@@ -18,7 +18,7 @@
 ### Company Information
 - **Developer:** Soft Computers
 - **Location:** Toronto, Ontario, Canada
-- **Contact Email:** info@focusflowbepresent.com
+- **Contact Email:** support@focusflowbepresent.com
 - **App Store ID:** 6739000000
 - **Bundle Identifier:** ca.softcomputers.FocusFlow
 
@@ -123,7 +123,7 @@
 ## 📄 Legal Documentation Status
 
 ### Privacy Policy
-- ✅ Updated with correct contact email (info@focusflowbepresent.com)
+- ✅ Updated with correct contact email (support@focusflowbepresent.com)
 - ✅ Comprehensive data collection disclosure
 - ✅ Clear data storage location information
 - ✅ User rights section
@@ -145,7 +145,7 @@
 ## 🔍 Issues Found & Fixed
 
 ### Email Inconsistency
-- **Issue:** Privacy Policy and Terms used `Info@softcomputers.ca` instead of `info@focusflowbepresent.com`
+- **Issue:** Privacy Policy and Terms used `Info@softcomputers.ca` instead of `support@focusflowbepresent.com`
 - **Fix:** Updated to use `CONTACT_EMAIL` constant consistently
 
 ### Feature Documentation

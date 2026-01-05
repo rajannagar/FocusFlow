@@ -8,7 +8,7 @@ export const SITE_NAME = 'FocusFlow';
 export const SITE_DESCRIPTION = 'The all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.';
 
 // Contact information
-export const CONTACT_EMAIL = 'info@focusflowbepresent.com';
+export const CONTACT_EMAIL = 'support@focusflowbepresent.com';
 export const COMPANY_LOCATION = 'Toronto, Ontario, Canada';
 
 // App Store links

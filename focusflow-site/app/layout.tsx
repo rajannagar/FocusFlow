@@ -107,7 +107,7 @@ const organizationSchema = {
   url: siteUrl,
   logo: `${siteUrl}/focusflow_app_icon.png`,
   description: "The all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.",
-  email: "info@focusflowbepresent.com",
+  email: "support@focusflowbepresent.com",
   sameAs: [],
 };
 
