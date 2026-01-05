@@ -2,9 +2,11 @@
 User-agent: *
 Allow: /
 
-# Disallow internal paths
+# Disallow internal paths (API routes only - static assets should be accessible)
 Disallow: /api/
-Disallow: /_next/
+
+# Allow Next.js static assets - Googlebot needs these to render pages
+Allow: /_next/static/
 
 # Sitemap
 Sitemap: https://focusflowbepresent.com/sitemap.xml
