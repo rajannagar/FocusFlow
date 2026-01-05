@@ -86,10 +86,10 @@ export default function Header() {
     <>
       {/* Header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
           scrolled
             ? 'bg-[var(--background)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-sm'
-            : 'bg-transparent border-b border-transparent'
+            : 'bg-[var(--background)]/80 backdrop-blur-sm border-b border-transparent lg:bg-transparent lg:backdrop-blur-none'
         }`}
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)',
@@ -205,7 +205,7 @@ export default function Header() {
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[90] transition-opacity duration-300"
           onClick={toggleMenu}
           aria-hidden="true"
           style={{
@@ -217,7 +217,7 @@ export default function Header() {
       {/* Mobile Menu */}
       <div
         data-mobile-menu
-        className={`lg:hidden fixed left-0 right-0 z-50 bg-[var(--background)] border-t border-[var(--border)] transition-transform duration-300 ease-out ${
+        className={`lg:hidden fixed left-0 right-0 z-[95] bg-[var(--background)] border-t border-[var(--border)] transition-transform duration-300 ease-out ${
           isMenuOpen ? 'translate-y-0' : '-translate-y-full'
         }`}
         style={{
