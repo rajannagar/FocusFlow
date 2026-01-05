@@ -63,13 +63,13 @@ export default function Header() {
         paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative">
-        <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4 relative">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative">
+        <div className="flex h-14 sm:h-16 md:h-20 items-center justify-between gap-2 sm:gap-3 md:gap-4 relative">
           
           {/* Logo */}
           <Link 
             href="/" 
-            className="group relative flex items-center gap-2 md:gap-3 z-50 min-w-0 flex-shrink"
+            className="group relative flex items-center gap-1.5 sm:gap-2 md:gap-3 z-50 min-w-0 flex-shrink-0"
             onClick={() => {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
@@ -79,15 +79,15 @@ export default function Header() {
               <Image
                 src="/focusflow-logo.png"
                 alt="FocusFlow"
-                width={32}
-                height={32}
-                className="relative transition-transform duration-300 group-hover:scale-105 md:w-9 md:h-9"
+                width={28}
+                height={28}
+                className="relative transition-transform duration-300 group-hover:scale-105 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9"
                 priority
               />
             </div>
             <div className="relative min-w-0">
               {/* Main text with gradient - responsive sizing */}
-              <span className="relative z-10 text-lg md:text-xl lg:text-2xl font-bold tracking-tight block whitespace-nowrap">
+              <span className="relative z-10 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold tracking-tight block whitespace-nowrap">
                 <span className="bg-gradient-to-r from-[var(--foreground)] via-[var(--accent-primary)] to-[var(--foreground)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
                   Focus
                 </span>
@@ -95,13 +95,13 @@ export default function Header() {
                   Flow
                 </span>
                 {isPricingPage && (
-                  <span className="ml-2 bg-gradient-to-r from-[#D4A853] via-[#F4D03F] via-[#F7DC6F] to-[#D4A853] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                  <span className="ml-1 sm:ml-2 bg-gradient-to-r from-[#D4A853] via-[#F4D03F] via-[#F7DC6F] to-[#D4A853] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
                     Pro
                   </span>
                 )}
               </span>
               {/* Glow effect on hover */}
-              <span className="absolute inset-0 text-lg md:text-xl lg:text-2xl font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm whitespace-nowrap">
+              <span className="absolute inset-0 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm whitespace-nowrap">
                 <span className="bg-gradient-to-r from-[var(--accent-primary)]/60 via-[var(--accent-secondary)]/60 to-[var(--accent-primary)]/60 bg-clip-text text-transparent">
                   Focus
                 </span>
@@ -109,23 +109,23 @@ export default function Header() {
                   Flow
                 </span>
                 {isPricingPage && (
-                  <span className="ml-2 bg-gradient-to-r from-[#D4A853]/60 via-[#F4D03F]/60 to-[#D4A853]/60 bg-clip-text text-transparent">
+                  <span className="ml-1 sm:ml-2 bg-gradient-to-r from-[#D4A853]/60 via-[#F4D03F]/60 to-[#D4A853]/60 bg-clip-text text-transparent">
                     Pro
                   </span>
                 )}
               </span>
               {/* Animated underline accent */}
-              <span className="absolute -bottom-1 md:-bottom-1.5 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] group-hover:w-full transition-all duration-700 rounded-full" />
+              <span className="absolute -bottom-0.5 sm:-bottom-1 md:-bottom-1.5 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] group-hover:w-full transition-all duration-700 rounded-full" />
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+                className={`relative px-3 xl:px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
                   isActive(link.href)
                     ? 'text-[var(--foreground)] bg-[var(--background-elevated)]' 
                     : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50'
@@ -143,25 +143,25 @@ export default function Header() {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
             <Link
               href="/webapp"
-              className="px-5 py-2.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50 transition-all duration-300 flex items-center gap-2"
+              className="px-4 xl:px-5 py-2.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50 transition-all duration-300 flex items-center gap-2"
             >
               <LogIn className="w-4 h-4" strokeWidth={2} />
-              Sign In
+              <span className="hidden xl:inline">Sign In</span>
             </Link>
             <a
               href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative px-5 py-2.5 rounded-xl text-sm font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-[var(--accent-primary)]/30"
+              className="group relative px-4 xl:px-5 py-2.5 rounded-xl text-sm font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-[var(--accent-primary)]/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative z-10 flex items-center gap-2">
                 <Download className="w-4 h-4" strokeWidth={2.5} />
-                <span>Download</span>
+                <span className="hidden xl:inline">Download</span>
               </div>
             </a>
             <ThemeToggle />
@@ -177,8 +177,9 @@ export default function Header() {
             onTouchStart={(e) => {
               e.stopPropagation();
             }}
-            className="md:hidden relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10003] touch-manipulation"
-            aria-label="Menu"
+            className="lg:hidden relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10003] touch-manipulation"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMenuOpen}
             style={{ 
               minWidth: '44px', 
               minHeight: '44px',
@@ -193,31 +194,46 @@ export default function Header() {
           </button>
         </div>
 
+        {/* Mobile Menu Backdrop */}
+        <div
+          className={`lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[10000] transition-opacity duration-300 ${
+            isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={() => setIsMenuOpen(false)}
+          aria-hidden="true"
+        />
+
         {/* Mobile Menu */}
         <div 
-          className={`md:hidden fixed top-16 left-0 right-0 bottom-0 bg-[var(--background)] border-t border-[var(--border)] transition-transform duration-300 ease-out z-[10001] ${
+          className={`lg:hidden fixed inset-0 bg-[var(--background)] border-t border-[var(--border)] transition-all duration-300 ease-out z-[10001] ${
             isMenuOpen 
-              ? 'translate-y-0 pointer-events-auto' 
-              : '-translate-y-full pointer-events-none'
+              ? 'translate-y-0 opacity-100 pointer-events-auto' 
+              : '-translate-y-full opacity-0 pointer-events-none'
           }`}
           style={{
-            paddingTop: 'env(safe-area-inset-top, 0px)',
+            top: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)',
+            paddingTop: '1rem',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           }}
         >
-          <div className="h-full overflow-y-auto">
-            <div className="px-4 py-6 space-y-2">
+          <div className="h-full overflow-y-auto overscroll-contain">
+            <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-2">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`block px-4 py-3.5 rounded-xl text-base font-medium transition-all ${
+                  className={`block px-4 py-3.5 rounded-xl text-base font-medium transition-all touch-manipulation ${
                     isActive(link.href)
                       ? 'text-[var(--foreground)] bg-[var(--background-elevated)]' 
-                      : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]'
+                      : 'text-[var(--foreground-muted)] active:text-[var(--foreground)] active:bg-[var(--background-elevated)]'
                   }`}
                   onClick={() => {
                     setIsMenuOpen(false);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  style={{
+                    minHeight: '44px',
+                    WebkitTapHighlightColor: 'transparent',
                   }}
                 >
                   {link.label}
@@ -228,8 +244,12 @@ export default function Header() {
               <div className="pt-6 mt-6 border-t border-[var(--border)] space-y-3">
                 <Link
                   href="/webapp"
-                  className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)] transition-all"
+                  className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-medium text-[var(--foreground-muted)] active:text-[var(--foreground)] active:bg-[var(--background-elevated)] transition-all touch-manipulation"
                   onClick={() => setIsMenuOpen(false)}
+                  style={{
+                    minHeight: '44px',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
                 >
                   <LogIn className="w-5 h-5" strokeWidth={2} />
                   Sign In
@@ -238,15 +258,19 @@ export default function Header() {
                   href={APP_STORE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-semibold text-white overflow-hidden transition-all duration-300"
+                  className="group relative flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-semibold text-white overflow-hidden transition-all duration-300 touch-manipulation"
                   onClick={() => setIsMenuOpen(false)}
+                  style={{
+                    minHeight: '44px',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-active:opacity-100 transition-opacity duration-300" />
                   <Download className="w-5 h-5 relative z-10" strokeWidth={2.5} />
                   <span className="relative z-10">Download FocusFlow</span>
                 </a>
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--background-elevated)]">
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--background-elevated)] touch-manipulation" style={{ minHeight: '44px' }}>
                   <span className="text-sm font-medium text-[var(--foreground-muted)]">Theme</span>
                   <ThemeToggle />
                 </div>
