@@ -168,40 +168,60 @@ export default function Header() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsMenuOpen((prev) => !prev);
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-            }}
-            className="lg:hidden relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10003] touch-manipulation"
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={isMenuOpen}
-            style={{ 
-              minWidth: '44px', 
-              minHeight: '44px',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            {isMenuOpen ? (
-              <X className="w-6 h-6" strokeWidth={2} />
-            ) : (
-              <Menu className="w-6 h-6" strokeWidth={2} />
-            )}
-          </button>
+          <div className="lg:hidden relative" style={{ zIndex: 10004, pointerEvents: 'auto' }}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsMenuOpen((prev) => !prev);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+              className="relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] touch-manipulation"
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMenuOpen}
+              style={{ 
+                minWidth: '44px', 
+                minHeight: '44px',
+                WebkitTapHighlightColor: 'transparent',
+                position: 'relative',
+                pointerEvents: 'auto',
+              }}
+            >
+              {isMenuOpen ? (
+                <X className="w-6 h-6" strokeWidth={2} />
+              ) : (
+                <Menu className="w-6 h-6" strokeWidth={2} />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Mobile Menu Backdrop */}
-        <div
-          className={`lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[10000] transition-opacity duration-300 ${
-            isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
-          onClick={() => setIsMenuOpen(false)}
-          aria-hidden="true"
-        />
+        {/* Mobile Menu Backdrop - Only shows when menu is open and doesn't cover header */}
+        {isMenuOpen && (
+          <div
+            className="lg:hidden fixed bg-black/40 backdrop-blur-sm z-[10000] transition-opacity duration-300"
+            onClick={() => setIsMenuOpen(false)}
+            onTouchStart={(e) => {
+              // Prevent backdrop from interfering with header button
+              if (e.target === e.currentTarget) {
+                setIsMenuOpen(false);
+              }
+            }}
+            aria-hidden="true"
+            style={{
+              top: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              pointerEvents: 'auto',
+            }}
+          />
+        )}
 
         {/* Mobile Menu */}
         <div 
