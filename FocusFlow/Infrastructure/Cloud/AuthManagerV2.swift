@@ -342,12 +342,12 @@ final class AuthManagerV2: ObservableObject {
                 WidgetDataManager.shared.clearAllData()
             }
             
-            // 5. Return to guest mode (not signedOut) so user can continue using app
-            UserDefaults.standard.set(true, forKey: guestModeKey)
-            state = .guest
+            // 5. Show AuthLandingView (user can choose to sign in or continue as guest)
+            UserDefaults.standard.set(false, forKey: guestModeKey)
+            state = .signedOut
             
             #if DEBUG
-            print("[AuthManagerV2] Signed out and returned to guest mode")
+            print("[AuthManagerV2] Signed out - showing auth landing page")
             #endif
         } catch {
             self.error = error
