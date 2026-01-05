@@ -170,8 +170,9 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-xl hover:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-50"
+            className="md:hidden p-2.5 rounded-xl hover:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10001] touch-manipulation"
             aria-label="Menu"
+            style={{ minWidth: '44px', minHeight: '44px' }}
           >
             {isMenuOpen ? (
               <X className="w-6 h-6" strokeWidth={2} />
@@ -183,13 +184,13 @@ export default function Header() {
 
         {/* Mobile Menu */}
         <div 
-          className={`md:hidden fixed inset-0 top-16 bg-[var(--background)] border-t border-[var(--border)] transition-all duration-500 ease-out z-40 ${
+          className={`md:hidden fixed inset-0 bg-[var(--background)] transition-all duration-500 ease-out z-[10000] ${
             isMenuOpen 
-              ? 'opacity-100 translate-y-0' 
+              ? 'opacity-100 translate-y-0 pointer-events-auto' 
               : 'opacity-0 -translate-y-full pointer-events-none'
           }`}
           style={{
-            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingTop: 'calc(4rem + env(safe-area-inset-top, 0px))',
           }}
         >
           <div className="h-full overflow-y-auto">
