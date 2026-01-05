@@ -278,7 +278,8 @@ struct SmallWidgetContent: View {
                                 .foregroundStyle(theme.accent.opacity(0.8))
                         }
                     }
-                    .frame(width: 80, height: 80)
+                    .frame(width: 100, height: 100)
+                    .multilineTextAlignment(.center)
                 }
                 
                 Spacer()
