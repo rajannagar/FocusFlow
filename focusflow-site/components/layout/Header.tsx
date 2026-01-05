@@ -54,7 +54,7 @@ export default function Header() {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-[10002] transition-all duration-500 ${
         scrolled 
           ? 'bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-lg shadow-black/5' 
           : 'bg-transparent border-b border-transparent'
@@ -177,7 +177,7 @@ export default function Header() {
             onTouchStart={(e) => {
               e.stopPropagation();
             }}
-            className="md:hidden relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10001] touch-manipulation"
+            className="md:hidden relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10003] touch-manipulation"
             aria-label="Menu"
             style={{ 
               minWidth: '44px', 
@@ -195,13 +195,13 @@ export default function Header() {
 
         {/* Mobile Menu */}
         <div 
-          className={`md:hidden fixed inset-0 bg-[var(--background)] transition-all duration-500 ease-out z-[10000] ${
+          className={`md:hidden fixed top-16 left-0 right-0 bottom-0 bg-[var(--background)] transition-all duration-500 ease-out z-[10001] ${
             isMenuOpen 
               ? 'opacity-100 translate-y-0 pointer-events-auto' 
               : 'opacity-0 -translate-y-full pointer-events-none'
           }`}
           style={{
-            paddingTop: 'calc(4rem + env(safe-area-inset-top, 0px))',
+            paddingTop: 'env(safe-area-inset-top, 0px)',
           }}
         >
           <div className="h-full overflow-y-auto">
