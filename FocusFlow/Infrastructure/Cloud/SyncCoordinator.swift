@@ -4,10 +4,13 @@
 //
 //  Orchestrates sync engines based on authentication state.
 //  Starts/stops engines when user signs in/out.
+//  ✅ PRO GATING: Sync requires Pro subscription + signed in.
+//  ✅ MERGE STRATEGY: When resubscribing after >7 days, merges local+remote data.
 //
 
 import Foundation
 import Combine
+import SwiftUI
 
 @MainActor
 final class SyncCoordinator: ObservableObject {
@@ -26,6 +29,7 @@ final class SyncCoordinator: ObservableObject {
     // MARK: - State
     
     @Published private(set) var isSyncing = false
+    @Published private(set) var isMerging = false  // ✅ NEW: Track merge state separately
     @Published private(set) var lastSyncDate: Date?
     @Published private(set) var syncError: Error?
     
@@ -38,10 +42,17 @@ final class SyncCoordinator: ObservableObject {
     // ✅ Track last push time to prevent immediate pulls after push
     private var lastPushTime: Date = Date.distantPast
     
+    // ✅ NEW: Persist last successful sync date for merge detection
+    @AppStorage("ff_lastSuccessfulSyncTimestamp") private var lastSuccessfulSyncTimestamp: Double = 0
+    
+    // ✅ NEW: Days threshold to trigger merge sync (when gap is larger than this)
+    private let mergeTriggerDays = 7
+    
     // MARK: - Init
     
     private init() {
         observeAuthState()
+        observeProStatus()  // ✅ NEW: Observe Pro status changes
         // Don't start periodic sync here - it will start when engines start
     }
     
@@ -93,6 +104,43 @@ final class SyncCoordinator: ObservableObject {
             .store(in: &cancellables)
     }
     
+    // MARK: - Pro Status Observation
+    
+    /// ✅ NEW: Observe Pro subscription status changes
+    /// Handles: Free → Pro (start sync with merge), Pro → Free (stop sync)
+    private func observeProStatus() {
+        ProEntitlementManager.shared.$isPro
+            .dropFirst() // Skip initial value (handled by auth state)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isPro in
+                self?.handleProStatusChange(isPro: isPro)
+            }
+            .store(in: &cancellables)
+    }
+    
+    /// ✅ NEW: Handle Pro → Free or Free → Pro transitions
+    private func handleProStatusChange(isPro: Bool) {
+        #if DEBUG
+        print("[SyncCoordinator] Pro status changed: \(isPro)")
+        #endif
+        
+        if isPro && AuthManagerV2.shared.state.isSignedIn {
+            // User just got Pro while signed in - start sync with merge if needed
+            if let userId = AuthManagerV2.shared.state.userId, !isRunning {
+                Task {
+                    await startSyncWithMergeIfNeeded(userId: userId)
+                }
+            }
+        } else if !isPro && isRunning {
+            // User lost Pro - stop sync gracefully
+            #if DEBUG
+            print("[SyncCoordinator] Pro expired - stopping sync")
+            #endif
+            stopAllEngines()
+        }
+    }
+    
     private func handleAuthStateChange(_ state: CloudAuthState) {
         switch state {
         case .unknown:
@@ -107,11 +155,19 @@ final class SyncCoordinator: ObservableObject {
             #endif
             
         case .signedIn(let userId):
-            // Start sync for this user
-            startAllEngines(userId: userId)
-            #if DEBUG
-            print("[SyncCoordinator] Signed in - starting sync for \(userId)")
-            #endif
+            // ✅ MODIFIED: Only start sync if user has Pro
+            if ProGatingHelper.shared.isPro {
+                Task {
+                    await startSyncWithMergeIfNeeded(userId: userId)
+                }
+                #if DEBUG
+                print("[SyncCoordinator] Signed in with Pro - starting sync for \(userId)")
+                #endif
+            } else {
+                #if DEBUG
+                print("[SyncCoordinator] Signed in but no Pro - sync disabled")
+                #endif
+            }
             
         case .signedOut:
             // Signed out - stop all sync
@@ -124,7 +180,49 @@ final class SyncCoordinator: ObservableObject {
     
     // MARK: - Engine Control
     
+    /// ✅ NEW: Check if merge is needed and start sync accordingly
+    private func startSyncWithMergeIfNeeded(userId: UUID) async {
+        // Check Pro status first
+        guard ProGatingHelper.shared.canUseCloudSync else {
+            #if DEBUG
+            print("[SyncCoordinator] Cannot sync - requires Pro + SignedIn")
+            #endif
+            return
+        }
+        
+        guard !isRunning else { return }
+        
+        // Check gap since last sync
+        let lastSync = lastSuccessfulSyncTimestamp > 0 
+            ? Date(timeIntervalSince1970: lastSuccessfulSyncTimestamp) 
+            : Date.distantPast
+        let gapDays = Calendar.current.dateComponents([.day], from: lastSync, to: Date()).day ?? Int.max
+        
+        #if DEBUG
+        print("[SyncCoordinator] Last sync: \(lastSync), gap: \(gapDays) days")
+        #endif
+        
+        if gapDays > mergeTriggerDays && lastSuccessfulSyncTimestamp > 0 {
+            // Long gap - perform merge sync to preserve local data
+            #if DEBUG
+            print("[SyncCoordinator] Gap > \(mergeTriggerDays) days - performing MERGE sync")
+            #endif
+            await performMergeSync(userId: userId)
+        } else {
+            // Normal sync
+            startAllEngines(userId: userId)
+        }
+    }
+    
     private func startAllEngines(userId: UUID) {
+        // ✅ MODIFIED: Check Pro status before starting
+        guard ProGatingHelper.shared.canUseCloudSync else {
+            #if DEBUG
+            print("[SyncCoordinator] Sync disabled - requires Pro subscription")
+            #endif
+            return
+        }
+        
         // ✅ Process sync queue when engines start
         Task {
             await SyncQueue.shared.processQueue()
@@ -147,6 +245,88 @@ final class SyncCoordinator: ObservableObject {
         tasksEngine.stop()
         sessionsEngine.stop()
         presetsEngine.stop()
+    }
+    
+    // MARK: - Merge Sync (Resubscription)
+    
+    /// ✅ NEW: Performs merge sync when user resubscribes after a gap
+    /// Strategy:
+    /// - Sessions: UNION (keep all from both local and remote)
+    /// - Tasks: Timestamp merge (keep newer version, local deletions win)
+    /// - Presets: Timestamp merge (keep newer version)
+    /// - Settings: Local wins (current device preference)
+    private func performMergeSync(userId: UUID) async {
+        guard !isRunning else { return }
+        isRunning = true
+        isSyncing = true
+        isMerging = true
+        syncError = nil
+        
+        #if DEBUG
+        print("[SyncCoordinator] 🔄 Starting MERGE sync for resubscription...")
+        #endif
+        
+        do {
+            // Step 1: Settings - Local wins (just push local, then pull for any missing)
+            #if DEBUG
+            print("[SyncCoordinator] Step 1: Merging settings (local wins)...")
+            #endif
+            try await settingsEngine.start(userId: userId)
+            await settingsEngine.forcePushNow() // Push local settings first
+            
+            guard isRunning else { return }
+            
+            // Step 2: Presets - Timestamp merge
+            #if DEBUG
+            print("[SyncCoordinator] Step 2: Merging presets (timestamp-based)...")
+            #endif
+            try await presetsEngine.mergeWithRemote(userId: userId)
+            
+            guard isRunning else { return }
+            
+            // Step 3: Sessions - UNION (keep all)
+            #if DEBUG
+            print("[SyncCoordinator] Step 3: Merging sessions (UNION - keep all)...")
+            #endif
+            try await sessionsEngine.mergeAllSessions(userId: userId)
+            
+            guard isRunning else { return }
+            
+            // Step 4: Tasks - Timestamp merge with local deletions winning
+            #if DEBUG
+            print("[SyncCoordinator] Step 4: Merging tasks (timestamp-based, local deletions win)...")
+            #endif
+            try await tasksEngine.mergeWithRemote(userId: userId)
+            
+            // Update last sync timestamp
+            lastSyncDate = Date()
+            lastSuccessfulSyncTimestamp = Date().timeIntervalSince1970
+            
+            // Start periodic sync now that merge is complete
+            startPeriodicSync()
+            
+            // Start observing local changes
+            try await settingsEngine.start(userId: userId)
+            try await presetsEngine.start(userId: userId)
+            try await sessionsEngine.start(userId: userId)
+            try await tasksEngine.start(userId: userId)
+            
+            // Sync widgets
+            WidgetDataManager.shared.syncAll()
+            
+            #if DEBUG
+            print("[SyncCoordinator] ✅ MERGE sync completed successfully!")
+            #endif
+            
+        } catch {
+            syncError = error
+            #if DEBUG
+            print("[SyncCoordinator] ❌ MERGE sync error: \(error)")
+            #endif
+        }
+        
+        isSyncing = false
+        isMerging = false
     }
     
     // MARK: - Initial Sync
@@ -180,6 +360,9 @@ final class SyncCoordinator: ObservableObject {
             
             lastSyncDate = Date()
             
+            // ✅ NEW: Record successful sync timestamp for merge detection
+            lastSuccessfulSyncTimestamp = Date().timeIntervalSince1970
+            
             // ✅ Sync widgets after all remote data is pulled (ensures presets, theme, etc. are up-to-date)
             WidgetDataManager.shared.syncAll()
             
@@ -207,6 +390,14 @@ final class SyncCoordinator: ObservableObject {
     
     /// Manually trigger a full sync (e.g., on pull-to-refresh)
     func syncNow() async {
+        // ✅ MODIFIED: Check Pro status
+        guard ProGatingHelper.shared.canUseCloudSync else {
+            #if DEBUG
+            print("[SyncCoordinator] Cannot sync - requires Pro + SignedIn")
+            #endif
+            return
+        }
+        
         guard let userId = AuthManagerV2.shared.state.userId else {
             #if DEBUG
             print("[SyncCoordinator] Cannot sync - not signed in")

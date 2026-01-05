@@ -128,6 +128,223 @@ final class TasksSyncEngine {
         #endif
     }
     
+    // MARK: - Merge with Remote (Resubscription)
+    
+    /// ✅ NEW: Merge strategy for resubscription - timestamp-based with local deletions winning
+    /// Strategy:
+    /// - Tasks that exist in both: keep the newer version
+    /// - Tasks only in local: keep them (created while free)
+    /// - Tasks only in remote but deleted locally: mark as archived (local deletion wins)
+    /// - Completions: UNION all (never lose completion records)
+    func mergeWithRemote(userId: UUID) async throws {
+        self.userId = userId
+        self.isRunning = true
+        
+        let client = SupabaseManager.shared.client
+        let store = TasksStore.shared
+        let namespace = userId.uuidString
+        
+        #if DEBUG
+        print("[TasksSyncEngine] 🔄 Starting timestamp merge for tasks...")
+        #endif
+        
+        // Step 1: Fetch all remote tasks (including archived for comparison)
+        let remoteTasks: [TaskDTO] = try await client
+            .from("tasks")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+            .eq("is_archived", value: false)
+            .order("sort_index", ascending: true)
+            .execute()
+            .value
+        
+        let remoteCompletions: [TaskCompletionDTO] = try await client
+            .from("task_completions")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+            .execute()
+            .value
+        
+        #if DEBUG
+        print("[TasksSyncEngine] Remote has \(remoteTasks.count) tasks, \(remoteCompletions.count) completions")
+        print("[TasksSyncEngine] Local has \(store.tasks.count) tasks")
+        #endif
+        
+        // Step 2: Build maps for comparison
+        var remoteTaskMap: [UUID: TaskDTO] = Dictionary(uniqueKeysWithValues: remoteTasks.map { ($0.id, $0) })
+        let localTaskMap: [UUID: FFTaskItem] = Dictionary(uniqueKeysWithValues: store.tasks.map { ($0.id, $0) })
+        
+        var mergedTasks: [FFTaskItem] = []
+        var tasksToArchiveRemotely: [UUID] = []
+        var tasksToUpsertRemotely: [TaskDTO] = []
+        
+        // Step 3: Process local tasks
+        for (id, localTask) in localTaskMap {
+            if let remoteDTO = remoteTaskMap[id] {
+                // Task exists in both - compare timestamps
+                let localTimestamp = LocalTimestampTracker.shared.getLocalTimestamp(
+                    field: "task_\(id.uuidString)",
+                    namespace: namespace
+                )
+                let remoteTimestamp = remoteDTO.updatedAt ?? remoteDTO.createdAt ?? Date.distantPast
+                
+                if let localTs = localTimestamp, localTs > remoteTimestamp {
+                    // Local is newer - keep local and push to remote
+                    mergedTasks.append(localTask)
+                    tasksToUpsertRemotely.append(taskToDTO(localTask, userId: userId))
+                    #if DEBUG
+                    print("[TasksSyncEngine] Task '\(localTask.title)': keeping LOCAL (newer)")
+                    #endif
+                } else {
+                    // Remote is newer - use remote
+                    mergedTasks.append(dtoToTask(remoteDTO))
+                    #if DEBUG
+                    print("[TasksSyncEngine] Task '\(localTask.title)': keeping REMOTE (newer)")
+                    #endif
+                }
+                remoteTaskMap.removeValue(forKey: id)
+            } else {
+                // Task only in local - keep it (created while free)
+                mergedTasks.append(localTask)
+                tasksToUpsertRemotely.append(taskToDTO(localTask, userId: userId))
+                #if DEBUG
+                print("[TasksSyncEngine] Task '\(localTask.title)': LOCAL-ONLY, will push to remote")
+                #endif
+            }
+        }
+        
+        // Step 4: Process remaining remote-only tasks
+        // Check if they were deleted locally (local deletion wins)
+        for (id, remoteDTO) in remoteTaskMap {
+            // Check if this task was ever known locally (and thus deleted)
+            let wasDeletedLocally = LocalTimestampTracker.shared.getLocalTimestamp(
+                field: "task_deleted_\(id.uuidString)",
+                namespace: namespace
+            ) != nil
+            
+            if wasDeletedLocally {
+                // Local deletion wins - archive on remote
+                tasksToArchiveRemotely.append(id)
+                #if DEBUG
+                print("[TasksSyncEngine] Task '\(remoteDTO.title)': DELETED LOCALLY, archiving remote")
+                #endif
+            } else {
+                // Remote-only task that was never seen locally - add it
+                mergedTasks.append(dtoToTask(remoteDTO))
+                #if DEBUG
+                print("[TasksSyncEngine] Task '\(remoteDTO.title)': REMOTE-ONLY, adding to local")
+                #endif
+            }
+        }
+        
+        // Step 5: Merge completions (UNION - keep all)
+        var mergedCompletionKeys = store.completedOccurrenceKeys
+        for dto in remoteCompletions {
+            let key = "\(dto.taskId.uuidString)|\(dto.dayKey)"
+            mergedCompletionKeys.insert(key)
+        }
+        
+        #if DEBUG
+        print("[TasksSyncEngine] Merged \(mergedTasks.count) tasks, \(mergedCompletionKeys.count) completions")
+        #endif
+        
+        // Step 6: Apply merged state to local store
+        store.applyRemoteState(tasks: mergedTasks, completionKeys: mergedCompletionKeys)
+        
+        // Step 7: Push local-only and newer-local tasks to remote
+        if !tasksToUpsertRemotely.isEmpty {
+            try await client
+                .from("tasks")
+                .upsert(tasksToUpsertRemotely, onConflict: "id")
+                .execute()
+            #if DEBUG
+            print("[TasksSyncEngine] Pushed \(tasksToUpsertRemotely.count) tasks to remote")
+            #endif
+        }
+        
+        // Step 8: Archive locally-deleted tasks on remote
+        for taskId in tasksToArchiveRemotely {
+            try await client
+                .from("tasks")
+                .update(["is_archived": true])
+                .eq("id", value: taskId.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+        }
+        if !tasksToArchiveRemotely.isEmpty {
+            #if DEBUG
+            print("[TasksSyncEngine] Archived \(tasksToArchiveRemotely.count) tasks on remote")
+            #endif
+        }
+        
+        // Step 9: Push any new local completions to remote
+        let remoteCompletionKeys = Set(remoteCompletions.map { "\($0.taskId.uuidString)|\($0.dayKey)" })
+        let newCompletionKeys = mergedCompletionKeys.subtracting(remoteCompletionKeys)
+        if !newCompletionKeys.isEmpty {
+            var newCompletions: [TaskCompletionDTO] = []
+            for key in newCompletionKeys {
+                let parts = key.split(separator: "|")
+                guard parts.count == 2, let taskId = UUID(uuidString: String(parts[0])) else { continue }
+                newCompletions.append(TaskCompletionDTO(
+                    id: UUID(),
+                    userId: userId,
+                    taskId: taskId,
+                    dayKey: String(parts[1])
+                ))
+            }
+            if !newCompletions.isEmpty {
+                try await client
+                    .from("task_completions")
+                    .insert(newCompletions)
+                    .execute()
+                #if DEBUG
+                print("[TasksSyncEngine] Pushed \(newCompletions.count) new completions to remote")
+                #endif
+            }
+        }
+        
+        #if DEBUG
+        print("[TasksSyncEngine] ✅ Merge complete - \(mergedTasks.count) tasks, \(mergedCompletionKeys.count) completions")
+        #endif
+    }
+    
+    // MARK: - Helper: Convert between DTO and Model
+    
+    private func taskToDTO(_ task: FFTaskItem, userId: UUID) -> TaskDTO {
+        TaskDTO(
+            id: task.id,
+            userId: userId,
+            title: task.title,
+            notes: task.notes,
+            reminderDate: task.reminderDate,
+            repeatRule: task.repeatRule.rawValue,
+            customWeekdays: Array(task.customWeekdays),
+            durationMinutes: task.durationMinutes,
+            convertToPreset: task.convertToPreset,
+            presetCreated: task.presetCreated,
+            excludedDayKeys: Array(task.excludedDayKeys),
+            sortIndex: task.sortIndex,
+            isArchived: false
+        )
+    }
+    
+    private func dtoToTask(_ dto: TaskDTO) -> FFTaskItem {
+        FFTaskItem(
+            id: dto.id,
+            sortIndex: dto.sortIndex,
+            title: dto.title,
+            notes: dto.notes,
+            reminderDate: dto.reminderDate,
+            repeatRule: FFTaskRepeatRule(rawValue: dto.repeatRule) ?? .none,
+            customWeekdays: Set(dto.customWeekdays),
+            durationMinutes: dto.durationMinutes,
+            convertToPreset: dto.convertToPreset,
+            presetCreated: dto.presetCreated,
+            excludedDayKeys: Set(dto.excludedDayKeys),
+            createdAt: dto.createdAt ?? Date()
+        )
+    }
+    
     // MARK: - Push to Remote
     
     /// Force push immediately (bypasses debounce) - used by sync queue

@@ -252,6 +252,116 @@ final class SessionsSyncEngine {
             #endif
         }
     }
+    
+    // MARK: - Merge All Sessions (UNION Strategy)
+    
+    /// ✅ NEW: Merge strategy for resubscription - UNION all sessions
+    /// This ensures no sessions are ever lost when user resubscribes after a gap.
+    /// Strategy: Combine all sessions from both local and remote (no duplicates by ID)
+    func mergeAllSessions(userId: UUID) async throws {
+        self.userId = userId
+        self.isRunning = true
+        
+        let client = SupabaseManager.shared.client
+        let store = ProgressStore.shared
+        
+        #if DEBUG
+        print("[SessionsSyncEngine] 🔄 Starting UNION merge for sessions...")
+        #endif
+        
+        // Step 1: Fetch all remote sessions
+        let remoteSessions: [FocusSessionDTO] = try await client
+            .from("focus_sessions")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+            .order("started_at", ascending: false)
+            .execute()
+            .value
+        
+        #if DEBUG
+        print("[SessionsSyncEngine] Remote has \(remoteSessions.count) sessions")
+        print("[SessionsSyncEngine] Local has \(store.sessions.count) sessions")
+        #endif
+        
+        // Step 2: Build a map of all sessions by ID (UNION)
+        var sessionMap: [UUID: ProgressSession] = [:]
+        
+        // Add all remote sessions first
+        for dto in remoteSessions {
+            let session = ProgressSession(
+                id: dto.id,
+                date: dto.startedAt,
+                duration: TimeInterval(dto.durationSeconds),
+                sessionName: dto.sessionName
+            )
+            sessionMap[dto.id] = session
+        }
+        
+        // Add/merge local sessions (local wins for duplicates since user was using locally)
+        for local in store.sessions {
+            if let existing = sessionMap[local.id] {
+                // Session exists in both - keep local if it has more info or is newer
+                // For sessions, we prefer local since user was actively using the app
+                if local.duration > 0 {
+                    sessionMap[local.id] = local
+                    #if DEBUG
+                    print("[SessionsSyncEngine] Keeping local version of session \(local.id)")
+                    #endif
+                }
+            } else {
+                // Local-only session - add it (this is data created while user was free)
+                sessionMap[local.id] = local
+                #if DEBUG
+                print("[SessionsSyncEngine] Adding local-only session \(local.id) to merge")
+                #endif
+            }
+        }
+        
+        // Step 3: Sort by date (newest first)
+        let mergedSessions = Array(sessionMap.values).sorted { $0.date > $1.date }
+        
+        #if DEBUG
+        print("[SessionsSyncEngine] Merged total: \(mergedSessions.count) sessions")
+        #endif
+        
+        // Step 4: Apply merged sessions to local store
+        store.applyMergedSessions(mergedSessions)
+        
+        // Step 5: Push all local-only sessions to remote
+        let remoteIds = Set(remoteSessions.map { $0.id })
+        let localOnlySessions = mergedSessions.filter { !remoteIds.contains($0.id) }
+        
+        if !localOnlySessions.isEmpty {
+            let dtos = localOnlySessions.map { session in
+                FocusSessionDTO(
+                    id: session.id,
+                    userId: userId,
+                    startedAt: session.date,
+                    durationSeconds: Int(session.duration),
+                    sessionName: session.sessionName
+                )
+            }
+            
+            try await client
+                .from("focus_sessions")
+                .upsert(dtos, onConflict: "id")
+                .execute()
+            
+            #if DEBUG
+            print("[SessionsSyncEngine] Pushed \(localOnlySessions.count) local-only sessions to remote")
+            #endif
+        }
+        
+        // Step 6: Update remote stats
+        await updateRemoteStats()
+        
+        // Track all synced IDs
+        syncedSessionIds = Set(mergedSessions.map { $0.id })
+        
+        #if DEBUG
+        print("[SessionsSyncEngine] ✅ UNION merge complete - \(mergedSessions.count) total sessions")
+        #endif
+    }
 
     // MARK: - Apply Remote to Local
 

@@ -120,6 +120,195 @@ final class PresetsSyncEngine {
         print("[PresetsSyncEngine] Pulled \(remotePresets.count) presets")
         #endif
     }
+    
+    // MARK: - Merge with Remote (Resubscription)
+    
+    /// ✅ NEW: Merge strategy for resubscription - timestamp-based
+    /// Strategy:
+    /// - Presets that exist in both: keep the newer version
+    /// - Presets only in local: keep them (created while free)
+    /// - Presets only in remote but deleted locally: delete from remote (local deletion wins)
+    func mergeWithRemote(userId: UUID) async throws {
+        self.userId = userId
+        self.isRunning = true
+        
+        let client = SupabaseManager.shared.client
+        let store = FocusPresetStore.shared
+        let namespace = userId.uuidString
+        
+        #if DEBUG
+        print("[PresetsSyncEngine] 🔄 Starting timestamp merge for presets...")
+        #endif
+        
+        // Step 1: Fetch all remote presets
+        let remotePresets: [FocusPresetDTO] = try await client
+            .from("focus_presets")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+            .order("sort_order", ascending: true)
+            .execute()
+            .value
+        
+        #if DEBUG
+        print("[PresetsSyncEngine] Remote has \(remotePresets.count) presets")
+        print("[PresetsSyncEngine] Local has \(store.presets.count) presets")
+        #endif
+        
+        // Step 2: Build maps for comparison
+        var remotePresetMap: [UUID: FocusPresetDTO] = Dictionary(uniqueKeysWithValues: remotePresets.map { ($0.id, $0) })
+        let localPresetMap: [UUID: FocusPreset] = Dictionary(uniqueKeysWithValues: store.presets.map { ($0.id, $0) })
+        
+        var mergedPresets: [FocusPreset] = []
+        var presetsToDeleteRemotely: [UUID] = []
+        var presetsToUpsertRemotely: [FocusPresetDTO] = []
+        
+        // Step 3: Process local presets
+        for (id, localPreset) in localPresetMap {
+            if let remoteDTO = remotePresetMap[id] {
+                // Preset exists in both - compare timestamps
+                let localTimestamp = LocalTimestampTracker.shared.getLocalTimestamp(
+                    field: "preset_\(id.uuidString)",
+                    namespace: namespace
+                )
+                let remoteTimestamp = remoteDTO.updatedAt ?? remoteDTO.createdAt ?? Date.distantPast
+                
+                if let localTs = localTimestamp, localTs > remoteTimestamp {
+                    // Local is newer - keep local and push to remote
+                    mergedPresets.append(localPreset)
+                    presetsToUpsertRemotely.append(presetToDTO(localPreset, userId: userId, sortOrder: mergedPresets.count - 1))
+                    #if DEBUG
+                    print("[PresetsSyncEngine] Preset '\(localPreset.name)': keeping LOCAL (newer)")
+                    #endif
+                } else {
+                    // Remote is newer - use remote
+                    mergedPresets.append(dtoToPreset(remoteDTO))
+                    #if DEBUG
+                    print("[PresetsSyncEngine] Preset '\(localPreset.name)': keeping REMOTE (newer)")
+                    #endif
+                }
+                remotePresetMap.removeValue(forKey: id)
+            } else {
+                // Preset only in local - keep it (created while free)
+                mergedPresets.append(localPreset)
+                presetsToUpsertRemotely.append(presetToDTO(localPreset, userId: userId, sortOrder: mergedPresets.count - 1))
+                #if DEBUG
+                print("[PresetsSyncEngine] Preset '\(localPreset.name)': LOCAL-ONLY, will push to remote")
+                #endif
+            }
+        }
+        
+        // Step 4: Process remaining remote-only presets
+        // Check if they were deleted locally (local deletion wins)
+        for (id, remoteDTO) in remotePresetMap {
+            // Check if this preset was deleted locally
+            let wasDeletedLocally = LocalTimestampTracker.shared.getLocalTimestamp(
+                field: "preset_deleted_\(id.uuidString)",
+                namespace: namespace
+            ) != nil
+            
+            if wasDeletedLocally {
+                // Local deletion wins - delete from remote
+                presetsToDeleteRemotely.append(id)
+                #if DEBUG
+                print("[PresetsSyncEngine] Preset '\(remoteDTO.name)': DELETED LOCALLY, deleting from remote")
+                #endif
+            } else {
+                // Remote-only preset that was never seen locally - add it
+                mergedPresets.append(dtoToPreset(remoteDTO))
+                #if DEBUG
+                print("[PresetsSyncEngine] Preset '\(remoteDTO.name)': REMOTE-ONLY, adding to local")
+                #endif
+            }
+        }
+        
+        #if DEBUG
+        print("[PresetsSyncEngine] Merged \(mergedPresets.count) presets")
+        #endif
+        
+        // Step 5: Apply merged state to local store
+        store.applyRemoteState(presets: mergedPresets, activePresetId: nil)
+        
+        // Step 6: Push local-only and newer-local presets to remote
+        if !presetsToUpsertRemotely.isEmpty {
+            do {
+                try await client
+                    .from("focus_presets")
+                    .upsert(presetsToUpsertRemotely, onConflict: "id")
+                    .execute()
+            } catch let error as PostgrestError {
+                // Handle missing column error gracefully
+                if error.code == "PGRST204" && error.message.contains("ambiance_mode_raw") {
+                    let dtosWithoutAmbiance = presetsToUpsertRemotely.map { dto in
+                        var dtoCopy = dto
+                        dtoCopy.ambianceModeRaw = nil
+                        return dtoCopy
+                    }
+                    try await client
+                        .from("focus_presets")
+                        .upsert(dtosWithoutAmbiance, onConflict: "id")
+                        .execute()
+                } else {
+                    throw error
+                }
+            }
+            #if DEBUG
+            print("[PresetsSyncEngine] Pushed \(presetsToUpsertRemotely.count) presets to remote")
+            #endif
+        }
+        
+        // Step 7: Delete locally-deleted presets from remote
+        for presetId in presetsToDeleteRemotely {
+            try await client
+                .from("focus_presets")
+                .delete()
+                .eq("id", value: presetId.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+        }
+        if !presetsToDeleteRemotely.isEmpty {
+            #if DEBUG
+            print("[PresetsSyncEngine] Deleted \(presetsToDeleteRemotely.count) presets from remote")
+            #endif
+        }
+        
+        #if DEBUG
+        print("[PresetsSyncEngine] ✅ Merge complete - \(mergedPresets.count) presets")
+        #endif
+    }
+    
+    // MARK: - Helper: Convert between DTO and Model
+    
+    private func presetToDTO(_ preset: FocusPreset, userId: UUID, sortOrder: Int) -> FocusPresetDTO {
+        FocusPresetDTO(
+            id: preset.id,
+            userId: userId,
+            name: preset.name,
+            durationSeconds: preset.durationSeconds,
+            soundId: preset.soundID.isEmpty ? nil : preset.soundID,
+            emoji: preset.emoji,
+            isSystemDefault: preset.isSystemDefault,
+            themeRaw: preset.themeRaw,
+            externalMusicAppRaw: preset.externalMusicAppRaw,
+            ambianceModeRaw: preset.ambianceModeRaw,
+            sortOrder: sortOrder
+        )
+    }
+    
+    private func dtoToPreset(_ dto: FocusPresetDTO) -> FocusPreset {
+        FocusPreset(
+            id: dto.id,
+            name: dto.name,
+            durationSeconds: dto.durationSeconds,
+            soundID: dto.soundId ?? "",
+            emoji: dto.emoji,
+            isSystemDefault: dto.isSystemDefault,
+            themeRaw: dto.themeRaw,
+            externalMusicAppRaw: dto.externalMusicAppRaw,
+            ambianceModeRaw: dto.ambianceModeRaw
+        )
+    }
+        #endif
+    }
 
     // MARK: - Push to Remote
 

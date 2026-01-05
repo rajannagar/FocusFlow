@@ -1,16 +1,17 @@
 # FocusFlow Launch Implementation Plan
 **Created:** January 2, 2026  
-**Last Updated:** January 2, 2026 (P1-14, P1-15, P2-1, P3-2 completed, Badges gating completed, P1-4 deferred)  
-**Status:** 🟡 In Progress (15/17 P1 tasks completed, 1 skipped, 1 deferred; P3-2 completed)  
+**Last Updated:** January 5, 2026 (P1-4 Cloud Sync Gating COMPLETED with merge strategy)  
+**Status:** ✅ Complete (16/17 P1 tasks completed, 1 skipped; P3-2 completed)  
 **Estimated Time:** 5-7 days
 
 ## 📊 Progress Summary
 
-**✅ Completed (15 tasks):**
+**✅ Completed (16 tasks):**
 - ✅ P1-0: Update PaywallView (contextual support)
 - ✅ P1-1: Create ProGatingHelper.swift
 - ✅ P1-2: Wire Guest → Account Migration
 - ✅ P1-3: Remove DebugLogView
+- ✅ P1-4: Gate Cloud Sync (Pro only + merge strategy for resubscription)
 - ✅ P1-5: Gate Themes (2 free)
 - ✅ P1-6: Gate Sounds (3 free)
 - ✅ P1-7: Gate Ambiance (3 free)
@@ -25,9 +26,6 @@
 
 **⏭️ Skipped (1 task):**
 - ⏭️ P1-10: Gate Task Reminders (free users can use reminders on their 3 tasks)
-
-**⏳ Remaining P1 Tasks (1):**
-- ⏸️ P1-4: Gate Cloud Sync (DEFERRED - to be completed later)
 
 ---
 
@@ -219,36 +217,35 @@ NotificationCenter.default.post(
 
 ---
 
-### P1-4: Gate Cloud Sync ⏸️ DEFERRED
+### P1-4: Gate Cloud Sync ✅ COMPLETED
 **File:** `FocusFlow/Infrastructure/Cloud/SyncCoordinator.swift`  
-**Effort:** 30 minutes  
+**Effort:** 2 hours  
 **Why:** Cloud sync is highest-value Pro feature
 
-**Status:** ⏸️ **DEFERRED** - To be completed later in the project
+**Status:** ✅ **COMPLETED** - January 5, 2026
 
-**Note:** This task has been deferred. Cloud sync will remain available to all signed-in users for now. When implementing, ensure to:
-- Gate sync behind Pro + SignedIn requirement
-- Add proper Pro status observer
-- Handle Pro → Free transition gracefully
+**Implementation Summary:**
+- ✅ Gate sync behind Pro + SignedIn requirement (`ProGatingHelper.shared.canUseCloudSync`)
+- ✅ Add Pro status observer to handle Free → Pro and Pro → Free transitions
+- ✅ Handle Pro → Free transition gracefully (stops sync, preserves local data)
+- ✅ **Merge Strategy for Resubscription** - When gap > 7 days:
+  - Sessions: UNION (keep all from both local and remote - no data loss)
+  - Tasks: Timestamp-based merge (keep newer version, local deletions win)
+  - Presets: Timestamp-based merge (keep newer version, local deletions win)
+  - Settings: Local wins (current device preference)
 
-**Changes in `startAllEngines(userId:)`:**
-```swift
-private func startAllEngines(userId: UUID) {
-    // ✅ Check Pro + SignedIn
-    guard ProGatingHelper.shared.canUseCloudSync else {
-        #if DEBUG
-        print("[SyncCoordinator] Sync disabled - requires Pro + SignedIn")
-        #endif
-        return
-    }
-    
-    // ... existing code
-}
-```
+**Files Modified:**
+- `SyncCoordinator.swift` - Pro gating, merge detection, Pro status observer
+- `SessionsSyncEngine.swift` - Added `mergeAllSessions()` UNION strategy
+- `TasksSyncEngine.swift` - Added `mergeWithRemote()` timestamp-based merge
+- `PresetsSyncEngine.swift` - Added `mergeWithRemote()` timestamp-based merge
 
-**Also update:**
-- `handleAuthStateChange()` - Check Pro before starting
-- Add observer for Pro status changes
+**Key Behaviors:**
+- Free users: Sync disabled, local data accumulates normally
+- Pro users: Full sync enabled
+- Resubscription after >7 days gap: Automatic merge preserves all data
+- Pro → Free: Sync stops gracefully, no data loss
+- Free → Pro: Sync starts with merge if needed
 
 ---
 
