@@ -1440,7 +1440,7 @@ private struct TaskEditorSheet: View {
     
     @State private var title: String = ""
     @State private var notes: String = ""
-    @State private var remindersEnabled: Bool = true
+    @State private var remindersEnabled: Bool = false
     @State private var reminderDate: Date? = nil
     @State private var reminderTime: Date = Date()
     @State private var durationHours: Int = 0
@@ -1547,6 +1547,15 @@ private struct TaskEditorSheet: View {
                                     Spacer()
                                     Toggle("", isOn: $remindersEnabled)
                                         .labelsHidden()
+                                        .onChange(of: remindersEnabled) { oldValue, newValue in
+                                            if !newValue {
+                                                // Clear reminder date when disabled
+                                                reminderDate = nil
+                                            } else if reminderDate == nil {
+                                                // Set to selected day when enabled
+                                                reminderDate = selectedDay
+                                            }
+                                        }
                                 }
                                 .padding(16)
                                 
@@ -1701,7 +1710,13 @@ private struct TaskEditorSheet: View {
                 
                 DatePicker("", selection: Binding(
                     get: { reminderDate ?? selectedDay },
-                    set: { reminderDate = Calendar.autoupdatingCurrent.startOfDay(for: $0) }
+                    set: { 
+                        reminderDate = Calendar.autoupdatingCurrent.startOfDay(for: $0)
+                        // Auto-enable reminders when a date is selected
+                        if !remindersEnabled {
+                            remindersEnabled = true
+                        }
+                    }
                 ), displayedComponents: [.date])
                     .datePickerStyle(.graphical)
                     .tint(theme.accentPrimary)
@@ -2086,8 +2101,8 @@ private struct TaskEditorSheet: View {
         } else {
             title = ""
             notes = ""
-            remindersEnabled = true
-            reminderDate = selectedDay
+            remindersEnabled = false
+            reminderDate = nil
             reminderTime = Date()
             durationHours = 0
             durationMinutes = 25

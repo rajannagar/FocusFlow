@@ -163,8 +163,10 @@ struct FFTaskItem: Identifiable, Equatable, Codable {
 
         switch repeatRule {
         case .none:
-            // If no reminder date, treat it as a flexible task that always shows.
-            guard reminderDate != nil else { return true }
+            // If no reminder date, show only on the created date (one-time task)
+            guard let remDate = reminderDate else {
+                return calendar.isDate(target, inSameDayAs: calendar.startOfDay(for: createdAt))
+            }
             return calendar.isDate(target, inSameDayAs: anchor)
 
         case .daily:
