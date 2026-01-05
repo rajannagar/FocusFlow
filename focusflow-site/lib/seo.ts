@@ -126,7 +126,7 @@ export function generateProductSchema() {
         price: '3.99',
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
-        url: APP_STORE_URL,
+        url: APP_STORE_URL || SITE_URL,
       },
       {
         '@type': 'Offer',
@@ -134,16 +134,9 @@ export function generateProductSchema() {
         price: '44.99',
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
-        url: APP_STORE_URL,
+        url: APP_STORE_URL || SITE_URL,
       },
     ],
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '5',
-      ratingCount: '1',
-      bestRating: '5',
-      worstRating: '1',
-    },
     description: SITE_DESCRIPTION,
     image: `${SITE_URL}/focusflow-app-icon.jpg`,
     author: {
@@ -151,7 +144,35 @@ export function generateProductSchema() {
       name: SITE_NAME,
       email: CONTACT_EMAIL,
     },
-    downloadUrl: APP_STORE_URL,
+    downloadUrl: APP_STORE_URL || SITE_URL,
+  };
+}
+
+/**
+ * Generate SoftwareApplication schema for the app page (coming soon state)
+ */
+export function generateSoftwareAppSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'FocusFlow',
+    operatingSystem: 'iOS',
+    applicationCategory: 'ProductivityApplication',
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    image: `${SITE_URL}/focusflow_app_icon.png`,
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    offers: {
+      '@type': 'Offer',
+      price: '3.99',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+      url: APP_STORE_URL || SITE_URL,
+    },
   };
 }
 
@@ -176,4 +197,3 @@ export function generateOrganizationSchema() {
     sameAs: [],
   };
 }
-

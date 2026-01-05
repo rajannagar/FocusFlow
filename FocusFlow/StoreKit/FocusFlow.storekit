@@ -5,7 +5,7 @@
       {
         "locale" : "en_US",
         "policyText" : "",
-        "policyURL" : ""
+        "policyURL" : "https://focusflowbepresent.com/privacy"
       }
     ]
   },
@@ -56,8 +56,8 @@
           },
           "localizations" : [
             {
-              "description" : "",
-              "displayName" : "",
+              "description" : "Unlock all sounds, themes, backgrounds, unlimited tasks & presets, full history, XP/levels, widgets, Live Activity, music apps, and cloud sync.",
+              "displayName" : "FocusFlow Pro Monthly",
               "locale" : "en_US"
             }
           ],
@@ -88,8 +88,8 @@
           },
           "localizations" : [
             {
-              "description" : "",
-              "displayName" : "",
+              "description" : "Unlock all sounds, themes, backgrounds, unlimited tasks & presets, full history, XP/levels, widgets, Live Activity, music apps, and cloud sync. Save 16% vs monthly.",
+              "displayName" : "FocusFlow Pro Yearly",
               "locale" : "en_US"
             }
           ],

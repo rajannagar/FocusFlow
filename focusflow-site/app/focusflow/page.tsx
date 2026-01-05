@@ -6,6 +6,7 @@ import { Container, PhoneSimulator, CurrencySelector } from '@/components';
 import { useState } from 'react';
 import { useThrottledMouse } from '@/hooks';
 import { APP_STORE_URL, PRICING } from '@/lib/constants';
+import { generateSoftwareAppSchema } from '@/lib/seo';
 
 // Feature data for the tabbed section
 const features = [
@@ -106,9 +107,16 @@ export default function FocusFlowPage() {
   const mousePosition = useThrottledMouse();
   const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'CAD'>('CAD');
   const [activeFeature, setActiveFeature] = useState(0);
+  const appSchema = generateSoftwareAppSchema();
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
+      
+      {/* Structured Data: SoftwareApplication (coming soon) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
+      />
       
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION
