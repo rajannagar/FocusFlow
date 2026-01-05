@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from '@/components/common';
@@ -12,12 +12,14 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Handle scroll state
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -31,10 +33,33 @@ export default function Header() {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(target) &&
+        !target.closest('[data-mobile-menu]')
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [isMenuOpen]);
 
@@ -45,6 +70,7 @@ export default function Header() {
 
   const isPricingPage = isActive('/pricing');
 
+  // Navigation links - reordered for better UX
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/features', label: 'Features' },
@@ -52,262 +78,217 @@ export default function Header() {
     { href: '/about', label: 'About' },
   ];
 
+  const toggleMenu = () => {
+    setIsMenuOpen((prev) => !prev);
+  };
+
   return (
     <>
-      <header 
-        className={`fixed top-0 left-0 right-0 z-[10002] transition-all duration-500 ${
-          scrolled 
-            ? 'bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-lg shadow-black/5' 
+      {/* Header */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-[var(--background)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-sm'
             : 'bg-transparent border-b border-transparent'
         }`}
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}
       >
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 relative">
-          <div className="flex h-14 sm:h-16 md:h-20 items-center justify-between gap-2 sm:gap-3 md:gap-4 relative">
-          
-          {/* Logo */}
-          <Link 
-            href="/" 
-            className="group relative flex items-center gap-1.5 sm:gap-2 md:gap-3 z-50 min-w-0 flex-shrink-0"
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            <div className="relative flex-shrink-0">
-              <div className="absolute -inset-1 bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <Image
-                src="/focusflow-logo.png"
-                alt="FocusFlow"
-                width={28}
-                height={28}
-                className="relative transition-transform duration-300 group-hover:scale-105 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9"
-                priority
-              />
-            </div>
-            <div className="relative min-w-0">
-              {/* Main text with gradient - responsive sizing */}
-              <span className="relative z-10 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold tracking-tight block whitespace-nowrap">
-                <span className="bg-gradient-to-r from-[var(--foreground)] via-[var(--accent-primary)] to-[var(--foreground)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
-                  Focus
-                </span>
-                <span className="bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient" style={{ animationDelay: '0.5s' }}>
-                  Flow
-                </span>
-                {isPricingPage && (
-                  <span className="ml-1 sm:ml-2 bg-gradient-to-r from-[#D4A853] via-[#F4D03F] via-[#F7DC6F] to-[#D4A853] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
-                    Pro
-                  </span>
-                )}
-              </span>
-              {/* Glow effect on hover */}
-              <span className="absolute inset-0 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm whitespace-nowrap">
-                <span className="bg-gradient-to-r from-[var(--accent-primary)]/60 via-[var(--accent-secondary)]/60 to-[var(--accent-primary)]/60 bg-clip-text text-transparent">
-                  Focus
-                </span>
-                <span className="bg-gradient-to-r from-[var(--accent-secondary)]/60 via-[var(--accent-primary)]/60 to-[var(--accent-secondary)]/60 bg-clip-text text-transparent">
-                  Flow
-                </span>
-                {isPricingPage && (
-                  <span className="ml-1 sm:ml-2 bg-gradient-to-r from-[#D4A853]/60 via-[#F4D03F]/60 to-[#D4A853]/60 bg-clip-text text-transparent">
-                    Pro
-                  </span>
-                )}
-              </span>
-              {/* Animated underline accent */}
-              <span className="absolute -bottom-0.5 sm:-bottom-1 md:-bottom-1.5 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] group-hover:w-full transition-all duration-700 rounded-full" />
-            </div>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative px-3 xl:px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
-                  isActive(link.href)
-                    ? 'text-[var(--foreground)] bg-[var(--background-elevated)]' 
-                    : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50'
-                }`}
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              >
-                {link.label}
-                {isActive(link.href) && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--accent-primary)]" />
-                )}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Desktop Actions */}
-          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 sm:h-20 md:h-20 items-center justify-between">
+            {/* Logo */}
             <Link
-              href="/webapp"
-              className="px-4 xl:px-5 py-2.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50 transition-all duration-300 flex items-center gap-2"
+              href="/"
+              className="flex items-center gap-2 sm:gap-3 group"
+              onClick={() => {
+                if (pathname === '/') {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
             >
-              <LogIn className="w-4 h-4" strokeWidth={2} />
-              <span className="hidden xl:inline">Sign In</span>
-            </Link>
-            <a
-              href={APP_STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative px-4 xl:px-5 py-2.5 rounded-xl text-sm font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-[var(--accent-primary)]/30"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative z-10 flex items-center gap-2">
-                <Download className="w-4 h-4" strokeWidth={2.5} />
-                <span className="hidden xl:inline">Download</span>
+              <div className="relative flex-shrink-0">
+                <Image
+                  src="/focusflow-logo.png"
+                  alt="FocusFlow"
+                  width={32}
+                  height={32}
+                  className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 transition-transform duration-300 group-hover:scale-105"
+                  priority
+                />
               </div>
-            </a>
-            <ThemeToggle />
-          </div>
+              <div className="relative">
+                <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight block whitespace-nowrap">
+                  <span className="bg-gradient-to-r from-[var(--foreground)] via-[var(--accent-primary)] to-[var(--foreground)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                    Focus
+                  </span>
+                  <span
+                    className="bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient"
+                    style={{ animationDelay: '0.5s' }}
+                  >
+                    Flow
+                  </span>
+                  {isPricingPage && (
+                    <span className="ml-1 sm:ml-2 bg-gradient-to-r from-[#D4A853] via-[#F4D03F] via-[#F7DC6F] to-[#D4A853] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                      Pro
+                    </span>
+                  )}
+                </span>
+              </div>
+            </Link>
 
-          {/* Mobile Menu Button - Placeholder for layout */}
-          <div className="lg:hidden" style={{ width: '44px', height: '44px' }} />
-        </div>
-
-        {/* Mobile Menu Backdrop - Only shows when menu is open and doesn't cover header */}
-        {isMenuOpen && (
-          <div
-            className="lg:hidden fixed bg-black/40 backdrop-blur-sm z-[10000] transition-opacity duration-300"
-            onClick={() => setIsMenuOpen(false)}
-            onTouchStart={(e) => {
-              // Prevent backdrop from interfering with header button
-              if (e.target === e.currentTarget) {
-                setIsMenuOpen(false);
-              }
-            }}
-            aria-hidden="true"
-            style={{
-              top: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)',
-              left: 0,
-              right: 0,
-              bottom: 0,
-              pointerEvents: 'auto',
-            }}
-          />
-        )}
-
-        {/* Mobile Menu */}
-        <div 
-          className={`lg:hidden fixed inset-0 bg-[var(--background)] border-t border-[var(--border)] transition-all duration-300 ease-out z-[10001] ${
-            isMenuOpen 
-              ? 'translate-y-0 opacity-100 pointer-events-auto' 
-              : '-translate-y-full opacity-0 pointer-events-none'
-          }`}
-          style={{
-            top: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)',
-            paddingTop: '1rem',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          }}
-        >
-          <div className="h-full overflow-y-auto overscroll-contain">
-            <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-2">
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`block px-4 py-3.5 rounded-xl text-base font-medium transition-all touch-manipulation ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActive(link.href)
-                      ? 'text-[var(--foreground)] bg-[var(--background-elevated)]' 
-                      : 'text-[var(--foreground-muted)] active:text-[var(--foreground)] active:bg-[var(--background-elevated)]'
+                      ? 'text-[var(--foreground)] bg-[var(--background-elevated)]'
+                      : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50'
                   }`}
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  style={{
-                    minHeight: '44px',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
                 >
                   {link.label}
                 </Link>
               ))}
-              
-              {/* Mobile Actions */}
-              <div className="pt-6 mt-6 border-t border-[var(--border)] space-y-3">
-                <Link
-                  href="/webapp"
-                  className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-medium text-[var(--foreground-muted)] active:text-[var(--foreground)] active:bg-[var(--background-elevated)] transition-all touch-manipulation"
-                  onClick={() => setIsMenuOpen(false)}
-                  style={{
-                    minHeight: '44px',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                >
-                  <LogIn className="w-5 h-5" strokeWidth={2} />
-                  Sign In
-                </Link>
-                <a
-                  href={APP_STORE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-semibold text-white overflow-hidden transition-all duration-300 touch-manipulation"
-                  onClick={() => setIsMenuOpen(false)}
-                  style={{
-                    minHeight: '44px',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                  <Download className="w-5 h-5 relative z-10" strokeWidth={2.5} />
-                  <span className="relative z-10">Download FocusFlow</span>
-                </a>
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--background-elevated)] touch-manipulation" style={{ minHeight: '44px' }}>
-                  <span className="text-sm font-medium text-[var(--foreground-muted)]">Theme</span>
-                  <ThemeToggle />
+            </nav>
+
+            {/* Desktop Actions */}
+            <div className="hidden lg:flex items-center gap-3">
+              <Link
+                href="/webapp"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50 transition-all duration-200 flex items-center gap-2"
+              >
+                <LogIn className="w-4 h-4" strokeWidth={2} />
+                <span>Sign In</span>
+              </Link>
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative px-5 py-2.5 rounded-lg text-sm font-semibold text-white overflow-hidden transition-all duration-200 hover:scale-[1.02]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                <div className="relative z-10 flex items-center gap-2">
+                  <Download className="w-4 h-4" strokeWidth={2.5} />
+                  <span>Download</span>
                 </div>
+              </a>
+              <ThemeToggle />
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              ref={menuButtonRef}
+              onClick={toggleMenu}
+              className="lg:hidden p-2 rounded-lg text-[var(--foreground)] hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-colors touch-manipulation"
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMenuOpen}
+              style={{
+                minWidth: '44px',
+                minHeight: '44px',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              {isMenuOpen ? (
+                <X className="w-6 h-6" strokeWidth={2} />
+              ) : (
+                <Menu className="w-6 h-6" strokeWidth={2} />
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+          onClick={toggleMenu}
+          aria-hidden="true"
+          style={{
+            top: 'calc(env(safe-area-inset-top, 0px) + 4rem)',
+          }}
+        />
+      )}
+
+      {/* Mobile Menu */}
+      <div
+        data-mobile-menu
+        className={`lg:hidden fixed left-0 right-0 z-50 bg-[var(--background)] border-t border-[var(--border)] transition-transform duration-300 ease-out ${
+          isMenuOpen ? 'translate-y-0' : '-translate-y-full'
+        }`}
+        style={{
+          top: 'calc(env(safe-area-inset-top, 0px) + 4rem)',
+          maxHeight: 'calc(100vh - env(safe-area-inset-top, 0px) - 4rem)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(100vh - env(safe-area-inset-top, 0px) - 4rem - env(safe-area-inset-bottom, 0px))' }}>
+          <div className="px-4 py-6 space-y-2">
+            {/* Navigation Links */}
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={toggleMenu}
+                className={`block px-4 py-3.5 rounded-lg text-base font-medium transition-all touch-manipulation ${
+                  isActive(link.href)
+                    ? 'text-[var(--foreground)] bg-[var(--background-elevated)]'
+                    : 'text-[var(--foreground-muted)] active:text-[var(--foreground)] active:bg-[var(--background-elevated)]'
+                }`}
+                style={{
+                  minHeight: '44px',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Mobile Actions */}
+            <div className="pt-6 mt-6 border-t border-[var(--border)] space-y-3">
+              <Link
+                href="/webapp"
+                onClick={toggleMenu}
+                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg text-base font-medium text-[var(--foreground-muted)] active:text-[var(--foreground)] active:bg-[var(--background-elevated)] transition-all touch-manipulation"
+                style={{
+                  minHeight: '44px',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <LogIn className="w-5 h-5" strokeWidth={2} />
+                Sign In
+              </Link>
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={toggleMenu}
+                className="group relative flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg text-base font-semibold text-white overflow-hidden transition-all duration-200 touch-manipulation"
+                style={{
+                  minHeight: '44px',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-active:opacity-100 transition-opacity duration-200" />
+                <Download className="w-5 h-5 relative z-10" strokeWidth={2.5} />
+                <span className="relative z-10">Download FocusFlow</span>
+              </a>
+              <div
+                className="flex items-center justify-between px-4 py-3 rounded-lg bg-[var(--background-elevated)] touch-manipulation"
+                style={{ minHeight: '44px' }}
+              >
+                <span className="text-sm font-medium text-[var(--foreground-muted)]">Theme</span>
+                <ThemeToggle />
               </div>
             </div>
           </div>
         </div>
       </div>
-    </header>
-
-    {/* Mobile Menu Button - Fixed outside header to escape stacking context */}
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsMenuOpen((prev) => !prev);
-      }}
-      onTouchStart={(e) => {
-        e.stopPropagation();
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
-      className="lg:hidden fixed p-2.5 rounded-xl hover:bg-[var(--background-elevated)] active:bg-[var(--background-elevated)] transition-all text-[var(--foreground)] touch-manipulation"
-      aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-      aria-expanded={isMenuOpen}
-      style={{ 
-        top: `calc(env(safe-area-inset-top, 0px) + 0.5rem)`,
-        right: '0.75rem',
-        minWidth: '44px', 
-        minHeight: '44px',
-        WebkitTapHighlightColor: 'transparent',
-        zIndex: 10005,
-        pointerEvents: 'auto',
-        backgroundColor: scrolled ? 'var(--background)' : 'transparent',
-        opacity: scrolled ? 0.9 : 1,
-        backdropFilter: scrolled ? 'blur(12px)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
-      }}
-    >
-      {isMenuOpen ? (
-        <X className="w-6 h-6" strokeWidth={2} />
-      ) : (
-        <Menu className="w-6 h-6" strokeWidth={2} />
-      )}
-    </button>
     </>
   );
 }

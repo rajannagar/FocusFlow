@@ -183,7 +183,7 @@ export default function RootLayout({
           <main 
             className="flex-1"
             style={{
-              paddingTop: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)',
+              paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4rem)',
             }}
           >{children}</main>
           <Footer />
