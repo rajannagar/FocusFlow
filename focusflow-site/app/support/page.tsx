@@ -94,7 +94,7 @@ export default function SupportPage() {
                 },
                 {
                   q: 'What if I have a feature request?',
-                  a: 'We love hearing from you! Email us at Info@softcomputers.ca with your ideas. We review all feedback and consider it for future updates.',
+                  a: `We love hearing from you! Email us at ${CONTACT_EMAIL} with your ideas. We review all feedback and consider it for future updates.`,
                 },
               ].map((faq, i) => (
                 <div key={i} className="card group p-4 md:p-6 hover:border-[var(--accent-primary)]/30">
@@ -143,10 +143,10 @@ export default function SupportPage() {
                 </div>
                 
                 <a
-                  href="mailto:Info@softcomputers.ca"
+                  href={`mailto:${CONTACT_EMAIL}`}
                   className="text-xl sm:text-2xl md:text-4xl font-bold text-gradient hover:opacity-80 transition-opacity inline-block mb-4 md:mb-6 break-all sm:break-normal"
                 >
-                  Info@softcomputers.ca
+                  {CONTACT_EMAIL}
                 </a>
                 
                 <p className="text-sm md:text-base text-[var(--foreground-muted)] leading-relaxed mb-6 md:mb-8 max-w-xl mx-auto">

@@ -340,7 +340,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
                   <Link 
-                    href="/signin"
+                    href="/webapp"
                     className="px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)] text-white font-semibold text-lg hover:scale-[1.02] hover:shadow-2xl hover:shadow-[var(--accent-primary)]/30 transition-all duration-300 text-center"
                   >
                     Sign In to Get Notified

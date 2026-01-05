@@ -1,10 +1,21 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { APP_STORE_URL, CONTACT_EMAIL, COMPANY_LOCATION, SITE_DESCRIPTION } from '@/lib/constants';
 import { Download, Mail, MapPin, Sparkles, ArrowUpRight } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const pathname = usePathname();
+  
+  const isActive = (path: string) => {
+    if (path === '/') return pathname === '/';
+    return pathname.startsWith(path);
+  };
+
+  const isPricingPage = isActive('/pricing');
 
   return (
     <footer className="relative border-t border-[var(--border)] bg-[var(--background-elevated)]">
@@ -19,8 +30,14 @@ export default function Footer() {
             
             {/* Brand Column - Takes more space */}
             <div className="md:col-span-5 lg:col-span-4">
-              <Link href="/" className="group relative inline-flex items-center gap-2.5 mb-6">
-                <div className="relative">
+              <Link 
+                href="/" 
+                className="group relative inline-flex items-center gap-2.5 md:gap-3 mb-6"
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                <div className="relative flex-shrink-0">
                   <div className="absolute -inset-1 bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <Image
                     src="/focusflow-logo.png"
@@ -30,9 +47,38 @@ export default function Footer() {
                     className="relative transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
-                <span className="text-2xl font-bold tracking-tight text-[var(--foreground)] transition-all duration-300 group-hover:text-gradient">
-                  FocusFlow
-                </span>
+                <div className="relative min-w-0">
+                  {/* Main text with gradient - matching header style */}
+                  <span className="relative z-10 text-2xl font-bold tracking-tight block whitespace-nowrap">
+                    <span className="bg-gradient-to-r from-[var(--foreground)] via-[var(--accent-primary)] to-[var(--foreground)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                      Focus
+                    </span>
+                    <span className="bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient" style={{ animationDelay: '0.5s' }}>
+                      Flow
+                    </span>
+                    {isPricingPage && (
+                      <span className="ml-2 bg-gradient-to-r from-[#D4A853] via-[#F4D03F] via-[#F7DC6F] to-[#D4A853] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                        Pro
+                      </span>
+                    )}
+                  </span>
+                  {/* Glow effect on hover */}
+                  <span className="absolute inset-0 text-2xl font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm whitespace-nowrap">
+                    <span className="bg-gradient-to-r from-[var(--accent-primary)]/60 via-[var(--accent-secondary)]/60 to-[var(--accent-primary)]/60 bg-clip-text text-transparent">
+                      Focus
+                    </span>
+                    <span className="bg-gradient-to-r from-[var(--accent-secondary)]/60 via-[var(--accent-primary)]/60 to-[var(--accent-secondary)]/60 bg-clip-text text-transparent">
+                      Flow
+                    </span>
+                    {isPricingPage && (
+                      <span className="ml-2 bg-gradient-to-r from-[#D4A853]/60 via-[#F4D03F]/60 to-[#D4A853]/60 bg-clip-text text-transparent">
+                        Pro
+                      </span>
+                    )}
+                  </span>
+                  {/* Animated underline accent */}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] group-hover:w-full transition-all duration-700 rounded-full" />
+                </div>
               </Link>
               <p className="text-sm md:text-base text-[var(--foreground-muted)] leading-relaxed mb-6 max-w-md font-light">
                 {SITE_DESCRIPTION}
@@ -120,7 +166,7 @@ export default function Footer() {
                   <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
                 </a>
                 <Link
-                  href="/signin"
+                  href="/webapp"
                   className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
                 >
                   Sign In

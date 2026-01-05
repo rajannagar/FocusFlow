@@ -46,21 +46,38 @@ softcomputers-site/
 
 ## 🚀 Getting Started
 
+### Development Server Setup
+
+1. **Install dependencies:**
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Export static site
-npm run build  # Outputs to /out directory
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+2. **Set up environment variables:**
+Create a `.env.local` file in the root directory with the following variables:
+```env
+# Site Configuration
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Supabase Configuration (get these from your Supabase project settings)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+3. **Start the development server:**
+```bash
+npm run dev
+```
+
+The dev server will start on [http://localhost:3000](http://localhost:3000) with hot reload enabled.
+
+**Available scripts:**
+- `npm run dev` - Start dev server on port 3000
+- `npm run dev:port` - Start dev server on custom port (prompts for port)
+- `npm run build` - Build for production (static export)
+- `npm run build:static` - Explicitly build static export
+- `npm run start` - Start production server (after build)
+- `npm run lint` - Run ESLint
 
 ## 📦 Import Patterns
 
@@ -102,6 +119,15 @@ Site-wide configuration is centralized in `lib/constants.ts`:
 - Contact information
 - App Store links
 - Pricing tiers
+
+## 🔧 Development vs Production
+
+The Next.js configuration automatically switches between development and production modes:
+
+- **Development** (`npm run dev`): Full Next.js dev server with hot reload, API routes, and dynamic features
+- **Production** (`npm run build`): Static export for AWS Amplify deployment (outputs to `/out` directory)
+
+The static export is only enabled in production builds, allowing you to use all Next.js features during development.
 
 ## 📤 Deployment
 

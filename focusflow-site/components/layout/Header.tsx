@@ -43,6 +43,8 @@ export default function Header() {
     return pathname.startsWith(path);
   };
 
+  const isPricingPage = isActive('/pricing');
+
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/features', label: 'Features' },
@@ -92,6 +94,11 @@ export default function Header() {
                 <span className="bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient" style={{ animationDelay: '0.5s' }}>
                   Flow
                 </span>
+                {isPricingPage && (
+                  <span className="ml-2 bg-gradient-to-r from-[#D4A853] via-[#F4D03F] via-[#F7DC6F] to-[#D4A853] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                    Pro
+                  </span>
+                )}
               </span>
               {/* Glow effect on hover */}
               <span className="absolute inset-0 text-lg md:text-xl lg:text-2xl font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm whitespace-nowrap">
@@ -101,6 +108,11 @@ export default function Header() {
                 <span className="bg-gradient-to-r from-[var(--accent-secondary)]/60 via-[var(--accent-primary)]/60 to-[var(--accent-secondary)]/60 bg-clip-text text-transparent">
                   Flow
                 </span>
+                {isPricingPage && (
+                  <span className="ml-2 bg-gradient-to-r from-[#D4A853]/60 via-[#F4D03F]/60 to-[#D4A853]/60 bg-clip-text text-transparent">
+                    Pro
+                  </span>
+                )}
               </span>
               {/* Animated underline accent */}
               <span className="absolute -bottom-1 md:-bottom-1.5 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] group-hover:w-full transition-all duration-700 rounded-full" />
@@ -132,15 +144,13 @@ export default function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
-            <a
-              href="https://webapp.focusflowbepresent.com"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/webapp"
               className="px-5 py-2.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)]/50 transition-all duration-300 flex items-center gap-2"
             >
               <LogIn className="w-4 h-4" strokeWidth={2} />
               Sign In
-            </a>
+            </Link>
             <a
               href={APP_STORE_URL}
               target="_blank"
@@ -204,16 +214,14 @@ export default function Header() {
               
               {/* Mobile Actions */}
               <div className="pt-6 mt-6 border-t border-[var(--border)] space-y-3">
-                <a
-                  href="https://webapp.focusflowbepresent.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href="/webapp"
                   className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl text-base font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-elevated)] transition-all"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <LogIn className="w-5 h-5" strokeWidth={2} />
                   Sign In
-                </a>
+                </Link>
                 <a
                   href={APP_STORE_URL}
                   target="_blank"

@@ -34,7 +34,7 @@ export default function PrivacyPage() {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-[var(--foreground)] mb-4">Privacy Policy</h1>
             <p className="text-[var(--foreground-muted)]">
-              Last updated: January 2, 2026
+              Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
         </Container>
@@ -115,23 +115,27 @@ export default function PrivacyPage() {
                   </li>
                   <li className="flex gap-3">
                     <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Focus data:</strong> Session duration, timestamps, session names/intentions, and derived stats.</span>
+                    <span><strong className="text-[var(--foreground)]">Focus data:</strong> Session duration, timestamps, session names/intentions, ambient background selections, focus sound preferences, and derived statistics (streaks, total time, etc.).</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Task data:</strong> Task titles, notes, schedules, reminders, duration estimates, and completion records.</span>
+                    <span><strong className="text-[var(--foreground)]">Task data:</strong> Task titles, notes, schedules, reminders, duration estimates, completion records, and task status.</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Preset data:</strong> Custom focus presets including names, durations, and theme preferences.</span>
+                    <span><strong className="text-[var(--foreground)]">Preset data:</strong> Custom focus presets including names, durations, ambient background selections, focus sound preferences, and theme preferences.</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Settings & preferences:</strong> Themes, daily goals, reminder preferences, sound/haptic settings, and avatar selection.</span>
+                    <span><strong className="text-[var(--foreground)]">Progress data:</strong> XP points, level progression, achievement badges, journey milestones, and historical session data.</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Subscription data:</strong> Apple handles all payment information. We only receive confirmation of your subscription status.</span>
+                    <span><strong className="text-[var(--foreground)]">Settings & preferences:</strong> Theme selections (10 available), daily goals, reminder preferences, sound/haptic settings, avatar selection, and app customization options.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Subscription data:</strong> Apple handles all payment information through StoreKit. We only receive confirmation of your FocusFlow Pro subscription status (active, expired, cancelled) to enable or disable Pro features.</span>
                   </li>
                       </ul>
               </section>
@@ -273,7 +277,7 @@ export default function PrivacyPage() {
                   </li>
                   <li className="flex gap-3">
                     <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Export your data:</strong> Use the backup feature to export your data as a JSON file.</span>
+                    <span><strong className="text-[var(--foreground)]">Export your data:</strong> Use the backup/export feature within the app to export your data as a JSON file containing all your sessions, tasks, presets, and settings.</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="text-[var(--accent-primary)]">•</span>
@@ -281,7 +285,7 @@ export default function PrivacyPage() {
                   </li>
                   <li className="flex gap-3">
                     <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Contact us:</strong> Email <a href="mailto:Info@softcomputers.ca" className="text-[var(--accent-primary)] hover:underline">Info@softcomputers.ca</a> for any privacy-related requests.</span>
+                    <span><strong className="text-[var(--foreground)]">Contact us:</strong> Email <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent-primary)] hover:underline">{CONTACT_EMAIL}</a> for any privacy-related requests.</span>
                   </li>
                       </ul>
               </section>
@@ -293,13 +297,14 @@ export default function PrivacyPage() {
                 </h2>
                 <p className="text-[var(--foreground-muted)] mb-4">You can delete your account at any time from within the app:</p>
                 <ol className="space-y-2 text-[var(--foreground-muted)] mb-4 list-decimal list-inside">
-                        <li>Go to Profile → Settings → Delete Account</li>
-                        <li>Confirm deletion by typing "DELETE"</li>
-                        <li>All your data will be permanently removed from our servers</li>
+                        <li>Open FocusFlow and navigate to Profile → Settings</li>
+                        <li>Scroll to the "Account" section and tap "Delete Account"</li>
+                        <li>Confirm deletion by typing "DELETE" when prompted</li>
+                        <li>All your data (sessions, tasks, presets, progress, settings) will be permanently removed from our servers</li>
                         <li>This action cannot be undone</li>
                 </ol>
                 <p className="text-[var(--foreground-muted)] text-sm italic">
-                  Note: If you have an active FocusFlow Pro subscription, please cancel it through your Apple ID settings before deleting your account.
+                  <strong>Important:</strong> If you have an active FocusFlow Pro subscription, please cancel it through your Apple ID account settings (Settings → [Your Name] → Subscriptions) before deleting your account to avoid further charges. Account deletion does not automatically cancel your subscription.
                       </p>
               </section>
 
@@ -309,17 +314,34 @@ export default function PrivacyPage() {
                   11. Children's Privacy
                 </h2>
                 <p className="text-[var(--foreground-muted)]">
-                  FocusFlow is not directed at children under 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided us with personal information, please contact us.
+                  FocusFlow is not directed at children under the age of 13 (or the minimum age required in your jurisdiction). We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent-primary)] hover:underline">{CONTACT_EMAIL}</a> and we will promptly delete such information.
                     </p>
               </section>
 
               {/* 12. Changes */}
               <section id="changes">
                 <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  12. Changes
+                  12. Changes to This Privacy Policy
                 </h2>
-                <p className="text-[var(--foreground-muted)]">
-                  We may update this Privacy Policy from time to time. The latest version will be posted here with an updated effective date. We encourage you to review this policy periodically.
+                <p className="text-[var(--foreground-muted)] mb-4">
+                  We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors. When we make changes, we will:
+                </p>
+                <ul className="space-y-3 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Update the "Last updated" date at the top of this policy</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Post the updated policy on this page</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>For material changes, notify users through the app or via email</span>
+                  </li>
+                </ul>
+                <p className="text-[var(--foreground-muted)] mt-4">
+                  We encourage you to review this policy periodically to stay informed about how we protect your information. Your continued use of FocusFlow after changes to this policy constitutes acceptance of those changes.
                     </p>
               </section>
 
@@ -329,8 +351,8 @@ export default function PrivacyPage() {
             <div className="mt-16 pt-8 border-t border-[var(--border)]">
               <p className="text-[var(--foreground-muted)] text-center">
                 Questions about this policy? Contact us at{' '}
-                <a href="mailto:Info@softcomputers.ca" className="text-[var(--accent-primary)] hover:underline font-medium">
-                  Info@softcomputers.ca
+                <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent-primary)] hover:underline font-medium">
+                  {CONTACT_EMAIL}
                 </a>
               </p>
             </div>

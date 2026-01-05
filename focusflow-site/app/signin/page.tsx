@@ -260,7 +260,7 @@ export default function SignInPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-3 rounded-xl bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--foreground-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 focus:border-[var(--accent-primary)] transition-all"
-                placeholder="e.g. hello@focusflow.com"
+                placeholder="e.g. hello@focusflowbepresent.com"
               />
             </div>
 
