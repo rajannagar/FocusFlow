@@ -26,17 +26,31 @@ export default function Header() {
     setIsMenuOpen(false);
   }, [pathname]);
 
-  // Prevent body scroll when menu is open and scroll to top
+  // Prevent body scroll when menu is open
   useEffect(() => {
     if (isMenuOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
       document.body.style.overflow = 'hidden';
-      // Scroll to top when menu opens to ensure menu is visible
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
     } else {
+      // Restore scroll position
+      const scrollY = document.body.style.top;
       document.body.style.overflow = 'unset';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
     }
     return () => {
       document.body.style.overflow = 'unset';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
     };
   }, [isMenuOpen]);
 
@@ -197,14 +211,14 @@ export default function Header() {
 
         {/* Mobile Menu */}
         <div 
-          className={`md:hidden fixed top-16 left-0 right-0 bottom-0 bg-[var(--background)] transition-all duration-300 ease-out z-[10001] ${
+          className={`md:hidden fixed inset-0 bg-[var(--background)] transition-opacity duration-300 ease-out z-[10001] ${
             isMenuOpen 
-              ? 'opacity-100 translate-y-0 pointer-events-auto visible' 
-              : 'opacity-0 translate-y-[-100%] pointer-events-none invisible'
+              ? 'opacity-100 pointer-events-auto' 
+              : 'opacity-0 pointer-events-none'
           }`}
           style={{
-            paddingTop: 'env(safe-area-inset-top, 0px)',
-            willChange: 'transform, opacity',
+            paddingTop: 'calc(4rem + env(safe-area-inset-top, 0px))',
+            top: '4rem',
           }}
         >
           <div className="h-full overflow-y-auto">
