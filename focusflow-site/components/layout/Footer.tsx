@@ -75,7 +75,7 @@ export default function Footer() {
                         Pro
                       </span>
                     )}
-                  </span>
+                </span>
                   {/* Animated underline accent */}
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] group-hover:w-full transition-all duration-700 rounded-full" />
                 </div>

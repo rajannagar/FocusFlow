@@ -3,10 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Only use static export in production builds
   ...(process.env.NODE_ENV === 'production' && {
-    output: 'export', // Generate static HTML files for AWS Amplify
-    images: {
-      unoptimized: true, // Required for static export
-    },
+  output: 'export', // Generate static HTML files for AWS Amplify
+  images: {
+    unoptimized: true, // Required for static export
+  },
   }),
   // In development, use dynamic features
   ...(process.env.NODE_ENV === 'development' && {
