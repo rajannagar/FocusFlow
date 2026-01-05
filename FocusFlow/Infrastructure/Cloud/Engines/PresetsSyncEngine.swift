@@ -307,8 +307,6 @@ final class PresetsSyncEngine {
             ambianceModeRaw: dto.ambianceModeRaw
         )
     }
-        #endif
-    }
 
     // MARK: - Push to Remote
 
