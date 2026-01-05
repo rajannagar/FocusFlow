@@ -26,10 +26,12 @@ export default function Header() {
     setIsMenuOpen(false);
   }, [pathname]);
 
-  // Prevent body scroll when menu is open
+  // Prevent body scroll when menu is open and scroll to top
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
+      // Scroll to top when menu opens to ensure menu is visible
+      window.scrollTo({ top: 0, behavior: 'instant' });
     } else {
       document.body.style.overflow = 'unset';
     }
