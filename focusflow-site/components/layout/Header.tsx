@@ -195,13 +195,14 @@ export default function Header() {
 
         {/* Mobile Menu */}
         <div 
-          className={`md:hidden fixed top-16 left-0 right-0 bottom-0 bg-[var(--background)] transition-all duration-300 ease-out z-[10001] ${
+          className={`md:hidden fixed inset-0 bg-[var(--background)] transition-opacity duration-300 ease-out z-[10001] ${
             isMenuOpen 
-              ? 'opacity-100 translate-y-0 pointer-events-auto' 
-              : 'opacity-0 -translate-y-4 pointer-events-none'
+              ? 'opacity-100 pointer-events-auto' 
+              : 'opacity-0 pointer-events-none'
           }`}
           style={{
-            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingTop: 'calc(4rem + env(safe-area-inset-top, 0px))',
+            top: '4rem',
           }}
         >
           <div className="h-full overflow-y-auto">
