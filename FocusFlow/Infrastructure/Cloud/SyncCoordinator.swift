@@ -155,18 +155,22 @@ final class SyncCoordinator: ObservableObject {
             #endif
             
         case .signedIn(let userId):
-            // ✅ MODIFIED: Only start sync if user has Pro
-            if ProGatingHelper.shared.isPro {
-                Task {
+            // ✅ ALWAYS pull remote data on sign-in to restore user's data
+            // But only enable ongoing sync if user has Pro
+            Task {
+                if ProGatingHelper.shared.isPro {
+                    // Has Pro - start full sync with merge if needed
                     await startSyncWithMergeIfNeeded(userId: userId)
+                    #if DEBUG
+                    print("[SyncCoordinator] Signed in with Pro - starting sync for \(userId)")
+                    #endif
+                } else {
+                    // No Pro - pull remote data once, but don't enable ongoing sync
+                    await performInitialPullOnly(userId: userId)
+                    #if DEBUG
+                    print("[SyncCoordinator] Signed in without Pro - pulled remote data, ongoing sync disabled")
+                    #endif
                 }
-                #if DEBUG
-                print("[SyncCoordinator] Signed in with Pro - starting sync for \(userId)")
-                #endif
-            } else {
-                #if DEBUG
-                print("[SyncCoordinator] Signed in but no Pro - sync disabled")
-                #endif
             }
             
         case .signedOut:
@@ -380,6 +384,44 @@ final class SyncCoordinator: ObservableObject {
             if isNetworkError {
                 print("[SyncCoordinator] Network error detected - sync requires internet connection")
             }
+            #endif
+        }
+        
+        isSyncing = false
+    }
+    
+    /// ✅ NEW: Pull remote data once without enabling ongoing sync (for non-Pro users)
+    /// This ensures users can access their synced data even when not subscribed,
+    /// but local changes won't be pushed until they resubscribe.
+    private func performInitialPullOnly(userId: UUID) async {
+        isSyncing = true
+        syncError = nil
+        
+        #if DEBUG
+        print("[SyncCoordinator] 📥 Pulling remote data for non-Pro user...")
+        #endif
+        
+        do {
+            // Pull data from all engines without starting observers
+            try await settingsEngine.pullFromRemote(userId: userId)
+            try await presetsEngine.pullFromRemote(userId: userId)
+            try await sessionsEngine.pullFromRemote(userId: userId)
+            try await tasksEngine.pullFromRemote(userId: userId)
+            
+            lastSyncDate = Date()
+            lastSuccessfulSyncTimestamp = Date().timeIntervalSince1970
+            
+            // Sync widgets
+            WidgetDataManager.shared.syncAll()
+            
+            #if DEBUG
+            print("[SyncCoordinator] ✅ Remote data pulled successfully (ongoing sync disabled - requires Pro)")
+            #endif
+            
+        } catch {
+            syncError = error
+            #if DEBUG
+            print("[SyncCoordinator] ❌ Pull error: \(error)")
             #endif
         }
         
