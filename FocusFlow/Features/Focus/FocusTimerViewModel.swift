@@ -260,14 +260,16 @@ final class FocusTimerViewModel: ObservableObject {
     private func completeIfNeeded() {
         guard phase != .completed else { return }
 
+        // ✅ Compute elapsed time BEFORE changing phase (while still .running)
+        // This ensures accuracy for all completion scenarios
+        let elapsed = computeElapsedSeconds()
+        let durationToLog = max(elapsed, 0)
+
         remainingSeconds = 0
         stopTimer(keepRemaining: true)
         phase = .completed
 
         // ✅ Completed sessions ALWAYS record the ACTUAL elapsed time
-        // This ensures accuracy even if session is stopped immediately after starting
-        let elapsed = computeElapsedSeconds()
-        let durationToLog = max(elapsed, 0)
         logSessionIfNeeded(durationSeconds: durationToLog)
 
         // ✅ Clear active preset when session completes
