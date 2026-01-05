@@ -441,7 +441,8 @@ struct MediumWidgetContent: View {
                             .foregroundStyle(theme.accent.opacity(0.8))
                     }
                 }
-                .frame(width: 74, height: 74)
+                .frame(width: 94, height: 94)
+                .multilineTextAlignment(.center)
             }
             
             Spacer()
