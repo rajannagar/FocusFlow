@@ -393,6 +393,7 @@ final class SyncCoordinator: ObservableObject {
     /// ✅ NEW: Pull remote data once without enabling ongoing sync (for non-Pro users)
     /// This ensures users can access their synced data even when not subscribed,
     /// but local changes won't be pushed until they resubscribe.
+    /// Uses merge strategy to preserve any local changes made since last sync.
     private func performInitialPullOnly(userId: UUID) async {
         isSyncing = true
         syncError = nil
@@ -402,20 +403,24 @@ final class SyncCoordinator: ObservableObject {
         #endif
         
         do {
-            // Pull data from all engines without starting observers
+            // ✅ Always use merge pull to preserve local changes made while not syncing
+            // The engines' pullFromRemote already has merge logic built-in (timestamp comparison)
+            // This ensures local data created/modified since last sync is never lost
+            
             try await settingsEngine.pullFromRemote(userId: userId)
             try await presetsEngine.pullFromRemote(userId: userId)
             try await sessionsEngine.pullFromRemote(userId: userId)
             try await tasksEngine.pullFromRemote(userId: userId)
             
             lastSyncDate = Date()
-            lastSuccessfulSyncTimestamp = Date().timeIntervalSince1970
+            // ✅ DON'T update lastSuccessfulSyncTimestamp for non-Pro pulls
+            // This ensures that when they resubscribe, we still detect the gap and do full merge
             
             // Sync widgets
             WidgetDataManager.shared.syncAll()
             
             #if DEBUG
-            print("[SyncCoordinator] ✅ Remote data pulled successfully (ongoing sync disabled - requires Pro)")
+            print("[SyncCoordinator] ✅ Remote data merged successfully (ongoing sync disabled - requires Pro)")
             #endif
             
         } catch {
