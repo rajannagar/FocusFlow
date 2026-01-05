@@ -63,8 +63,8 @@ export default function Header() {
         paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative">
+        <div className="flex h-16 md:h-20 items-center justify-between gap-2 md:gap-4 relative">
           
           {/* Logo */}
           <Link 
@@ -169,10 +169,14 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2.5 rounded-xl hover:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10001] touch-manipulation"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            className="md:hidden relative p-2.5 rounded-xl hover:bg-[var(--background-elevated)] transition-colors text-[var(--foreground)] z-[10001] touch-manipulation"
             aria-label="Menu"
-            style={{ minWidth: '44px', minHeight: '44px' }}
+            style={{ minWidth: '44px', minHeight: '44px', position: 'relative' }}
           >
             {isMenuOpen ? (
               <X className="w-6 h-6" strokeWidth={2} />
