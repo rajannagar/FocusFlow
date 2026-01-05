@@ -2,11 +2,10 @@ import { Metadata } from 'next';
 import { generatePageMetadata, generateBreadcrumbSchema } from '@/lib/seo';
 import HomeClient from './HomeClient';
 
-// Page metadata
-export const metadata: Metadata = generatePageMetadata({
-  title: 'FocusFlow - Be Present',
-  description: 'The all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work. Download for iOS.',
-  path: '/',
+// Page metadata - Homepage uses default title without template
+export const metadata: Metadata = {
+  title: 'FocusFlow - Be Present | Focus Timer & Productivity App',
+  description: 'FocusFlow is the all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work. Available on iOS.',
   keywords: [
     'focus timer',
     'productivity app',
@@ -20,7 +19,33 @@ export const metadata: Metadata = generatePageMetadata({
     'concentration app',
     'FocusFlow',
   ],
-});
+  alternates: {
+    canonical: 'https://focusflowbepresent.com/',
+  },
+  openGraph: {
+    title: 'FocusFlow - Be Present | Focus Timer & Productivity App',
+    description: 'FocusFlow is the all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work. Available on iOS.',
+    url: 'https://focusflowbepresent.com/',
+    siteName: 'FocusFlow',
+    images: [
+      {
+        url: '/focusflow_app_icon.png',
+        width: 512,
+        height: 512,
+        alt: 'FocusFlow - Be Present',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FocusFlow - Be Present | Focus Timer & Productivity App',
+    description: 'FocusFlow is the all-in-one focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work. Available on iOS.',
+    images: ['/focusflow_app_icon.png'],
+    creator: '@focusflow',
+  },
+};
 
 // Breadcrumb structured data
 const breadcrumbSchema = generateBreadcrumbSchema([
