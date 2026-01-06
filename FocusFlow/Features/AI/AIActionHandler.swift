@@ -40,6 +40,14 @@ final class AIActionHandler {
             print("[AIActionHandler] ✅ Task list generated")
             #endif
             
+        case .listTasks(let period):
+            AIContextBuilder.shared.invalidateCache()
+            let tasksMessage = generateTaskListMessage(period: period)
+            postStatsFollowUp(tasksMessage)
+            #if DEBUG
+            print("[AIActionHandler] ✅ Task list generated for period: \(period)")
+            #endif
+            
         // MARK: - Preset Actions
         case .setPreset(let presetID):
             setPreset(presetID: presetID)
@@ -465,22 +473,85 @@ final class AIActionHandler {
     }
     
     /// Generate a formatted list of user's tasks
-    private func generateTaskListMessage() -> String {
-        let tasks = TasksStore.shared.tasks
+    private func generateTaskListMessage(period: String = "all") -> String {
+        let tasksStore = TasksStore.shared
+        let tasks = tasksStore.tasks
         let calendar = Calendar.autoupdatingCurrent
         let now = Date()
-        let today = calendar.startOfDay(for: now)
         
         if tasks.isEmpty {
             return "📋 You don't have any tasks yet!\n\nWant me to create one? Just say something like \"Create a task to review documents at 3pm\""
         }
         
-        // Separate pending and completed
+        let normalizedPeriod = period.lowercased()
+        var dates: [Date] = []
+        
+        func days(from start: Date, count: Int) -> [Date] {
+            (0..<count).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
+        }
+        
+        let today = calendar.startOfDay(for: now)
+        switch normalizedPeriod {
+        case "today":
+            dates = [today]
+        case "tomorrow":
+            if let d = calendar.date(byAdding: .day, value: 1, to: today) { dates = [d] }
+        case "yesterday":
+            if let d = calendar.date(byAdding: .day, value: -1, to: today) { dates = [d] }
+        case "this_week":
+            let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) ?? today
+            dates = days(from: startOfWeek, count: 7)
+        case "next_week":
+            let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) ?? today
+            if let nextWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek) {
+                dates = days(from: nextWeek, count: 7)
+            }
+        case "upcoming":
+            dates = days(from: today, count: 14)
+        default: // all
+            // For "all", just use tasks without date filtering
+            dates = []
+        }
+        
+        var filteredTasks: [FFTaskItem] = []
+        var completionMap: [UUID: Bool] = [:]
+        
+        if dates.isEmpty {
+            filteredTasks = tasks
+            // completion status for today
+            for task in tasks {
+                completionMap[task.id] = tasksStore.isCompleted(taskId: task.id, on: today, calendar: calendar)
+            }
+        } else {
+            let dateSet = Set(dates)
+            for date in dateSet {
+                let visible = tasksStore.tasksVisible(on: date, calendar: calendar)
+                for task in visible {
+                    filteredTasks.append(task)
+                    completionMap[task.id] = tasksStore.isCompleted(taskId: task.id, on: date, calendar: calendar)
+                }
+            }
+            // Deduplicate by task ID while preserving order
+            var seen = Set<UUID>()
+            var unique: [FFTaskItem] = []
+            for task in filteredTasks {
+                if seen.insert(task.id).inserted {
+                    unique.append(task)
+                }
+            }
+            filteredTasks = unique
+        }
+        
+        if filteredTasks.isEmpty {
+            let label = periodLabel(normalizedPeriod: normalizedPeriod)
+            return "📋 No tasks for \(label)."
+        }
+        
         var pendingTasks: [FFTaskItem] = []
         var completedTasks: [FFTaskItem] = []
         
-        for task in tasks {
-            let isCompleted = TasksStore.shared.isCompleted(taskId: task.id, on: today, calendar: calendar)
+        for task in filteredTasks {
+            let isCompleted = completionMap[task.id] ?? false
             if isCompleted {
                 completedTasks.append(task)
             } else {
@@ -489,8 +560,8 @@ final class AIActionHandler {
         }
         
         var message = "📋 **Your Tasks**\n\n"
+        message += periodLabel(normalizedPeriod: normalizedPeriod, long: true) + "\n"
         
-        // Date formatter
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMM d, h:mm a"
         
@@ -499,9 +570,8 @@ final class AIActionHandler {
         
         // Pending tasks
         if !pendingTasks.isEmpty {
-            message += "**Pending** (\(pendingTasks.count))\n"
+            message += "\n**Pending** (\(pendingTasks.count))\n"
             
-            // Sort by reminder date (upcoming first)
             let sorted = pendingTasks.sorted { task1, task2 in
                 let date1 = task1.reminderDate ?? Date.distantFuture
                 let date2 = task2.reminderDate ?? Date.distantFuture
@@ -515,9 +585,7 @@ final class AIActionHandler {
                 if let reminder = task.reminderDate {
                     if calendar.isDateInToday(reminder) {
                         message += " • Today \(timeFormatter.string(from: reminder))"
-                        if reminder < now {
-                            message += " ⚠️ Overdue"
-                        }
+                        if reminder < now { message += " ⚠️ Overdue" }
                     } else if calendar.isDateInTomorrow(reminder) {
                         message += " • Tomorrow \(timeFormatter.string(from: reminder))"
                     } else {
@@ -531,28 +599,33 @@ final class AIActionHandler {
                 message += "\n"
             }
         } else {
-            message += "✅ **All caught up!** No pending tasks.\n"
+            message += "\n✅ **All caught up!** No pending tasks.\n"
         }
         
-        // Completed today
+        // Completed
         if !completedTasks.isEmpty {
-            message += "\n**Completed Today** (\(completedTasks.count))\n"
-            for task in completedTasks.prefix(5) {
+            message += "\n**Completed** (\(completedTasks.count))\n"
+            for task in completedTasks.prefix(10) {
                 message += "✅ \(task.title)\n"
             }
-            if completedTasks.count > 5 {
-                message += "   ...and \(completedTasks.count - 5) more\n"
+            if completedTasks.count > 10 {
+                message += "   ...and \(completedTasks.count - 10) more\n"
             }
-        }
-        
-        // Helpful footer
-        if pendingTasks.isEmpty && completedTasks.isEmpty {
-            message += "\n💡 Create your first task! Just tell me what you need to do."
-        } else if !pendingTasks.isEmpty {
-            message += "\n💡 Tap on \"Start Focus\" to begin working on your tasks!"
         }
         
         return message
+    }
+    
+    private func periodLabel(normalizedPeriod: String, long: Bool = false) -> String {
+        switch normalizedPeriod {
+        case "today": return long ? "Today" : "today"
+        case "tomorrow": return long ? "Tomorrow" : "tomorrow"
+        case "yesterday": return long ? "Yesterday" : "yesterday"
+        case "this_week": return long ? "This Week" : "this week"
+        case "next_week": return long ? "Next Week" : "next week"
+        case "upcoming": return long ? "Upcoming 14 days" : "upcoming"
+        default: return long ? "All Tasks" : "all tasks"
+        }
     }
     
     private func generateProductivityAnalysis() -> String {

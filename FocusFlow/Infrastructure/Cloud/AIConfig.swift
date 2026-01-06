@@ -20,8 +20,8 @@ struct AIConfig {
     /// Maximum conversation length (to limit token usage)
     static let maxMessages = 20
     
-    /// Context cache duration (30 seconds - keeps data fresh)
-    static let contextCacheDuration: TimeInterval = 30
+    /// Context cache duration (short to keep data fresh)
+    static let contextCacheDuration: TimeInterval = 5
     
     /// Check if AI service is configured
     /// Returns true if Supabase URL is configured (Edge Function handles API key)

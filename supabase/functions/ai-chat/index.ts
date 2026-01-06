@@ -18,11 +18,13 @@ interface AIChatRequest {
   context: string
 }
 
-interface OpenAIMessage {
-  role: 'user' | 'assistant' | 'system' | 'function'
-  content: string
-  name?: string
-}
+const MAX_CONTEXT_CHARS = 24000
+const SYSTEM_PREAMBLE = `You are Focus AI, the in-app assistant for FocusFlow. Rules:
+- Accuracy first: never invent data; use only context and tool results.
+- Relevance: answer ONLY what the user asked; skip unrelated extras.
+- Tone: friendly, professional, concise; minimal filler.
+- Formatting: short sentences; use bullets when they improve clarity; emojis are okay but sparing (0–2) and only if they fit naturally.
+- Actions: if something should be done, call the tool instead of describing it.`
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -77,11 +79,15 @@ serve(async (req) => {
       )
     }
 
+    const safeContext = context.length > MAX_CONTEXT_CHARS
+      ? context.slice(context.length - MAX_CONTEXT_CHARS)
+      : context
+
     // Build messages array for OpenAI
-    const messages: OpenAIMessage[] = [
+    const messages = [
       {
         role: 'system',
-        content: context
+        content: `${SYSTEM_PREAMBLE}\n\n${safeContext}`
       }
     ]
 
@@ -102,75 +108,104 @@ serve(async (req) => {
       content: userMessage
     })
 
-    // Define functions for OpenAI function calling - COMPREHENSIVE LIST
-    const functions = [
+    // Define functions as OpenAI tools (parallel enabled)
+    const tools = [
       // ═══════════════════════════════════════════════════════════════════
       // TASK FUNCTIONS
       // ═══════════════════════════════════════════════════════════════════
       {
-        name: "create_task",
-        description: "Create a new task. ALWAYS use this when user wants to add a task, reminder, todo, or schedule something. If user mentions ANY time (7pm, tomorrow, next week), ALWAYS include reminderDate. Be proactive - 'remind me to call mom' = create task with reminder.",
-        parameters: {
-          type: "object",
-          properties: {
-            title: { 
-              type: "string", 
-              description: "Task title - clear and specific (required)" 
+        type: "function",
+        function: {
+          name: "create_task",
+          description: "Create a new task. ALWAYS use this when user wants to add a task, reminder, todo, or schedule something. If user mentions ANY time (7pm, tomorrow, next week), ALWAYS include reminderDate. Be proactive - 'remind me to call mom' = create task with reminder.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { 
+                type: "string", 
+                description: "Task title - clear and specific (required)" 
+              },
+              reminderDate: { 
+                type: "string", 
+                description: "REQUIRED if user mentions ANY time. Format: YYYY-MM-DDTHH:MM:SS (local time, no timezone). Examples: '7pm today' = '2026-01-06T19:00:00', 'tomorrow 2pm' = '2026-01-07T14:00:00', '9am' = '2026-01-06T09:00:00'. Use the dates provided in the context." 
+              },
+              durationMinutes: { 
+                type: "number", 
+                description: "Estimated duration in minutes. Suggest 25 for quick tasks, 50 for deep work (optional)" 
+              }
             },
-            reminderDate: { 
-              type: "string", 
-              description: "REQUIRED if user mentions ANY time. Format: YYYY-MM-DDTHH:MM:SS (local time, no timezone). Examples: '7pm today' = '2026-01-06T19:00:00', 'tomorrow 2pm' = '2026-01-07T14:00:00', '9am' = '2026-01-06T09:00:00'. Use the dates provided in the context." 
+            required: ["title"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "update_task",
+          description: "Update an existing task. Use the exact taskID (UUID) from the TASKS section in context. Can update title, reminder time, or duration.",
+          parameters: {
+            type: "object",
+            properties: {
+              taskID: { type: "string", description: "UUID of task to update (from context, e.g., '12345678-1234-1234-1234-123456789abc')" },
+              title: { type: "string", description: "New task title (only if user wants to change it)" },
+              reminderDate: { type: "string", description: "New reminder in YYYY-MM-DDTHH:MM:SS format (only if changing)" },
+              durationMinutes: { type: "number", description: "New duration in minutes (only if changing)" }
             },
-            durationMinutes: { 
-              type: "number", 
-              description: "Estimated duration in minutes. Suggest 25 for quick tasks, 50 for deep work (optional)" 
-            }
-          },
-          required: ["title"]
+            required: ["taskID"]
+          }
         }
       },
       {
-        name: "update_task",
-        description: "Update an existing task. Use the exact taskID (UUID) from the TASKS section in context. Can update title, reminder time, or duration.",
-        parameters: {
-          type: "object",
-          properties: {
-            taskID: { type: "string", description: "UUID of task to update (from context, e.g., '12345678-1234-1234-1234-123456789abc')" },
-            title: { type: "string", description: "New task title (only if user wants to change it)" },
-            reminderDate: { type: "string", description: "New reminder in YYYY-MM-DDTHH:MM:SS format (only if changing)" },
-            durationMinutes: { type: "number", description: "New duration in minutes (only if changing)" }
-          },
-          required: ["taskID"]
+        type: "function",
+        function: {
+          name: "delete_task",
+          description: "Delete a task permanently. Only use when user explicitly asks to delete, remove, or cancel a task.",
+          parameters: {
+            type: "object",
+            properties: {
+              taskID: { type: "string", description: "UUID of task to delete (from context)" }
+            },
+            required: ["taskID"]
+          }
         }
       },
       {
-        name: "delete_task",
-        description: "Delete a task permanently. Only use when user explicitly asks to delete, remove, or cancel a task.",
-        parameters: {
-          type: "object",
-          properties: {
-            taskID: { type: "string", description: "UUID of task to delete (from context)" }
-          },
-          required: ["taskID"]
+        type: "function",
+        function: {
+          name: "toggle_task_completion",
+          description: "Mark a task as complete or incomplete. Use when user says 'done', 'complete', 'finished', 'mark as done', 'check off', etc.",
+          parameters: {
+            type: "object",
+            properties: {
+              taskID: { type: "string", description: "UUID of task to toggle (from context)" }
+            },
+            required: ["taskID"]
+          }
         }
       },
       {
-        name: "toggle_task_completion",
-        description: "Mark a task as complete or incomplete. Use when user says 'done', 'complete', 'finished', 'mark as done', 'check off', etc.",
-        parameters: {
-          type: "object",
-          properties: {
-            taskID: { type: "string", description: "UUID of task to toggle (from context)" }
-          },
-          required: ["taskID"]
+        type: "function",
+        function: {
+          name: "list_future_tasks",
+          description: "List all upcoming/future tasks. Use when user asks 'what tasks do I have?', 'show my tasks', 'upcoming tasks', 'what's on my list?'",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
         }
       },
       {
-        name: "list_future_tasks",
-        description: "List all upcoming/future tasks. Use when user asks 'what tasks do I have?', 'show my tasks', 'upcoming tasks', 'what's on my list?'",
-        parameters: {
-          type: "object",
-          properties: {}
+        type: "function",
+        function: {
+          name: "list_tasks",
+          description: "List tasks for a specific period. Use when user asks for today, tomorrow, yesterday, this week, next week, or upcoming tasks.",
+          parameters: {
+            type: "object",
+            properties: {
+              period: { type: "string", enum: ["today", "tomorrow", "yesterday", "this_week", "next_week", "upcoming", "all"], description: "Time window for tasks" }
+            },
+            required: ["period"]
+          }
         }
       },
       
@@ -178,51 +213,63 @@ serve(async (req) => {
       // PRESET FUNCTIONS  
       // ═══════════════════════════════════════════════════════════════════
       {
-        name: "set_preset",
-        description: "Activate/select a focus preset. Use when user wants to 'use', 'set', 'switch to', or 'activate' a specific preset.",
-        parameters: {
-          type: "object",
-          properties: {
-            presetID: { type: "string", description: "UUID of preset to activate (from FOCUS PRESETS section in context)" }
-          },
-          required: ["presetID"]
+        type: "function",
+        function: {
+          name: "set_preset",
+          description: "Activate/select a focus preset. Use when user wants to 'use', 'set', 'switch to', or 'activate' a specific preset.",
+          parameters: {
+            type: "object",
+            properties: {
+              presetID: { type: "string", description: "UUID of preset to activate (from FOCUS PRESETS section in context)" }
+            },
+            required: ["presetID"]
+          }
         }
       },
       {
-        name: "create_preset",
-        description: "Create a new focus preset. Use when user wants to create, add, or make a new preset.",
-        parameters: {
-          type: "object",
-          properties: {
-            name: { type: "string", description: "Preset name (e.g., 'Deep Work', 'Quick Break')" },
-            durationSeconds: { type: "number", description: "Duration in SECONDS. Convert minutes to seconds: 25min=1500, 50min=3000, 90min=5400" },
-            soundID: { type: "string", description: "Sound ID: 'angelsbymyside', 'fireplace', 'floatinggarden', 'hearty', 'light-rain-ambient', 'longnight', 'sound-ambience', 'underwater', 'yesterday', or 'none'" }
-          },
-          required: ["name", "durationSeconds"]
+        type: "function",
+        function: {
+          name: "create_preset",
+          description: "Create a new focus preset. Use when user wants to create, add, or make a new preset.",
+          parameters: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Preset name (e.g., 'Deep Work', 'Quick Break')" },
+              durationSeconds: { type: "number", description: "Duration in SECONDS. Convert minutes to seconds: 25min=1500, 50min=3000, 90min=5400" },
+              soundID: { type: "string", description: "Sound ID: 'angelsbymyside', 'fireplace', 'floatinggarden', 'hearty', 'light-rain-ambient', 'longnight', 'sound-ambience', 'underwater', 'yesterday', or 'none'" }
+            },
+            required: ["name", "durationSeconds"]
+          }
         }
       },
       {
-        name: "update_preset",
-        description: "Update an existing preset's name or duration.",
-        parameters: {
-          type: "object",
-          properties: {
-            presetID: { type: "string", description: "UUID of preset to update (from context)" },
-            name: { type: "string", description: "New name (only if changing)" },
-            durationSeconds: { type: "number", description: "New duration in seconds (only if changing)" }
-          },
-          required: ["presetID"]
+        type: "function",
+        function: {
+          name: "update_preset",
+          description: "Update an existing preset's name or duration.",
+          parameters: {
+            type: "object",
+            properties: {
+              presetID: { type: "string", description: "UUID of preset to update (from context)" },
+              name: { type: "string", description: "New name (only if changing)" },
+              durationSeconds: { type: "number", description: "New duration in seconds (only if changing)" }
+            },
+            required: ["presetID"]
+          }
         }
       },
       {
-        name: "delete_preset",
-        description: "Delete a preset permanently.",
-        parameters: {
-          type: "object",
-          properties: {
-            presetID: { type: "string", description: "UUID of preset to delete (from context)" }
-          },
-          required: ["presetID"]
+        type: "function",
+        function: {
+          name: "delete_preset",
+          description: "Delete a preset permanently.",
+          parameters: {
+            type: "object",
+            properties: {
+              presetID: { type: "string", description: "UUID of preset to delete (from context)" }
+            },
+            required: ["presetID"]
+          }
         }
       },
       
@@ -230,16 +277,19 @@ serve(async (req) => {
       // FOCUS FUNCTIONS
       // ═══════════════════════════════════════════════════════════════════
       {
-        name: "start_focus",
-        description: "Start a focus/timer session. Use when user says 'start focus', 'let's focus', 'start timer', 'focus for X minutes', 'begin session'.",
-        parameters: {
-          type: "object",
-          properties: {
-            minutes: { type: "number", description: "Duration in minutes (1-480). Default 25 for Pomodoro, 50 for deep work." },
-            presetID: { type: "string", description: "Optional preset ID to use (from context)" },
-            sessionName: { type: "string", description: "Optional name for tracking (e.g., 'Deep work on project')" }
-          },
-          required: ["minutes"]
+        type: "function",
+        function: {
+          name: "start_focus",
+          description: "Start a focus/timer session. Use when user says 'start focus', 'let's focus', 'start timer', 'focus for X minutes', 'begin session'.",
+          parameters: {
+            type: "object",
+            properties: {
+              minutes: { type: "number", description: "Duration in minutes (1-480). Default 25 for Pomodoro, 50 for deep work." },
+              presetID: { type: "string", description: "Optional preset ID to use (from context)" },
+              sessionName: { type: "string", description: "Optional name for tracking (e.g., 'Deep work on project')" }
+            },
+            required: ["minutes"]
+          }
         }
       },
       
@@ -247,18 +297,21 @@ serve(async (req) => {
       // SETTINGS FUNCTIONS
       // ═══════════════════════════════════════════════════════════════════
       {
-        name: "update_setting",
-        description: "Update app settings. Use when user wants to change their goal, theme, name, sounds, haptics, etc.",
-        parameters: {
-          type: "object",
-          properties: {
-            setting: { 
-              type: "string", 
-              description: "Setting name: 'dailyGoal' (value=minutes like '60'), 'theme' (value=forest/neon/peach/cyber/ocean/sunrise/amber/mint/royal/slate), 'soundEnabled' (value=true/false), 'hapticsEnabled' (value=true/false), 'focusSound' (value=sound ID or 'none'), 'displayName' (value=name), 'tagline' (value=tagline)" 
+        type: "function",
+        function: {
+          name: "update_setting",
+          description: "Update app settings. Use when user wants to change their goal, theme, name, sounds, haptics, etc.",
+          parameters: {
+            type: "object",
+            properties: {
+              setting: { 
+                type: "string", 
+                description: "Setting name: 'dailyGoal' (value=minutes like '60'), 'theme' (value=forest/neon/peach/cyber/ocean/sunrise/amber/mint/royal/slate), 'soundEnabled' (value=true/false), 'hapticsEnabled' (value=true/false), 'focusSound' (value=sound ID or 'none'), 'displayName' (value=name), 'tagline' (value=tagline)" 
+              },
+              value: { type: "string", description: "New value for the setting" }
             },
-            value: { type: "string", description: "New value for the setting" }
-          },
-          required: ["setting", "value"]
+            required: ["setting", "value"]
+          }
         }
       },
       
@@ -266,22 +319,28 @@ serve(async (req) => {
       // STATS & ANALYSIS FUNCTIONS
       // ═══════════════════════════════════════════════════════════════════
       {
-        name: "get_stats",
-        description: "Get productivity statistics. Use when user asks 'how am I doing?', 'show my stats', 'my progress', 'summary'.",
-        parameters: {
-          type: "object",
-          properties: {
-            period: { type: "string", enum: ["today", "week", "month", "alltime"], description: "Time period to analyze" }
-          },
-          required: ["period"]
+        type: "function",
+        function: {
+          name: "get_stats",
+          description: "Get productivity statistics. Use when user asks 'how am I doing?', 'show my stats', 'my progress', 'summary'.",
+          parameters: {
+            type: "object",
+            properties: {
+              period: { type: "string", enum: ["today", "week", "month", "alltime"], description: "Time period to analyze" }
+            },
+            required: ["period"]
+          }
         }
       },
       {
-        name: "analyze_sessions",
-        description: "Provide detailed productivity analysis and personalized recommendations. Use for 'analyze my productivity', 'give insights', 'how can I improve?'",
-        parameters: {
-          type: "object",
-          properties: {}
+        type: "function",
+        function: {
+          name: "analyze_sessions",
+          description: "Provide detailed productivity analysis and personalized recommendations. Use for 'analyze my productivity', 'give insights', 'how can I improve?'",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
         }
       },
       
@@ -289,27 +348,36 @@ serve(async (req) => {
       // SMART PLANNING FUNCTIONS
       // ═══════════════════════════════════════════════════════════════════
       {
-        name: "generate_daily_plan",
-        description: "Generate a personalized daily plan based on user's tasks, goals, and productivity patterns. Use when user asks 'plan my day', 'what should I focus on?', 'help me plan', 'daily schedule', 'what's my plan?', or at the start of a conversation.",
-        parameters: {
-          type: "object",
-          properties: {}
+        type: "function",
+        function: {
+          name: "generate_daily_plan",
+          description: "Generate a personalized daily plan based on user's tasks, goals, and productivity patterns. Use when user asks 'plan my day', 'what should I focus on?', 'help me plan', 'daily schedule', 'what's my plan?', or at the start of a conversation.",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
         }
       },
       {
-        name: "suggest_break",
-        description: "Suggest a break based on recent focus activity. Use when user says 'I need a break', 'tired', 'exhausted', 'when should I rest?', 'break time?', or after extended focus periods.",
-        parameters: {
-          type: "object",
-          properties: {}
+        type: "function",
+        function: {
+          name: "suggest_break",
+          description: "Suggest a break based on recent focus activity. Use when user says 'I need a break', 'tired', 'exhausted', 'when should I rest?', 'break time?', or after extended focus periods.",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
         }
       },
       {
-        name: "motivate",
-        description: "Provide personalized motivation and encouragement based on user's progress. Use when user seems discouraged, asks for motivation, says 'motivate me', 'I can't focus', 'help me stay motivated', or needs encouragement.",
-        parameters: {
-          type: "object",
-          properties: {}
+        type: "function",
+        function: {
+          name: "motivate",
+          description: "Provide personalized motivation and encouragement based on user's progress. Use when user seems discouraged, asks for motivation, says 'motivate me', 'I can't focus', 'help me stay motivated', or needs encouragement.",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
         }
       },
       
@@ -317,19 +385,25 @@ serve(async (req) => {
       // ADVANCED ANALYTICS FUNCTIONS
       // ═══════════════════════════════════════════════════════════════════
       {
-        name: "generate_weekly_report",
-        description: "Generate a comprehensive weekly productivity report with stats, trends, and insights. Use when user asks 'weekly report', 'how was my week?', 'weekly summary', 'week in review', 'last 7 days', or wants to see their weekly performance.",
-        parameters: {
-          type: "object",
-          properties: {}
+        type: "function",
+        function: {
+          name: "generate_weekly_report",
+          description: "Generate a comprehensive weekly productivity report with stats, trends, and insights. Use when user asks 'weekly report', 'how was my week?', 'weekly summary', 'week in review', 'last 7 days', or wants to see their weekly performance.",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
         }
       },
       {
-        name: "show_welcome",
-        description: "Show a personalized welcome message with today's status, pending tasks, and suggestions. Use at the start of conversations, when user says 'hi', 'hello', 'hey', 'what's up', or when they want a quick overview of their day.",
-        parameters: {
-          type: "object",
-          properties: {}
+        type: "function",
+        function: {
+          name: "show_welcome",
+          description: "Show a personalized welcome message with today's status, pending tasks, and suggestions. Use at the start of conversations, when user says 'hi', 'hello', 'hey', 'what's up', or when they want a quick overview of their day.",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
         }
       }
     ]
@@ -343,11 +417,11 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 2000,
-        functions: functions,
-        function_call: 'auto'
+        messages,
+        tools,
+        tool_choice: 'auto',
+        temperature: 0.6,
+        max_tokens: 4000
       })
     })
 
@@ -392,46 +466,42 @@ serve(async (req) => {
     const choice = openaiData.choices[0]
     const message = choice.message
 
-    // Handle function calls - support MULTIPLE function calls in batch
-    if (message.function_call) {
-      // Collect all function calls (OpenAI can return multiple)
+    const toolCalls = message?.tool_calls ?? []
+
+    if (toolCalls.length > 0) {
       const actions: Array<{ type: string; params: any }> = []
-      
-      // First action from main message
-      const functionName = message.function_call.name
-      const functionArgs = JSON.parse(message.function_call.arguments || '{}')
-      
-      console.log('[ai-chat] Function call:', functionName, functionArgs)
-      
-      actions.push({
-        type: functionName,
-        params: functionArgs
-      })
-      
-      // Generate a helpful response for the batch of actions
-      let actionResponse = generateBatchResponse(actions)
-      
+
+      for (const call of toolCalls) {
+        const fnName = call.function?.name
+        const rawArgs = call.function?.arguments ?? '{}'
+        if (!fnName) continue
+        try {
+          const parsedArgs = JSON.parse(rawArgs)
+          actions.push({ type: fnName, params: parsedArgs })
+          console.log('[ai-chat] Tool call:', fnName, parsedArgs)
+        } catch (err) {
+          console.error('[ai-chat] Failed to parse tool args', err)
+        }
+      }
+
+      const actionResponse = generateBatchResponse(actions)
+
       return new Response(
         JSON.stringify({
           response: actionResponse,
-          actions: actions  // Return array of actions for batch processing
+          actions
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Regular text response - clean up any markdown formatting
-    let cleanedResponse = message.content
-      .replace(/\*\*/g, '')  // Remove bold markdown (**text**)
-      .replace(/###\s*/g, '')  // Remove markdown headers (### )
-      .replace(/^\s*-\s+/gm, '')  // Remove bullet points
-      .replace(/^\s*\*\s+/gm, '')  // Remove asterisk bullets
-      .trim()
+    // Regular text response (keep bullets/formatting)
+    const cleanedResponse = (message?.content ?? '').trim()
     
     return new Response(
       JSON.stringify({
         response: cleanedResponse,
-        actions: []  // No actions for text-only response
+        actions: []
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

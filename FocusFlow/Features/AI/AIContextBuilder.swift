@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Builds context string from user data for AI prompts
 /// This context is sent to the Edge Function which passes it to OpenAI
@@ -8,8 +9,40 @@ final class AIContextBuilder {
     
     private var cachedContext: String?
     private var cacheTimestamp: Date?
+    private var cancellables = Set<AnyCancellable>()
     
-    private init() {}
+    private init() {
+        // Keep cache fresh when core data changes
+        TasksStore.shared.$tasks
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in self?.invalidateCache() }
+            .store(in: &cancellables)
+        
+        TasksStore.shared.$completedOccurrenceKeys
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in self?.invalidateCache() }
+            .store(in: &cancellables)
+        
+        ProgressStore.shared.$sessions
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in self?.invalidateCache() }
+            .store(in: &cancellables)
+        
+        ProgressStore.shared.$dailyGoalMinutes
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in self?.invalidateCache() }
+            .store(in: &cancellables)
+        
+        FocusPresetStore.shared.$presets
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in self?.invalidateCache() }
+            .store(in: &cancellables)
+        
+        AuthManagerV2.shared.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.invalidateCache() }
+            .store(in: &cancellables)
+    }
     
     /// Builds context string from current user data
     func buildContext() -> String {
@@ -35,6 +68,7 @@ final class AIContextBuilder {
         let now = Date()
         let userName = AppSettings.shared.displayName ?? "there"
         let firstName = userName.components(separatedBy: " ").first ?? userName
+        let stats = computeFocusStats(now: now, calendar: calendar)
         
         // Time-based greeting
         let hour = calendar.component(.hour, from: now)
@@ -69,7 +103,11 @@ final class AIContextBuilder {
         """
         
         // MARK: - User Data Section
-        context += "=== USER DATA ===\n\n"
+        context += "=== PROFILE & SETTINGS ===\n\n"
+        context += buildProfileContext(firstName: firstName, stats: stats)
+        
+        context += "=== PROGRESS SNAPSHOT ===\n\n"
+        context += buildProgressContext(stats: stats)
         
         // Tasks with completion status
         context += buildTasksContext(now: now, calendar: calendar)
@@ -80,8 +118,9 @@ final class AIContextBuilder {
         // Recent Sessions
         context += buildSessionsContext()
         
-        // Settings & Progress
-        context += buildSettingsContext()
+        // Patterns & achievements
+        context += buildPatternsContext(stats: stats)
+        context += buildAchievementsContext(stats: stats)
         
         // MARK: - Capabilities Section
         context += """
@@ -94,6 +133,7 @@ final class AIContextBuilder {
         • delete_task - Remove tasks (use taskID from above)
         • toggle_task_completion - Mark tasks complete/incomplete
         • list_future_tasks - Show all upcoming tasks
+        • list_tasks - Show tasks for a period: today, tomorrow, yesterday, this_week, next_week, upcoming, all
         
         PRESETS:
         • set_preset - Activate a focus preset (use presetID from above)
@@ -133,6 +173,101 @@ final class AIContextBuilder {
     }
     
     // MARK: - Context Builders
+    
+    private struct FocusStats {
+        let todayMinutes: Int
+        let todaySessions: Int
+        let weekMinutes: Int
+        let monthMinutes: Int
+        let lifetimeMinutes: Int
+        let lifetimeSessions: Int
+        let bestStreak: Int
+        let longestSessionMinutes: Int
+        let bestHour: (hour: Int, minutes: Int)?
+        let bestDay: (day: String, minutes: Int)?
+        let tasksCompleted: Int
+        let goalsHit: Int
+        let morningSessions: Int
+        let nightSessions: Int
+        let dailyGoalMinutes: Int
+        let isPro: Bool
+    }
+    
+    private func computeFocusStats(now: Date, calendar: Calendar) -> FocusStats {
+        let progress = ProgressStore.shared
+        let sessions = progress.sessions
+        let startOfToday = calendar.startOfDay(for: now)
+        let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) ?? now
+        let monthAgo = calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        
+        // Group minutes
+        var todayMinutes = 0
+        var todaySessions = 0
+        var weekMinutes = 0
+        var monthMinutes = 0
+        var lifetimeMinutes = 0
+        var longestSessionMinutes = 0
+        var hourBuckets: [Int: Int] = [:]
+        var dayBuckets: [Int: Int] = [:]
+        var morningSessions = 0
+        var nightSessions = 0
+        
+        for session in sessions {
+            let minutes = Int(session.duration / 60)
+            lifetimeMinutes += minutes
+            longestSessionMinutes = max(longestSessionMinutes, minutes)
+            
+            if calendar.isDate(session.date, inSameDayAs: startOfToday) {
+                todayMinutes += minutes
+                todaySessions += 1
+            }
+            if session.date >= weekAgo { weekMinutes += minutes }
+            if session.date >= monthAgo { monthMinutes += minutes }
+            
+            let hour = calendar.component(.hour, from: session.date)
+            hourBuckets[hour, default: 0] += minutes
+            
+            let weekday = calendar.component(.weekday, from: session.date) // 1 = Sunday
+            dayBuckets[weekday, default: 0] += minutes
+            
+            if hour < 8 { morningSessions += 1 }
+            if hour >= 22 { nightSessions += 1 }
+        }
+        
+        let bestHour = hourBuckets.max(by: { $0.value < $1.value }).map { ($0.key, $0.value) }
+        let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        let bestDay = dayBuckets.max(by: { $0.value < $1.value }).map { (dayNames[($0.key - 1 + 7) % 7], $0.value) }
+        
+        // Goals hit (per day)
+        var minutesPerDay: [Date: Int] = [:]
+        for session in sessions {
+            let day = calendar.startOfDay(for: session.date)
+            minutesPerDay[day, default: 0] += Int(session.duration / 60)
+        }
+        let goal = progress.dailyGoalMinutes
+        let goalsHit = minutesPerDay.values.filter { $0 >= goal && goal > 0 }.count
+        
+        let tasksCompleted = TasksStore.shared.completedOccurrenceKeys.count
+        
+        return FocusStats(
+            todayMinutes: todayMinutes,
+            todaySessions: todaySessions,
+            weekMinutes: weekMinutes,
+            monthMinutes: monthMinutes,
+            lifetimeMinutes: lifetimeMinutes,
+            lifetimeSessions: sessions.count,
+            bestStreak: progress.lifetimeBestStreak,
+            longestSessionMinutes: longestSessionMinutes,
+            bestHour: bestHour,
+            bestDay: bestDay,
+            tasksCompleted: tasksCompleted,
+            goalsHit: goalsHit,
+            morningSessions: morningSessions,
+            nightSessions: nightSessions,
+            dailyGoalMinutes: goal,
+            isPro: ProEntitlementManager.shared.isPro
+        )
+    }
     
     private func buildTasksContext(now: Date, calendar: Calendar) -> String {
         var context = "TASKS:\n"
@@ -234,56 +369,89 @@ final class AIContextBuilder {
         return context
     }
     
-    private func buildSettingsContext() -> String {
-        let progress = ProgressStore.shared
+    private func buildProfileContext(firstName: String, stats: FocusStats) -> String {
         let settings = AppSettings.shared
-        let calendar = Calendar.autoupdatingCurrent
-        
-        var context = "CURRENT SETTINGS:\n"
-        context += "  • Daily Goal: \(progress.dailyGoalMinutes) minutes\n"
-        context += "  • Theme: \(settings.profileTheme.displayName)\n"
-        context += "  • Sound: \(settings.soundEnabled ? "On" : "Off")\n"
-        context += "  • Haptics: \(settings.hapticsEnabled ? "On" : "Off")\n"
+        var context = ""
+        context += "USER: \(firstName)\n"
+        if !settings.tagline.isEmpty {
+            context += "• Tagline: \(settings.tagline)\n"
+        }
+        context += "• Pro Status: \(stats.isPro ? "Active" : "Free")\n"
+        context += "• Daily Goal: \(stats.dailyGoalMinutes) minutes\n"
+        context += "• Theme: \(settings.profileTheme.displayName)\n"
+        context += "• Sound: \(settings.soundEnabled ? "On" : "Off") | Haptics: \(settings.hapticsEnabled ? "On" : "Off")\n"
         if let sound = settings.selectedFocusSound {
-            context += "  • Focus Sound: \(sound.rawValue)\n"
+            context += "• Focus Sound: \(sound.rawValue)\n"
         }
         context += "\n"
+        return context
+    }
+    
+    private func buildProgressContext(stats: FocusStats) -> String {
+        var context = ""
+        context += "TODAY: \(stats.todayMinutes) min across \(stats.todaySessions) sessions (goal \(stats.dailyGoalMinutes) min)\n"
+        context += "THIS WEEK: \(stats.weekMinutes) min | THIS MONTH: \(stats.monthMinutes) min\n"
+        context += "LIFETIME: \(stats.lifetimeMinutes) min across \(stats.lifetimeSessions) sessions\n"
+        context += "BEST STREAK: \(stats.bestStreak) days | LONGEST SESSION: \(stats.longestSessionMinutes) min\n\n"
+        return context
+    }
+    
+    private func buildPatternsContext(stats: FocusStats) -> String {
+        var context = "PATTERNS:\n"
         
-        // Progress stats
-        context += "PROGRESS:\n"
-        
-        // Today's progress
-        let todayMinutes = Int(progress.sessions.filter {
-            calendar.isDateInToday($0.date)
-        }.reduce(0) { $0 + $1.duration } / 60)
-        context += "  • Today: \(todayMinutes)/\(progress.dailyGoalMinutes) minutes\n"
-        
-        // Streak
-        var streak = 0
-        var checkDate = calendar.startOfDay(for: Date())
-        for _ in 0..<365 {
-            let hasSession = progress.sessions.contains {
-                calendar.isDate($0.date, inSameDayAs: checkDate)
-            }
-            if hasSession {
-                streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-            } else if streak > 0 {
-                break
-            } else {
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-            }
+        if let bestHour = stats.bestHour {
+            context += "  • Peak hour: \(formatHourLabel(bestHour.hour)) (\(bestHour.minutes) min)\n"
+        } else {
+            context += "  • Peak hour: Not enough data yet\n"
         }
-        context += "  • Current Streak: \(streak) days\n"
         
-        // Total time
-        let totalMinutes = Int(progress.sessions.reduce(0) { $0 + $1.duration } / 60)
-        context += "  • Total Focus Time: \(totalMinutes) minutes\n"
+        if let bestDay = stats.bestDay {
+            context += "  • Best day: \(bestDay.day) (\(bestDay.minutes) min)\n"
+        }
         
-        // Pro status
-        context += "  • Pro Status: \(ProEntitlementManager.shared.isPro ? "Active" : "Free")\n"
+        let morningVsNight: String
+        if stats.morningSessions >= stats.nightSessions * 2 {
+            morningVsNight = "Morning-focused (\(stats.morningSessions) morning vs \(stats.nightSessions) night sessions)"
+        } else if stats.nightSessions >= stats.morningSessions * 2 {
+            morningVsNight = "Night-focused (\(stats.nightSessions) night vs \(stats.morningSessions) morning sessions)"
+        } else {
+            morningVsNight = "Balanced (\(stats.morningSessions) morning vs \(stats.nightSessions) night sessions)"
+        }
+        context += "  • Chronotype: \(morningVsNight)\n"
+        context += "  • Goals hit: \(stats.goalsHit) days\n\n"
+        return context
+    }
+    
+    private func buildAchievementsContext(stats: FocusStats) -> String {
+        var context = "ACHIEVEMENTS & NEXT GOALS:\n"
         
-        context += "\n"
+        func nextTargets(current: Int, milestones: [Int]) -> String {
+            guard let target = milestones.first(where: { current < $0 }) else {
+                return "Max milestone reached"
+            }
+            return "\(target - current) to next milestone (\(target))"
+        }
+        
+        // Focus time badges
+        let focusMilestones = [60, 600, 3000, 6000] // minutes
+        context += "  • Focus Time: \(stats.lifetimeMinutes) min (\(nextTargets(current: stats.lifetimeMinutes, milestones: focusMilestones)))\n"
+        
+        // Streak badges
+        let streakMilestones = [3, 7, 30]
+        context += "  • Streak: \(stats.bestStreak) days (\(nextTargets(current: stats.bestStreak, milestones: streakMilestones)))\n"
+        
+        // Session count badges
+        let sessionMilestones = [25, 100]
+        context += "  • Sessions: \(stats.lifetimeSessions) (\(nextTargets(current: stats.lifetimeSessions, milestones: sessionMilestones)))\n"
+        
+        // Task badges
+        let taskMilestones = [10, 50, 200]
+        context += "  • Tasks completed: \(stats.tasksCompleted) (\(nextTargets(current: stats.tasksCompleted, milestones: taskMilestones)))\n"
+        
+        // Goal crusher badge
+        let goalMilestones = [10]
+        context += "  • Goals hit: \(stats.goalsHit) (\(nextTargets(current: stats.goalsHit, milestones: goalMilestones)))\n\n"
+        
         return context
     }
     
@@ -310,11 +478,11 @@ final class AIContextBuilder {
         • "call mom at 9am tomorrow" → reminderDate: "\(tomorrowISO)T09:00:00"
         
         RESPONSE STYLE:
-        • Be conversational and warm, not robotic
-        • When showing tasks, format them nicely with bullet points
-        • Always acknowledge what you're doing ("Sure! Let me..." or "Got it!")
-        • After actions, give brief helpful follow-ups
-        • Use natural language, not technical jargon
+        • Be concise, professional, friendly; skip filler
+        • Answer only what the user asked for; do not add unrelated stats
+        • Use short bullets when they improve clarity; otherwise plain sentences
+        • Emojis are okay but sparing (0–2) and only if they fit naturally
+        • After actions, briefly confirm what was done
         
         WHEN USER ASKS ABOUT TASKS:
         • List them clearly with times if set
@@ -350,6 +518,12 @@ final class AIContextBuilder {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
+    }
+    
+    private func formatHourLabel(_ hour: Int) -> String {
+        if hour == 0 { return "12am" }
+        if hour == 12 { return "12pm" }
+        return hour < 12 ? "\(hour)am" : "\(hour - 12)pm"
     }
     
     private func formatDateISO(_ date: Date) -> String {

@@ -32,6 +32,7 @@ enum AIAction: Codable, Equatable {
     case deleteTask(taskID: UUID)
     case toggleTaskCompletion(taskID: UUID)
     case listFutureTasks
+    case listTasks(period: String)
     
     // Preset actions
     case setPreset(presetID: UUID)
@@ -103,6 +104,10 @@ enum AIAction: Codable, Equatable {
             
         case "listFutureTasks", "list_future_tasks":
             self = .listFutureTasks
+            
+        case "listTasks", "list_tasks":
+            let period = try container.decode(String.self, forKey: .period)
+            self = .listTasks(period: period)
             
         case "setPreset", "set_preset", "suggestPreset":
             let presetID = try container.decode(UUID.self, forKey: .presetID)
@@ -194,6 +199,10 @@ enum AIAction: Codable, Equatable {
         case .listFutureTasks:
             try container.encode("listFutureTasks", forKey: .type)
             
+        case .listTasks(let period):
+            try container.encode("listTasks", forKey: .type)
+            try container.encode(period, forKey: .period)
+            
         case .setPreset(let presetID):
             try container.encode("setPreset", forKey: .type)
             try container.encode(presetID, forKey: .presetID)
@@ -279,6 +288,9 @@ extension AIAction: CustomStringConvertible {
             
         case .setPreset(let presetID):
             return "setPreset(\(presetID.uuidString.prefix(8))...)"
+            
+        case .listTasks(let period):
+            return "listTasks(\(period))"
             
         case .createPreset(let name, let durationSeconds, let soundID):
             return "createPreset('\(name)', \(durationSeconds/60)min, sound: \(soundID))"

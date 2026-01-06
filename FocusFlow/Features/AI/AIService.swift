@@ -192,6 +192,15 @@ final class AIService {
         case "list_future_tasks":
             return .listFutureTasks
             
+        case "list_tasks":
+            guard let period = params["period"] as? String, !period.isEmpty else {
+                #if DEBUG
+                print("[AIService] ⚠️ list_tasks missing period")
+                #endif
+                return nil
+            }
+            return .listTasks(period: period)
+            
         // MARK: Preset Actions
         case "set_preset":
             guard let presetIDStr = params["presetID"] as? String,

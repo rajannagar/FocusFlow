@@ -704,6 +704,8 @@ struct ActionButton: View {
             return "checkmark.square.fill"
         case .listFutureTasks:
             return "list.bullet"
+        case .listTasks:
+            return "list.bullet.rectangle"
         case .setPreset:
             return "slider.horizontal.3"
         case .createPreset:
@@ -745,6 +747,8 @@ struct ActionButton: View {
             return "Toggle Complete"
         case .listFutureTasks:
             return "View Tasks"
+        case .listTasks(let period):
+            return "View \(period.replacingOccurrences(of: "_", with: " ").capitalized) Tasks"
         case .setPreset:
             return "Use Preset"
         case .createPreset(let name, _, _):
