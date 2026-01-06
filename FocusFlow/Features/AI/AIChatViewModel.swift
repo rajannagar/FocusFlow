@@ -46,98 +46,112 @@ final class AIChatViewModel: ObservableObject {
         Task {
             do {
                 let context = contextBuilder.buildContext()
-                let (response, action) = try await aiService.sendMessage(
+                let (response, actions) = try await aiService.sendMessage(
                     userMessage: text,
                     conversationHistory: messages,
                     context: context
                 )
                 
-                // Create assistant message
+                // Create assistant message with batch actions
                 let assistantMessage = AIMessage(
                     text: response,
                     sender: .assistant,
-                    action: action
+                    action: actions.first, // Keep backward compatibility
+                    actions: !actions.isEmpty ? actions : nil
                 )
                 messageStore.addMessage(assistantMessage)
                 
-                // Execute action if present
-                if let action = action {
+                // Execute actions sequentially if present
+                if !actions.isEmpty {
                     #if DEBUG
-                    print("[AIChatViewModel] Executing action: \(action)")
+                    print("[AIChatViewModel] Executing \(actions.count) action(s)")
                     #endif
                     do {
-                        try await actionHandler.execute(action)
+                        // Execute actions in sequence
+                        for (index, action) in actions.enumerated() {
+                            #if DEBUG
+                            print("[AIChatViewModel] Executing action \(index + 1)/\(actions.count): \(action)")
+                            #endif
+                            try await actionHandler.execute(action)
+                        }
                         
-                        // Invalidate context cache after action
+                        // Invalidate context cache after all actions
                         contextBuilder.invalidateCache()
                         
                         #if DEBUG
-                        print("[AIChatViewModel] ✅ Action executed successfully")
+                        print("[AIChatViewModel] ✅ All \(actions.count) action(s) executed successfully")
                         #endif
                         
-                        // Add success confirmation message for task creation
-                        if case .createTask(let title, _, _) = action {
-                            let successMsg = AIMessage(
-                                text: "✅ Task '\(title)' has been created! You can see it in the Tasks tab.",
-                                sender: .assistant
-                            )
-                            messageStore.addMessage(successMsg)
-                        } else if case .updateTask = action {
-                            let successMsg = AIMessage(
-                                text: "✅ Task has been updated successfully!",
-                                sender: .assistant
-                            )
-                            messageStore.addMessage(successMsg)
-                        } else if case .deleteTask = action {
-                            let successMsg = AIMessage(
-                                text: "✅ Task has been deleted successfully!",
-                                sender: .assistant
-                            )
-                            messageStore.addMessage(successMsg)
-                        }
                     } catch {
                         // Log error but don't fail the message
                         print("[AIChatViewModel] ❌ Failed to execute action: \(error)")
                         // Add error message to chat
                         let errorMsg = AIMessage(
-                            text: "I encountered an error while creating the task: \(error.localizedDescription). Please try again.",
+                            text: "I encountered an error while executing the task: \(error.localizedDescription). Please try again.",
                             sender: .assistant
                         )
                         messageStore.addMessage(errorMsg)
                     }
                 } else {
                     #if DEBUG
-                    print("[AIChatViewModel] No action to execute")
+                    print("[AIChatViewModel] No actions to execute")
                     #endif
                 }
                 
                 isLoading = false
             } catch {
                 isLoading = false
-                let errorDesc = error.localizedDescription
-                errorMessage = errorDesc
                 
-                // Add user-friendly error message to chat
-                var userFriendlyError = "Sorry, I encountered an error."
-                if errorDesc.contains("model is not available") {
-                    userFriendlyError = "⚠️ The AI model is not available. Please check your OpenAI API key has access to the model in your account settings (platform.openai.com)."
-                } else if errorDesc.contains("Access denied") || errorDesc.contains("403") {
-                    userFriendlyError = "⚠️ Access denied. Please check your OpenAI API key permissions."
-                } else if errorDesc.contains("Rate limit") || errorDesc.contains("429") {
-                    userFriendlyError = "⚠️ Rate limit exceeded. Please try again in a moment."
-                } else if errorDesc.contains("Invalid API key") || errorDesc.contains("401") {
-                    userFriendlyError = "⚠️ Invalid API key. Please check your OPENAI_API_KEY environment variable in Xcode."
-                } else {
-                    userFriendlyError = "⚠️ \(errorDesc)"
-                }
+                // Generate user-friendly error message
+                let userFriendlyError = Self.friendlyErrorMessage(from: error)
                 
+                // Only set errorMessage for critical errors that need alert
+                // For most errors, just show in chat
                 let errorMsg = AIMessage(
                     text: userFriendlyError,
                     sender: .assistant
                 )
                 messageStore.addMessage(errorMsg)
+                
+                #if DEBUG
+                print("[AIChatViewModel] ❌ Error: \(error.localizedDescription)")
+                #endif
             }
         }
+    }
+    
+    /// Convert errors to user-friendly messages
+    private static func friendlyErrorMessage(from error: Error) -> String {
+        let errorDesc = error.localizedDescription.lowercased()
+        
+        // Network/connectivity issues
+        if errorDesc.contains("network") || errorDesc.contains("internet") || errorDesc.contains("offline") ||
+           errorDesc.contains("connection") || errorDesc.contains("timed out") {
+            return "I'm having trouble connecting right now. Please check your internet connection and try again. 📶"
+        }
+        
+        // Auth issues - should be rare with retry logic
+        if errorDesc.contains("unauthorized") || errorDesc.contains("invalid jwt") || errorDesc.contains("401") {
+            return "I need you to sign in again to continue. Please go to Settings and sign in. 🔐"
+        }
+        
+        // Rate limiting
+        if errorDesc.contains("rate limit") || errorDesc.contains("429") || errorDesc.contains("too many") {
+            return "I'm receiving too many requests right now. Please wait a moment and try again. ⏳"
+        }
+        
+        // Server issues
+        if errorDesc.contains("500") || errorDesc.contains("502") || errorDesc.contains("503") || errorDesc.contains("server") {
+            return "I'm experiencing some technical difficulties. Please try again in a moment. 🔧"
+        }
+        
+        // OpenAI specific errors
+        if errorDesc.contains("openai") || errorDesc.contains("model") {
+            return "I'm having trouble with my AI backend. The team has been notified. Please try again later. 🤖"
+        }
+        
+        // Generic fallback - still friendly
+        return "Something went wrong on my end. Please try again, and if the problem persists, restart the app. 💫"
     }
     
     /// Clear chat history

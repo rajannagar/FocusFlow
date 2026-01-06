@@ -87,10 +87,45 @@ final class SupabaseManager {
         client.auth.currentUser != nil
     }
     
-    /// Get current auth token for API calls
-    func currentUserToken() async throws -> String {
-        let session = try await client.auth.session
-        return session.accessToken
+    /// Get current auth token for API calls (refreshes if needed)
+    /// - Parameter forceRefresh: If true, always refresh the token even if not expired
+    /// This method automatically handles token refresh when the current token is expired
+    func currentUserToken(forceRefresh: Bool = false) async throws -> String {
+        if forceRefresh {
+            // Force refresh regardless of expiration
+            #if DEBUG
+            print("[SupabaseManager] Force refreshing token...")
+            #endif
+            let refreshedSession = try await client.auth.refreshSession()
+            return refreshedSession.accessToken
+        }
+        
+        do {
+            // First try to get the current session
+            let session = try await client.auth.session
+            
+            // Check if token is expired or will expire soon (within 60 seconds)
+            let expiresAt = session.expiresAt
+            let now = Date().timeIntervalSince1970
+            
+            if expiresAt <= now + 60 {
+                // Token is expired or expiring soon, refresh it
+                #if DEBUG
+                print("[SupabaseManager] Token expired/expiring, refreshing...")
+                #endif
+                let refreshedSession = try await client.auth.refreshSession()
+                return refreshedSession.accessToken
+            }
+            
+            return session.accessToken
+        } catch {
+            // If getting session fails, try to refresh
+            #if DEBUG
+            print("[SupabaseManager] Session error, attempting refresh: \(error)")
+            #endif
+            let refreshedSession = try await client.auth.refreshSession()
+            return refreshedSession.accessToken
+        }
     }
 }
 

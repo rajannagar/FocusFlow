@@ -7,18 +7,20 @@ struct AIMessage: Identifiable, Codable, Equatable {
     let sender: Sender
     let timestamp: Date
     var action: AIAction?
+    var actions: [AIAction]?
     
     enum Sender: String, Codable {
         case user
         case assistant
     }
     
-    init(id: UUID = UUID(), text: String, sender: Sender, timestamp: Date = Date(), action: AIAction? = nil) {
+    init(id: UUID = UUID(), text: String, sender: Sender, timestamp: Date = Date(), action: AIAction? = nil, actions: [AIAction]? = nil) {
         self.id = id
         self.text = text
         self.sender = sender
         self.timestamp = timestamp
         self.action = action
+        self.actions = actions
     }
 }
 
