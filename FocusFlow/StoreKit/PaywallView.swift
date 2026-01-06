@@ -20,6 +20,7 @@ enum PaywallContext: String, Identifiable, CaseIterable {
     case liveActivity
     case externalMusic
     case cloudSync
+    case ai
     
     var id: String { rawValue }
     
@@ -39,6 +40,7 @@ enum PaywallContext: String, Identifiable, CaseIterable {
         case .liveActivity: return "Focus from Dynamic Island"
         case .externalMusic: return "Connect Your Music"
         case .cloudSync: return "Sync Everywhere"
+        case .ai: return "Focus AI"
         }
     }
     
@@ -58,6 +60,7 @@ enum PaywallContext: String, Identifiable, CaseIterable {
         case .liveActivity: return "Quick access from Dynamic Island"
         case .externalMusic: return "Spotify & Apple Music integration"
         case .cloudSync: return "Access your data on all devices"
+        case .ai: return "Get AI-powered assistance for your productivity"
         }
     }
     
@@ -77,6 +80,7 @@ enum PaywallContext: String, Identifiable, CaseIterable {
         case .liveActivity: return "iphone.badge.play"
         case .externalMusic: return "music.note"
         case .cloudSync: return "icloud.fill"
+        case .ai: return "brain.head.profile"
         }
     }
 }
@@ -644,6 +648,8 @@ struct PaywallView: View {
             list.append(("music.note", "Spotify & Apple Music"))
         case .cloudSync:
             list.append(("icloud.fill", "Sync across all devices"))
+        case .ai:
+            list.append(("brain.head.profile", "Focus AI - Your productivity assistant"))
         case .general:
             list.append(("sparkles", "All 14 immersive backgrounds"))
         }

@@ -86,6 +86,12 @@ final class SupabaseManager {
     var isAuthenticated: Bool {
         client.auth.currentUser != nil
     }
+    
+    /// Get current auth token for API calls
+    func currentUserToken() async throws -> String {
+        let session = try await client.auth.session
+        return session.accessToken
+    }
 }
 
 // MARK: - Deep Link Handling

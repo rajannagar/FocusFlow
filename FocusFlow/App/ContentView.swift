@@ -5,6 +5,7 @@ enum AppTab: Int, Hashable {
     case tasks = 1
     case progress = 2
     case profile = 3
+    case ai = 4
 }
 
 struct ContentView: View {
@@ -165,6 +166,10 @@ struct ContentView: View {
                 .tabItem { Label("Tasks", systemImage: "checklist") }
                 .tag(AppTab.tasks)
 
+            AIChatView()
+                .tabItem { Label("AI", systemImage: "sparkles") }
+                .tag(AppTab.ai)
+
             ProgressViewV2()
                 .tabItem { Label("Progress", systemImage: "chart.bar") }
                 .tag(AppTab.progress)
@@ -174,6 +179,7 @@ struct ContentView: View {
                 .tag(AppTab.profile)
         }
         .syncWithAppState()
+        .dismissKeyboardOnTap()
     }
 
     private func handleNotificationNavigation(to destination: NotificationDestination, presetID: UUID? = nil, autoStart: Bool = false) {

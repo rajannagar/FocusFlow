@@ -286,6 +286,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = FocusFlow/Resources/FocusFlowWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 77BJCE9J3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FocusFlowWidgets/Info.plist;
@@ -297,7 +298,6 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				CURRENT_PROJECT_VERSION = 1;
 				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.softcomputers.FocusFlow.FocusFlowWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -318,6 +318,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = FocusFlow/Resources/FocusFlowWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 77BJCE9J3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FocusFlowWidgets/Info.plist;
@@ -329,7 +330,6 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				CURRENT_PROJECT_VERSION = 1;
 				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.softcomputers.FocusFlow.FocusFlowWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";

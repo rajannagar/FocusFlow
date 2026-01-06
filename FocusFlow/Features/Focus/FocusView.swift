@@ -268,6 +268,9 @@ struct FocusView: View {
             .onReceive(NotificationCenter.default.publisher(for: Notification.Name("FocusFlow.widgetResetConfirm"))) { _ in
                 handleWidgetResetConfirm()
             }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("FocusFlow.startFocusFromAI"))) { notification in
+                handleAIStartFocus(notification)
+            }
         
         return viewWithNotifications
             .onChange(of: scenePhase) { _, newPhase in
@@ -756,6 +759,39 @@ struct FocusView: View {
         
         // Sync all data to clear widget state
         WidgetDataManager.shared.syncAll()
+    }
+    
+    // MARK: - AI Focus Handler
+    
+    private func handleAIStartFocus(_ notification: Notification) {
+        guard let minutes = notification.userInfo?["minutes"] as? Int, minutes > 0 else { return }
+        
+        let sessionName = notification.userInfo?["sessionName"] as? String
+        
+        // If a preset is specified, apply it first
+        if let presetID = notification.userInfo?["presetID"] as? UUID,
+           let preset = presetStore.presets.first(where: { $0.id == presetID }) {
+            applyPreset(preset)
+        }
+        
+        // Update the timer duration
+        viewModel.updateMinutes(minutes)
+        
+        // Set session name if provided
+        if let name = sessionName, !name.isEmpty {
+            self.sessionName = name
+        }
+        
+        // Start the focus session (with small delay for UI sync)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            if self.isIdle || self.isCompleted {
+                self.viewModel.toggle(sessionName: sessionName ?? self.currentSessionDisplayName)
+            }
+        }
+        
+        #if DEBUG
+        print("[FocusView] AI started focus: \(minutes) min, name: \(sessionName ?? "none")")
+        #endif
     }
 
     private func applyPreset(_ preset: FocusPreset) {
