@@ -283,6 +283,54 @@ serve(async (req) => {
           type: "object",
           properties: {}
         }
+      },
+      
+      // ═══════════════════════════════════════════════════════════════════
+      // SMART PLANNING FUNCTIONS
+      // ═══════════════════════════════════════════════════════════════════
+      {
+        name: "generate_daily_plan",
+        description: "Generate a personalized daily plan based on user's tasks, goals, and productivity patterns. Use when user asks 'plan my day', 'what should I focus on?', 'help me plan', 'daily schedule', 'what's my plan?', or at the start of a conversation.",
+        parameters: {
+          type: "object",
+          properties: {}
+        }
+      },
+      {
+        name: "suggest_break",
+        description: "Suggest a break based on recent focus activity. Use when user says 'I need a break', 'tired', 'exhausted', 'when should I rest?', 'break time?', or after extended focus periods.",
+        parameters: {
+          type: "object",
+          properties: {}
+        }
+      },
+      {
+        name: "motivate",
+        description: "Provide personalized motivation and encouragement based on user's progress. Use when user seems discouraged, asks for motivation, says 'motivate me', 'I can't focus', 'help me stay motivated', or needs encouragement.",
+        parameters: {
+          type: "object",
+          properties: {}
+        }
+      },
+      
+      // ═══════════════════════════════════════════════════════════════════
+      // ADVANCED ANALYTICS FUNCTIONS
+      // ═══════════════════════════════════════════════════════════════════
+      {
+        name: "generate_weekly_report",
+        description: "Generate a comprehensive weekly productivity report with stats, trends, and insights. Use when user asks 'weekly report', 'how was my week?', 'weekly summary', 'week in review', 'last 7 days', or wants to see their weekly performance.",
+        parameters: {
+          type: "object",
+          properties: {}
+        }
+      },
+      {
+        name: "show_welcome",
+        description: "Show a personalized welcome message with today's status, pending tasks, and suggestions. Use at the start of conversations, when user says 'hi', 'hello', 'hey', 'what's up', or when they want a quick overview of their day.",
+        parameters: {
+          type: "object",
+          properties: {}
+        }
       }
     ]
 
@@ -449,25 +497,25 @@ function generateActionResponse(functionName: string, params: Record<string, any
       return 'Task deleted ✓'
     
     case 'toggle_task_completion':
-      return 'Task completion toggled ✓'
+      return '✅ Task completion toggled!'
     
     case 'list_future_tasks':
-      return 'Here are your upcoming tasks:'
+      return '📋 Here are your tasks:'
     
     case 'set_preset':
-      return 'Preset activated ✓ Ready to focus!'
+      return '✅ Preset activated! Ready to focus!'
     
     case 'create_preset': {
       const name = params.name || 'preset'
       const minutes = Math.round((params.durationSeconds || 1500) / 60)
-      return `Created preset "${name}" (${minutes} min) ✓`
+      return `✅ Created "${name}" preset (${minutes} min)`
     }
     
     case 'update_preset':
-      return 'Preset updated ✓'
+      return '✅ Preset updated!'
     
     case 'delete_preset':
-      return 'Preset deleted ✓'
+      return '✅ Preset deleted!'
     
     case 'start_focus': {
       const mins = params.minutes || 25
@@ -475,7 +523,7 @@ function generateActionResponse(functionName: string, params: Record<string, any
       if (params.sessionName) {
         response += `: "${params.sessionName}"`
       }
-      return response + '. Let\'s do this!'
+      return response + '\n\nYou got this! 💪'
     }
     
     case 'update_setting': {
@@ -485,34 +533,50 @@ function generateActionResponse(functionName: string, params: Record<string, any
         case 'dailygoal':
         case 'daily_goal':
         case 'goal':
-          return `Daily goal set to ${value} minutes ✓`
+          return `✅ Daily goal updated to ${value} minutes!`
         case 'theme':
-          return `Theme changed to ${value} ✓ Looking good!`
+          return `✅ Theme changed to ${value}! Looking fresh! ✨`
         case 'soundenabled':
         case 'sound':
-          return `Sound ${value.toLowerCase() === 'true' ? 'enabled' : 'disabled'} ✓`
+          return `✅ Sound ${value.toLowerCase() === 'true' ? 'enabled' : 'disabled'}!`
         case 'hapticsenabled':
         case 'haptics':
-          return `Haptics ${value.toLowerCase() === 'true' ? 'enabled' : 'disabled'} ✓`
+          return `✅ Haptics ${value.toLowerCase() === 'true' ? 'enabled' : 'disabled'}!`
         case 'displayname':
         case 'name':
-          return `Name changed to ${value} ✓`
+          return `✅ Nice to meet you, ${value}! 👋`
         case 'focussound':
-          return `Focus sound set to ${value} ✓`
+          return `✅ Focus sound set to ${value}!`
         default:
-          return 'Setting updated ✓'
+          return '✅ Setting updated!'
       }
     }
     
     case 'get_stats': {
       const period = params.period || 'today'
-      return `Here's your ${period} summary:`
+      const periodName = period === 'alltime' ? 'all-time' : period
+      return `📊 Here's your ${periodName} summary:`
     }
     
     case 'analyze_sessions':
-      return 'Analyzing your productivity patterns...'
+      return '🔍 Here\'s my analysis of your productivity:'
+    
+    case 'generate_daily_plan':
+      return '📅 Here\'s your personalized plan for today:'
+    
+    case 'suggest_break':
+      return '☕ Based on your recent activity:'
+    
+    case 'motivate':
+      return ''  // Let the action handler provide the full motivation message
+    
+    case 'generate_weekly_report':
+      return ''  // Let the action handler provide the full report
+    
+    case 'show_welcome':
+      return ''  // Let the action handler provide the full welcome
     
     default:
-      return 'Done ✓'
+      return '✅ Done!'
   }
 }

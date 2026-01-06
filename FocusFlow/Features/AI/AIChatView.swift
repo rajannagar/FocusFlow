@@ -25,7 +25,6 @@ struct AIChatView: View {
     }
     
     private var chatInterface: some View {
-        // No need to check for API key anymore - it's on the backend!
         chatInterfaceContent
     }
     
@@ -47,11 +46,15 @@ struct AIChatView: View {
                             LazyVStack(spacing: 16) {
                                 if viewModel.messages.isEmpty {
                                     emptyStateView
-                                        .frame(minHeight: geo.size.height - 200)
+                                        .frame(minHeight: geo.size.height - 280)
                                 } else {
                                     ForEach(viewModel.messages) { message in
                                         MessageBubble(message: message, theme: theme)
                                             .id(message.id)
+                                            .transition(.asymmetric(
+                                                insertion: .opacity.combined(with: .move(edge: .bottom)),
+                                                removal: .opacity
+                                            ))
                                     }
                                     
                                     if viewModel.isLoading {
@@ -78,10 +81,15 @@ struct AIChatView: View {
                         }
                     }
                     
+                    // Quick action chips - always visible
+                    quickActionChips
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                    
                     // Input area
                     inputSection
                         .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
+                        .padding(.vertical, 12)
                 }
             }
         }
@@ -159,28 +167,97 @@ struct AIChatView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 16) {
-                Text("Focus Ai")
-                    .font(.system(size: 28, weight: .bold))
+        VStack(spacing: 28) {
+            // Premium AI icon
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                theme.accentPrimary.opacity(0.25),
+                                theme.accentSecondary.opacity(0.1),
+                                Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 80
+                        )
+                    )
+                    .frame(width: 160, height: 160)
+                    .blur(radius: 40)
+                
+                Image(systemName: "sparkles")
+                    .font(.system(size: 56, weight: .light))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [theme.accentPrimary, theme.accentSecondary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            
+            VStack(spacing: 12) {
+                Text("Hey, I'm Focus AI")
+                    .font(.system(size: 26, weight: .bold))
                     .foregroundColor(.white)
                 
-                Text("Your intelligent productivity companion")
-                    .font(.system(size: 16, weight: .medium))
+                Text("Your personal productivity companion.\nTap a suggestion below or ask me anything!")
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
-                
-                VStack(spacing: 12) {
-                    CapabilityRow(icon: "checkmark.circle.fill", text: "Create and manage tasks", theme: theme)
-                    CapabilityRow(icon: "slider.horizontal.3", text: "Set and customize presets", theme: theme)
-                    CapabilityRow(icon: "chart.bar.fill", text: "Analyze your productivity", theme: theme)
-                    CapabilityRow(icon: "gearshape.fill", text: "Change app settings", theme: theme)
-                    CapabilityRow(icon: "calendar", text: "View stats and insights", theme: theme)
-                }
-                .padding(.top, 8)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+    }
+    
+    /// Always-visible quick action chips
+    private var quickActionChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                QuickChip(icon: "hand.wave", text: "Say Hi", theme: theme) {
+                    sendQuickMessage("Hi!")
+                }
+                
+                QuickChip(icon: "list.bullet", text: "My Tasks", theme: theme) {
+                    sendQuickMessage("What are my tasks?")
+                }
+                
+                QuickChip(icon: "chart.bar", text: "Today's Stats", theme: theme) {
+                    sendQuickMessage("How am I doing today?")
+                }
+                
+                QuickChip(icon: "cup.and.saucer", text: "Need Break", theme: theme) {
+                    sendQuickMessage("I need a break")
+                }
+                
+                QuickChip(icon: "calendar", text: "Plan Day", theme: theme) {
+                    sendQuickMessage("Help me plan my day")
+                }
+                
+                QuickChip(icon: "star", text: "Motivate Me", theme: theme) {
+                    sendQuickMessage("Motivate me!")
+                }
+                
+                QuickChip(icon: "doc.text", text: "Week Report", theme: theme) {
+                    sendQuickMessage("Show my weekly report")
+                }
+                
+                QuickChip(icon: "play.fill", text: "Start Focus", theme: theme) {
+                    sendQuickMessage("Start a 25 minute focus session")
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+    
+    private func sendQuickMessage(_ message: String) {
+        guard !viewModel.isLoading else { return }
+        Haptics.impact(.light)
+        viewModel.inputText = message
+        viewModel.sendMessage()
     }
     
     private var inputSection: some View {
@@ -324,68 +401,92 @@ struct AIChatView: View {
             .padding(.vertical, 60)
         }
     }
-    
-    private var apiKeySetupView: some View {
-        ZStack {
-            PremiumAppBackground(theme: theme)
-            
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 32) {
-                    ZStack {
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [
-                                        Color.orange.opacity(0.3),
-                                        Color.orange.opacity(0.1),
-                                        Color.clear
-                                    ],
-                                    center: .center,
-                                    startRadius: 0,
-                                    endRadius: 120
-                                )
-                            )
-                            .frame(width: 220, height: 220)
-                            .blur(radius: 50)
-                        
-                        Image(systemName: "key.fill")
-                            .font(.system(size: 80, weight: .ultraLight))
-                            .foregroundColor(.orange)
-                    }
-                    
-                    VStack(spacing: 24) {
-                        Text("API Key Required")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Text("To use Focus AI, configure your OpenAI API key in Xcode.")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.7))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 20)
-                        
-                        FFGlassCard(cornerRadius: 20, padding: 20) {
-                            VStack(alignment: .leading, spacing: 20) {
-                                PremiumSectionHeader(title: "SETUP INSTRUCTIONS")
-                                
-                                VStack(alignment: .leading, spacing: 16) {
-                                    InstructionRow(number: "1", text: "Get an API key from platform.openai.com/api-keys", theme: theme)
-                                    InstructionRow(number: "2", text: "In Xcode, go to Product → Scheme → Edit Scheme", theme: theme)
-                                    InstructionRow(number: "3", text: "Select 'Run' → 'Arguments' tab", theme: theme)
-                                    InstructionRow(number: "4", text: "Add environment variable: OPENAI_API_KEY = your_key_here", theme: theme)
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                    }
-                }
-                .padding(.vertical, 40)
-            }
-        }
-    }
 }
 
 // MARK: - Supporting Views
+
+/// Premium quick action chip
+struct QuickChip: View {
+    let icon: String
+    let text: String
+    let theme: AppTheme
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(text)
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundColor(.white.opacity(0.9))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                theme.accentPrimary.opacity(0.3),
+                                theme.accentSecondary.opacity(0.2)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        theme.accentPrimary.opacity(0.5),
+                                        theme.accentSecondary.opacity(0.3)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+            )
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
+}
+
+/// Scale button style for premium feel
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+struct QuickSuggestionButton: View {
+    let text: String
+    let theme: AppTheme
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.white.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                )
+        }
+    }
+}
 
 struct CapabilityRow: View {
     let icon: String
@@ -447,43 +548,7 @@ struct CapabilityRow: View {
     }
 }
 
-struct InstructionRow: View {
-    let number: String
-    let text: String
-    let theme: AppTheme
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                theme.accentPrimary.opacity(0.25),
-                                theme.accentSecondary.opacity(0.2)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 28, height: 28)
-                
-                Text(number)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.white)
-            }
-            
-            Text(text)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(.white.opacity(0.8))
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Spacer()
-        }
-    }
-}
-
-/// Message bubble component with clean iMessage-style design
+/// Message bubble component with premium design
 struct MessageBubble: View {
     let message: AIMessage
     let theme: AppTheme
@@ -491,67 +556,140 @@ struct MessageBubble: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             if message.sender == .user {
-                Spacer(minLength: 50)
+                Spacer(minLength: 60)
+            } else {
+                // AI Avatar
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [theme.accentPrimary, theme.accentSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
             }
             
             VStack(alignment: message.sender == .user ? .trailing : .leading, spacing: 10) {
-                Text(message.text)
+                // Message text with better formatting
+                Text(formatMessageText(message.text))
                     .font(.system(size: 15, weight: .regular))
                     .foregroundColor(.white)
+                    .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 11)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                     .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .fill(
                                 message.sender == .user
-                                    ? theme.accentPrimary
-                                    : Color.white.opacity(0.08)
+                                    ? LinearGradient(
+                                        colors: [theme.accentPrimary, theme.accentSecondary.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                    : LinearGradient(
+                                        colors: [Color.white.opacity(0.12), Color.white.opacity(0.06)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .stroke(
+                                        message.sender == .user
+                                            ? Color.clear
+                                            : Color.white.opacity(0.1),
+                                        lineWidth: 1
+                                    )
                             )
                     )
+                    .shadow(color: message.sender == .user ? theme.accentPrimary.opacity(0.2) : Color.clear, radius: 8, x: 0, y: 4)
                 
-                if let action = message.action {
+                // Show action buttons if present
+                if let actions = message.actions, !actions.isEmpty {
+                    if let firstAction = actions.first {
+                        ActionButton(action: firstAction, theme: theme)
+                    }
+                } else if let action = message.action {
                     ActionButton(action: action, theme: theme)
                 }
             }
             
+            if message.sender == .user {
+                // User avatar (optional - can remove if too cluttered)
+            }
+            
             if message.sender == .assistant {
-                Spacer(minLength: 50)
+                Spacer(minLength: 40)
             }
         }
+    }
+    
+    /// Format message text for better display
+    private func formatMessageText(_ text: String) -> AttributedString {
+        var result = AttributedString(text)
+        // Basic formatting - can enhance later
+        return result
     }
 }
 
 /// Action button for AI-suggested actions
+/// Actions are auto-executed, so button shows "Done" state and can't be re-tapped
 struct ActionButton: View {
     let action: AIAction
     let theme: AppTheme
+    @State private var wasExecuted = true // Actions are auto-executed by ViewModel
+    @State private var isExecuting = false
     
     var body: some View {
         Button(action: {
+            guard !wasExecuted && !isExecuting else { return }
+            isExecuting = true
             Haptics.impact(.light)
             Task {
                 do {
                     try await AIActionHandler.shared.execute(action)
+                    wasExecuted = true
                 } catch {
                     print("[ActionButton] Failed to execute action: \(error)")
                 }
+                isExecuting = false
             }
         }) {
             HStack(spacing: 8) {
-                Image(systemName: actionIcon)
-                    .font(.system(size: 13, weight: .semibold))
-                Text(actionTitle)
+                if isExecuting {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                } else {
+                    Image(systemName: wasExecuted ? "checkmark.circle.fill" : actionIcon)
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                Text(wasExecuted ? "Done" : actionTitle)
                     .font(.system(size: 14, weight: .semibold))
             }
-            .foregroundColor(.white)
+            .foregroundColor(.white.opacity(wasExecuted ? 0.7 : 1.0))
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(theme.accentPrimary)
+                    .fill(wasExecuted ? Color.white.opacity(0.15) : theme.accentPrimary)
             )
         }
+        .disabled(wasExecuted || isExecuting)
     }
     
     private var actionIcon: String {
@@ -582,13 +720,23 @@ struct ActionButton: View {
             return "chart.bar.fill"
         case .analyzeSessions:
             return "chart.bar.fill"
+        case .generateDailyPlan:
+            return "calendar.badge.clock"
+        case .suggestBreak:
+            return "cup.and.saucer.fill"
+        case .motivate:
+            return "star.fill"
+        case .generateWeeklyReport:
+            return "doc.text.fill"
+        case .showWelcome:
+            return "hand.wave.fill"
         }
     }
     
     private var actionTitle: String {
         switch action {
         case .createTask(let title, _, _):
-            return "Create: \(title)"
+            return "Create: \(title.prefix(20))\(title.count > 20 ? "..." : "")"
         case .updateTask:
             return "Update Task"
         case .deleteTask:
@@ -610,9 +758,19 @@ struct ActionButton: View {
         case .updateSetting(let setting, _):
             return "Update: \(setting)"
         case .getStats(let period):
-            return "View \(period) Stats"
+            return "View \(period.capitalized) Stats"
         case .analyzeSessions:
             return "View Analysis"
+        case .generateDailyPlan:
+            return "View Daily Plan"
+        case .suggestBreak:
+            return "Break Suggestion"
+        case .motivate:
+            return "Get Motivated"
+        case .generateWeeklyReport:
+            return "Weekly Report"
+        case .showWelcome:
+            return "Welcome"
         }
     }
 }

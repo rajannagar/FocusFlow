@@ -1,39 +1,35 @@
 import Foundation
 
-/// Configuration for AI service
+/// Configuration for AI service via Supabase Edge Function
 struct AIConfig {
-    /// OpenAI API endpoint
-    static let apiURL = "https://api.openai.com/v1/chat/completions"
+    /// Supabase Edge Function URL for AI chat
+    /// The Edge Function handles OpenAI API calls securely on the server
+    static var apiURL: String {
+        guard let supabaseURL = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String else {
+            #if DEBUG
+            print("[AIConfig] ⚠️ Missing SUPABASE_URL in Info.plist")
+            #endif
+            return ""
+        }
+        return "\(supabaseURL)/functions/v1/ai-chat"
+    }
     
-    /// Model to use
-    /// Using GPT-4o for superior intelligence and instruction-following
-    static let model = "gpt-4o" // Most capable model - better at batch operations and complex instructions
+    /// Model to use (for reference - actual model is configured in Edge Function)
+    static let model = "gpt-4o"
     
-    /// Maximum conversation length (to limit costs)
+    /// Maximum conversation length (to limit token usage)
     static let maxMessages = 20
     
-    /// Context cache duration (5 minutes)
-    static let contextCacheDuration: TimeInterval = 300
+    /// Context cache duration (30 seconds - keeps data fresh)
+    static let contextCacheDuration: TimeInterval = 30
     
-    /// API key - should be stored securely (e.g., in environment variables or secure storage)
-    /// For production, this should be retrieved from a secure backend service
-    static var apiKey: String {
-        // First, try environment variable (for development/testing)
-        if let envKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !envKey.isEmpty {
-            return envKey
-        }
-        
-        // For production, you should:
-        // 1. Store the key in Keychain or secure storage
-        // 2. Or better yet, route API calls through your backend server
-        // This prevents the key from being exposed in the app binary
-        
-        return ""
-    }
-    
-    /// Check if API key is configured
+    /// Check if AI service is configured
+    /// Returns true if Supabase URL is configured (Edge Function handles API key)
     static var isConfigured: Bool {
-        !apiKey.isEmpty
+        guard let supabaseURL = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
+              !supabaseURL.isEmpty else {
+            return false
+        }
+        return true
     }
 }
-
