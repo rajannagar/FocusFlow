@@ -92,26 +92,26 @@ serve(async (req) => {
     const functions = [
       {
         name: "create_task",
-        description: "Create a new task in the user's task list",
+        description: "Create a new task. Can be called multiple times in sequence for batch creation. Use for any user request to add tasks to their list.",
         parameters: {
           type: "object",
           properties: {
-            title: { type: "string", description: "Task title" },
-            reminderDate: { type: "string", description: "Reminder date in YYYY-MM-DDTHH:MM:SS format (optional)" },
-            durationMinutes: { type: "number", description: "Estimated duration in minutes (optional)" }
+            title: { type: "string", description: "Task title (required). Should be clear and specific." },
+            reminderDate: { type: "string", description: "Reminder date/time in YYYY-MM-DDTHH:MM:SS format. Examples: 2026-01-06T08:00:00 for tomorrow at 8am, 2026-01-05T15:00:00 for today at 3pm (optional)" },
+            durationMinutes: { type: "number", description: "Estimated duration in minutes. Default 25 if not specified (optional)" }
           },
           required: ["title"]
         }
       },
       {
         name: "update_task",
-        description: "Update an existing task",
+        description: "Update an existing task. Provide taskID to identify which task to modify. Can be called multiple times for batch updates.",
         parameters: {
           type: "object",
           properties: {
-            taskID: { type: "string", description: "Task ID" },
-            title: { type: "string", description: "New task title (optional)" },
-            reminderDate: { type: "string", description: "New reminder date (optional)" },
+            taskID: { type: "string", description: "Unique ID of the task to update (required)" },
+            title: { type: "string", description: "New task title (optional - only include if changing)" },
+            reminderDate: { type: "string", description: "New reminder date/time in YYYY-MM-DDTHH:MM:SS format (optional)" },
             durationMinutes: { type: "number", description: "New duration in minutes (optional)" }
           },
           required: ["taskID"]
@@ -119,45 +119,45 @@ serve(async (req) => {
       },
       {
         name: "delete_task",
-        description: "Delete a task",
+        description: "Delete a task permanently. Only use if user explicitly asks to delete/remove. Can be called multiple times for batch deletion.",
         parameters: {
           type: "object",
           properties: {
-            taskID: { type: "string", description: "Task ID" }
+            taskID: { type: "string", description: "Unique ID of the task to delete (required)" }
           },
           required: ["taskID"]
         }
       },
       {
         name: "toggle_task_completion",
-        description: "Toggle task completion status",
+        description: "Mark a task as complete or incomplete (toggle completion status). Use when user says 'mark done', 'complete', 'check off', etc.",
         parameters: {
           type: "object",
           properties: {
-            taskID: { type: "string", description: "Task ID" }
+            taskID: { type: "string", description: "Unique ID of the task to toggle (required)" }
           },
           required: ["taskID"]
         }
       },
       {
         name: "start_focus",
-        description: "Start a focus session with optional duration",
+        description: "Start a focus/work session with optional duration and preset. Initiate focused work time for the user.",
         parameters: {
           type: "object",
           properties: {
-            minutes: { type: "number", description: "Duration in minutes (default: 25)" },
-            presetID: { type: "string", description: "Optional preset ID to use" },
-            sessionName: { type: "string", description: "Optional name for the session" }
+            minutes: { type: "number", description: "Duration in minutes (default: 25 for Pomodoro). Common values: 25, 45, 50, 90" },
+            presetID: { type: "string", description: "Optional preset ID to use predefined settings" },
+            sessionName: { type: "string", description: "Optional descriptive name for this session (e.g., 'Deep Work Session')" }
           }
         }
       },
       {
         name: "get_stats",
-        description: "Get user's task statistics and productivity data",
+        description: "Retrieve and analyze user's productivity statistics. Use to answer questions about progress, streaks, productivity patterns.",
         parameters: {
           type: "object",
           properties: {
-            period: { type: "string", enum: ["today", "week", "month", "alltime"], description: "Time period for stats" }
+            period: { type: "string", enum: ["today", "week", "month", "alltime"], description: "Time period to analyze (required)" }
           },
           required: ["period"]
         }
@@ -180,10 +180,10 @@ serve(async (req) => {
         'Authorization': `Bearer ${openaiApiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: messages,
         temperature: 0.7,
-        max_tokens: 800,
+        max_tokens: 2000,
         functions: functions,
         function_call: 'auto'
       })
@@ -247,10 +247,17 @@ serve(async (req) => {
       )
     }
 
-    // Regular text response
+    // Regular text response - clean up any markdown formatting
+    let cleanedResponse = message.content
+      .replace(/\*\*/g, '')  // Remove bold markdown (**text**)
+      .replace(/###\s*/g, '')  // Remove markdown headers (### )
+      .replace(/^\s*-\s+/gm, '')  // Remove bullet points
+      .replace(/^\s*\*\s+/gm, '')  // Remove asterisk bullets
+      .trim()
+    
     return new Response(
       JSON.stringify({
-        response: message.content,
+        response: cleanedResponse,
         action: null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

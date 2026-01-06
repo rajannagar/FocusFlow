@@ -6,12 +6,8 @@ struct AIConfig {
     static let apiURL = "https://api.openai.com/v1/chat/completions"
     
     /// Model to use
-    /// Try these models in order of preference (check which ones your API key has access to):
-    static let model = "gpt-4o-mini" // Cost-effective, supports function calling, best compatibility
-    // Alternative models to try if gpt-4o-mini doesn't work:
-    // - "gpt-4o" (most capable, but requires higher tier API access)
-    // - "gpt-4-turbo" (if you have access)
-    // - "gpt-3.5-turbo" (older model, may not have access)
+    /// Using GPT-4o for superior intelligence and instruction-following
+    static let model = "gpt-4o" // Most capable model - better at batch operations and complex instructions
     
     /// Maximum conversation length (to limit costs)
     static let maxMessages = 20
