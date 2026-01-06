@@ -256,6 +256,8 @@ final class AIService {
         
         guard (200...299).contains(httpResponse.statusCode) else {
             let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+            print("[AIService] ❌ Backend error - Status: \(httpResponse.statusCode)")
+            print("[AIService] ❌ Backend response: \(errorMessage)")
             throw AIServiceError.apiError(statusCode: httpResponse.statusCode, message: errorMessage)
         }
         

@@ -25,13 +25,8 @@ struct AIChatView: View {
     }
     
     private var chatInterface: some View {
-        Group {
-            if !AIConfig.isConfigured {
-                apiKeySetupView
-            } else {
-                chatInterfaceContent
-            }
-        }
+        // No need to check for API key anymore - it's on the backend!
+        chatInterfaceContent
     }
     
     private var chatInterfaceContent: some View {

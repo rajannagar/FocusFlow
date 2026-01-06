@@ -30,14 +30,17 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authorization
+    // Verify authorization header exists (user must be authenticated)
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('[ai-chat] Missing authorization header')
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - missing authorization header' }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log('[ai-chat] Request from authenticated user')
 
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
@@ -88,77 +91,80 @@ serve(async (req) => {
     // Define functions for OpenAI function calling
     const functions = [
       {
-        name: "createTask",
+        name: "create_task",
         description: "Create a new task in the user's task list",
         parameters: {
           type: "object",
           properties: {
             title: { type: "string", description: "Task title" },
-            description: { type: "string", description: "Task description (optional)" },
-            dueDate: { type: "string", description: "Due date in ISO format (optional)" },
-            priority: { type: "string", enum: ["low", "medium", "high"], description: "Task priority" }
+            reminderDate: { type: "string", description: "Reminder date in YYYY-MM-DDTHH:MM:SS format (optional)" },
+            durationMinutes: { type: "number", description: "Estimated duration in minutes (optional)" }
           },
           required: ["title"]
         }
       },
       {
-        name: "updateTask",
+        name: "update_task",
         description: "Update an existing task",
         parameters: {
           type: "object",
           properties: {
-            taskId: { type: "string", description: "Task ID" },
+            taskID: { type: "string", description: "Task ID" },
             title: { type: "string", description: "New task title (optional)" },
-            isCompleted: { type: "boolean", description: "Mark task as completed (optional)" },
-            priority: { type: "string", enum: ["low", "medium", "high"], description: "New priority (optional)" }
+            reminderDate: { type: "string", description: "New reminder date (optional)" },
+            durationMinutes: { type: "number", description: "New duration in minutes (optional)" }
           },
-          required: ["taskId"]
+          required: ["taskID"]
         }
       },
       {
-        name: "deleteTask",
+        name: "delete_task",
         description: "Delete a task",
         parameters: {
           type: "object",
           properties: {
-            taskId: { type: "string", description: "Task ID" }
+            taskID: { type: "string", description: "Task ID" }
           },
-          required: ["taskId"]
+          required: ["taskID"]
         }
       },
       {
-        name: "toggleTaskCompletion",
+        name: "toggle_task_completion",
         description: "Toggle task completion status",
         parameters: {
           type: "object",
           properties: {
-            taskId: { type: "string", description: "Task ID" }
+            taskID: { type: "string", description: "Task ID" }
           },
-          required: ["taskId"]
+          required: ["taskID"]
         }
       },
       {
-        name: "startFocusSession",
+        name: "start_focus",
         description: "Start a focus session with optional duration",
         parameters: {
           type: "object",
           properties: {
-            duration: { type: "number", description: "Duration in minutes (default: 25)" },
-            taskId: { type: "string", description: "Optional task ID to focus on" }
+            minutes: { type: "number", description: "Duration in minutes (default: 25)" },
+            presetID: { type: "string", description: "Optional preset ID to use" },
+            sessionName: { type: "string", description: "Optional name for the session" }
           }
         }
       },
       {
-        name: "getTaskStats",
-        description: "Get user's task statistics",
+        name: "get_stats",
+        description: "Get user's task statistics and productivity data",
         parameters: {
           type: "object",
-          properties: {}
+          properties: {
+            period: { type: "string", enum: ["today", "week", "month", "alltime"], description: "Time period for stats" }
+          },
+          required: ["period"]
         }
       },
       {
-        name: "analyzeProductivity",
-        description: "Analyze user's productivity patterns",
+        name: "analyze_sessions",
+        description: "Analyze user's productivity patterns and provide insights",
         parameters: {
           type: "object",
           properties: {}
