@@ -74,10 +74,10 @@ struct FocusFlowLaunchView: View {
                         .foregroundColor(.white.opacity(0.70))
                         .opacity(subtitleOpacity)
                         .offset(y: subtitleOffset)
-                        .padding(.bottom, 28)
+                        .padding(.bottom, DS.Spacing.xxl + 4)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, DS.Spacing.xxl)
             }
             .onAppear { runAnimation() }
         }

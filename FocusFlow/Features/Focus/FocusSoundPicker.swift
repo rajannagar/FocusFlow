@@ -179,7 +179,7 @@ struct FocusSoundPicker: View {
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
         }
     }
 
@@ -240,7 +240,7 @@ struct FocusSoundPicker: View {
                             .stroke(Color.white.opacity(isSelected ? 0.0 : 0.08), lineWidth: 1)
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
             }
 
             Spacer()
@@ -288,11 +288,11 @@ private struct BuiltInSoundsTab: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color.white.opacity(DS.Glass.veryThin))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
             )
 
             ScrollView(showsIndicators: false) {
@@ -341,11 +341,11 @@ private struct BuiltInSoundsTab: View {
         } label: {
             HStack(spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                         .fill(Color.white.opacity(0.06))
                         .frame(width: 42, height: 42)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                                 .stroke(Color.white.opacity(0.10), lineWidth: 1)
                         )
 
@@ -356,7 +356,7 @@ private struct BuiltInSoundsTab: View {
                     if isLocked {
                         ZStack {
                             // Gradient overlay
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                                 .fill(
                                     LinearGradient(
                                         colors: [
@@ -452,17 +452,17 @@ private struct BuiltInSoundsTab: View {
                             endPoint: .bottomTrailing
                         )
                     } else {
-                        Color.white.opacity(isLocked ? 0.02 : 0.04)
+                        Color.white.opacity(isLocked ? 0.02 : DS.Glass.ultraThin)
                     }
                 }
             )
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color.white.opacity(isSelected ? 0.0 : 0.08), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .stroke(Color.white.opacity(isSelected ? 0.0 : DS.Glass.regular), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 
     private func noSoundRow() -> some View {
@@ -475,7 +475,7 @@ private struct BuiltInSoundsTab: View {
         } label: {
             HStack(spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                         .fill(Color.red.opacity(0.16))
                         .frame(width: 42, height: 42)
 
@@ -510,14 +510,14 @@ private struct BuiltInSoundsTab: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color.white.opacity(DS.Glass.ultraThin))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 }
 
@@ -565,11 +565,11 @@ private struct ExternalMusicTab: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color.white.opacity(DS.Glass.veryThin))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
             )
 
             ScrollView(showsIndicators: false) {
@@ -627,7 +627,7 @@ private struct ExternalMusicTab: View {
         } label: {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                         .fill(app.tintColor.opacity(0.16))
                         .frame(width: 44, height: 44)
 
@@ -673,20 +673,20 @@ private struct ExternalMusicTab: View {
                         .foregroundColor(.white.opacity(0.82))
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
-                        .background(Color.white.opacity(0.04))
+                        .background(Color.white.opacity(DS.Glass.veryThin))
                         .clipShape(Capsule())
-                        .overlay(Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1))
+                        .overlay(Capsule().stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1))
                 }
             }
             .padding(14)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(Color.white.opacity(DS.Glass.veryThin))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 }
 
@@ -807,7 +807,7 @@ private struct ExternalMusicPaywallTeaser: View {
     private func musicAppTeaserCard(icon: String, name: String, color: Color) -> some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                     .fill(color.opacity(0.16))
                     .frame(width: 44, height: 44)
                 
@@ -831,10 +831,10 @@ private struct ExternalMusicPaywallTeaser: View {
         }
         .padding(14)
         .background(Color.white.opacity(0.02))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.04), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .stroke(Color.white.opacity(DS.Glass.ultraThin), lineWidth: 1)
         )
     }
 }

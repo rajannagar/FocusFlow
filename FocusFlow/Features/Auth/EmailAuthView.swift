@@ -57,12 +57,12 @@ struct EmailAuthView: View {
                             .background(Color.white.opacity(0.06))
                             .clipShape(Circle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
 
                     Spacer()
                 }
                 .padding(.top, 14)
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl)
 
                 // Header
                 VStack(alignment: .leading, spacing: 10) {
@@ -75,18 +75,34 @@ struct EmailAuthView: View {
                         .foregroundColor(.white.opacity(0.72))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, 4)
 
                 // Inputs
                 VStack(spacing: 14) {
                     if !isLoginMode {
-                        inputField(label: "FULL NAME", text: $fullName)
+                        FFLabeledTextField(
+                            label: "FULL NAME",
+                            placeholder: "",
+                            text: $fullName,
+                            keyboardType: .default,
+                            autocapitalization: .words
+                        )
                     }
-                    inputField(label: "EMAIL", text: $email, keyboard: .emailAddress)
-                    secureInputField(label: "PASSWORD", text: $password)
+                    FFLabeledTextField(
+                        label: "EMAIL",
+                        placeholder: "",
+                        text: $email,
+                        keyboardType: .emailAddress
+                    )
+                    FFLabeledTextField(
+                        label: "PASSWORD",
+                        placeholder: "",
+                        text: $password,
+                        isSecure: true
+                    )
                 }
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, 4)
 
                 // Messages
@@ -101,7 +117,7 @@ struct EmailAuthView: View {
                             .foregroundColor(.white.opacity(0.9))
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(.horizontal, 22)
+                    .padding(.horizontal, DS.Spacing.xl)
                     .padding(.top, 2)
                 }
 
@@ -116,37 +132,21 @@ struct EmailAuthView: View {
                             .foregroundColor(.red.opacity(0.9))
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(.horizontal, 22)
+                    .padding(.horizontal, DS.Spacing.xl)
                     .padding(.top, 2)
                 }
 
                 // Primary action
-                Button(action: submit) {
-                    if isLoading {
-                        ProgressView().tint(.black)
-                    } else {
-                        Text(isLoginMode ? "Login" : "Create account")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
+                FFPrimaryButton(
+                    title: isLoginMode ? "Login" : "Create account",
+                    isLoading: isLoading,
+                    isDisabled: isPrimaryDisabled,
+                    theme: theme
+                ) {
+                    submit()
                 }
-                .frame(maxWidth: .infinity, minHeight: 54)
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(colors: [theme.accentPrimary, theme.accentSecondary]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .foregroundColor(.black)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.22), radius: 18, x: 0, y: 12)
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, 6)
-                .disabled(isPrimaryDisabled)
 
                 // Secondary actions
                 VStack(spacing: 12) {
@@ -163,7 +163,7 @@ struct EmailAuthView: View {
                                 .foregroundColor(.white.opacity(0.85))
                                 .font(.system(size: 14, weight: .semibold))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(FFPressButtonStyle())
                     }
 
                     Button {
@@ -179,7 +179,7 @@ struct EmailAuthView: View {
                             .foregroundColor(.white)
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
                 .padding(.top, 4)
 
@@ -300,55 +300,7 @@ struct EmailAuthView: View {
         }
     }
 
-    // MARK: - UI Components
-    private func fieldContainer<Content: View>(_ content: () -> Content) -> some View {
-        content()
-            .padding(14)
-            .background(Color.white.opacity(0.08))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func inputField(
-        label: String,
-        text: Binding<String>,
-        keyboard: UIKeyboardType = .default
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(.white.opacity(0.65))
-
-            fieldContainer {
-                TextField("", text: text)
-                    .keyboardType(keyboard)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .foregroundColor(.white)
-                    .tint(.white)
-            }
-        }
-    }
-
-    private func secureInputField(
-        label: String,
-        text: Binding<String>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(.white.opacity(0.65))
-
-            fieldContainer {
-                SecureField("", text: text)
-                    .foregroundColor(.white)
-                    .tint(.white)
-            }
-        }
-    }
+    // MARK: - UI Components removed - now using FFLabeledTextField and FFPrimaryButton
 }
 
 // ---------------------------------------------------------
@@ -405,12 +357,12 @@ private struct ResetPasswordSheet: View {
                             .background(Color.white.opacity(0.06))
                             .clipShape(Circle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
 
                     Spacer()
                 }
                 .padding(.top, 14)
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Reset your password")
@@ -422,66 +374,37 @@ private struct ResetPasswordSheet: View {
                         .foregroundColor(.white.opacity(0.72))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, 4)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("EMAIL")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.65))
-
-                    TextField("", text: $email)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .padding(14)
-                        .background(Color.white.opacity(0.08))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .foregroundColor(.white)
-                        .tint(.white)
+                    FFLabeledTextField(
+                        label: "EMAIL",
+                        placeholder: "",
+                        text: $email,
+                        keyboardType: .emailAddress
+                    )
                 }
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, 4)
 
                 if let localError {
                     Text(localError)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.red.opacity(0.9))
-                        .padding(.horizontal, 22)
+                        .padding(.horizontal, DS.Spacing.xl)
                 }
 
-                Button {
+                FFPrimaryButton(
+                    title: "Send reset link",
+                    isLoading: isSending,
+                    isDisabled: email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                    theme: theme
+                ) {
                     send()
-                } label: {
-                    if isSending {
-                        ProgressView().tint(.black)
-                    } else {
-                        Text("Send reset link")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
                 }
-                .frame(maxWidth: .infinity, minHeight: 54)
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(colors: [theme.accentPrimary, theme.accentSecondary]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .foregroundColor(.black)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.22), radius: 18, x: 0, y: 12)
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, 8)
-                .disabled(isSending || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                 Spacer(minLength: 0)
             }

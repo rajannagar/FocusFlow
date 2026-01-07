@@ -193,30 +193,41 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             FocusView()
                 .flowHints(context: .focusTab, theme: appSettings.profileTheme)
-                .tabItem { Label("Focus", systemImage: "timer") }
+                .tabItem {
+                    Label("Focus", systemImage: "timer")
+                }
                 .tag(AppTab.focus)
-
+            
             TasksView()
                 .flowHints(context: .tasksTab, theme: appSettings.profileTheme)
-                .tabItem { Label("Tasks", systemImage: "checklist") }
+                .tabItem {
+                    Label("Tasks", systemImage: "checklist")
+                }
                 .tag(AppTab.tasks)
-
+            
             NavigationStack {
                 FlowChatView()
             }
-            .tabItem { Label("Flow", systemImage: "sparkles") }
+            .tabItem {
+                Label("Flow", systemImage: "sparkles")
+            }
             .tag(AppTab.flow)
-
+            
             ProgressViewV2()
                 .flowHints(context: .progressTab, theme: appSettings.profileTheme)
-                .tabItem { Label("Progress", systemImage: "chart.bar") }
+                .tabItem {
+                    Label("Progress", systemImage: "chart.bar")
+                }
                 .tag(AppTab.progress)
-
+            
             ProfileView(navigateToJourney: $navigateToJourney)
                 .flowHints(context: .profileTab, theme: appSettings.profileTheme)
-                .tabItem { Label("Profile", systemImage: "person.circle") }
+                .tabItem {
+                    Label("Profile", systemImage: "person.circle")
+                }
                 .tag(AppTab.profile)
         }
+        .tint(appSettings.profileTheme.accentPrimary)
         .flowNavigationBound(selectedTab: $selectedTab)
         .syncWithAppState()
         .dismissKeyboardOnTap()

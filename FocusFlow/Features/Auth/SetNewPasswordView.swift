@@ -46,10 +46,10 @@ struct SetNewPasswordView: View {
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.white.opacity(0.7))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
             }
-            .padding(.top, 16)
-            .padding(.horizontal, 22)
+            .padding(.top, DS.Spacing.lg)
+            .padding(.horizontal, DS.Spacing.xl + 2)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text("Set a new password")
@@ -61,15 +61,25 @@ struct SetNewPasswordView: View {
                     .foregroundColor(.white.opacity(0.72))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 22)
-            .padding(.top, 4)
+            .padding(.horizontal, DS.Spacing.xl + 2)
+            .padding(.top, DS.Spacing.xxs)
 
             VStack(spacing: 14) {
-                secureField(label: "NEW PASSWORD", text: $password)
-                secureField(label: "CONFIRM PASSWORD", text: $confirm)
+                FFLabeledTextField(
+                    label: "NEW PASSWORD",
+                    placeholder: "",
+                    text: $password,
+                    isSecure: true
+                )
+                FFLabeledTextField(
+                    label: "CONFIRM PASSWORD",
+                    placeholder: "",
+                    text: $confirm,
+                    isSecure: true
+                )
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 4)
+            .padding(.horizontal, DS.Spacing.xl + 2)
+            .padding(.top, DS.Spacing.xxs)
 
             if let error {
                 HStack(spacing: 8) {
@@ -80,37 +90,19 @@ struct SetNewPasswordView: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.red.opacity(0.9))
                 }
-                .padding(.horizontal, 22)
+                .padding(.horizontal, DS.Spacing.xl + 2)
             }
 
-            Button {
+            FFPrimaryButton(
+                title: "Update Password",
+                isLoading: isLoading,
+                isDisabled: isDisabled,
+                theme: theme
+            ) {
                 submit()
-            } label: {
-                if isLoading {
-                    ProgressView().tint(.black)
-                } else {
-                    Text("Update Password")
-                        .font(.system(size: 16, weight: .semibold))
-                }
             }
-            .frame(maxWidth: .infinity, minHeight: 54)
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [theme.accentPrimary, theme.accentSecondary]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .foregroundColor(.black)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.black.opacity(0.06), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.22), radius: 18, x: 0, y: 12)
-            .padding(.horizontal, 22)
-            .padding(.top, 8)
-            .disabled(isDisabled)
+            .padding(.horizontal, DS.Spacing.xl + 2)
+            .padding(.top, DS.Spacing.sm)
 
             Spacer(minLength: 0)
         }
@@ -166,8 +158,11 @@ struct SetNewPasswordView: View {
             
             // Continue button
             VStack(spacing: 16) {
-                Button {
-                    Haptics.impact(.medium)
+                FFPrimaryButton(
+                    title: "Sign In",
+                    height: 56,
+                    theme: theme
+                ) {
                     // Sign out so user can sign in with new password
                     Task {
                         await AuthManagerV2.shared.signOut()
@@ -181,40 +176,19 @@ struct SetNewPasswordView: View {
                             )
                         }
                     }
-                } label: {
-                    Text("Sign In")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            LinearGradient(
-                                colors: [theme.accentPrimary, theme.accentSecondary],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: theme.accentPrimary.opacity(0.4), radius: 16, y: 8)
                 }
                 
                 // Not now option - just goes to auth landing
-                Button {
-                    Haptics.impact(.light)
+                FFTextButton(title: "Not now", color: .white.opacity(0.6)) {
                     Task {
                         await AuthManagerV2.shared.signOut()
                         onFinished()
                         dismiss()
                     }
-                } label: {
-                    Text("Not now")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
                 }
-                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 40)
+            .padding(.horizontal, DS.Spacing.xxl)
+            .padding(.bottom, DS.Spacing.huge)
         }
         .onAppear {
             Haptics.notification(.success)
@@ -278,25 +252,6 @@ struct SetNewPasswordView: View {
                 onFinished()
                 dismiss()
             }
-        }
-    }
-
-    private func secureField(label: String, text: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(.white.opacity(0.65))
-
-            SecureField("", text: text)
-                .padding(14)
-                .background(Color.white.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .foregroundColor(.white)
-                .tint(.white)
         }
     }
 }

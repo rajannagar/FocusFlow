@@ -26,7 +26,7 @@ struct EmailVerifiedView: View {
             PremiumAppBackground(theme: theme, showParticles: true, particleCount: 20)
                 .ignoresSafeArea()
             
-            VStack(spacing: 32) {
+            VStack(spacing: DS.Spacing.xxxl) {
                 Spacer()
                 
                 // Success checkmark
@@ -59,7 +59,7 @@ struct EmailVerifiedView: View {
                 .opacity(checkmarkOpacity)
                 
                 // Success text
-                VStack(spacing: 12) {
+                VStack(spacing: DS.Spacing.md) {
                     Text("Email Verified!")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
@@ -68,14 +68,14 @@ struct EmailVerifiedView: View {
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
+                        .padding(.horizontal, DS.Spacing.xxxl)
                 }
                 .opacity(textOpacity)
                 
                 Spacer()
                 
                 // Sign In button
-                VStack(spacing: 16) {
+                VStack(spacing: DS.Spacing.lg) {
                     Button {
                         Haptics.impact(.medium)
                         // Dismiss this view and open login sheet
@@ -100,7 +100,7 @@ struct EmailVerifiedView: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                             .shadow(color: theme.accentPrimary.opacity(0.4), radius: 16, y: 8)
                     }
                     
@@ -113,10 +113,10 @@ struct EmailVerifiedView: View {
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.white.opacity(0.6))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
+                .padding(.horizontal, DS.Spacing.xxl)
+                .padding(.bottom, DS.Spacing.huge)
                 .opacity(buttonOpacity)
             }
         }

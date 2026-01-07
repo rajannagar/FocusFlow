@@ -176,8 +176,8 @@ struct FocusView: View {
 
                     Spacer(minLength: 6)
                 }
-                .padding(.horizontal, 22)
-                .padding(.top, 18)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, isTyping ? 120 : 24)
                 .animation(.spring(response: 0.45, dampingFraction: 0.9), value: isTyping)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -448,7 +448,7 @@ struct FocusView: View {
         let name = appSettings.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasUnread = notifications.notifications.contains { !$0.isRead }
         
-        return HStack(alignment: .center, spacing: 12) {
+        return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 10) {
                     Image("Focusflow_Logo")
@@ -477,7 +477,7 @@ struct FocusView: View {
             Spacer()
             
             // Bell + Info buttons
-            HStack(spacing: 10) {
+            HStack(spacing: DS.Spacing.sm) {
                 Button {
                     simpleTap()
                     showingNotificationCenter = true
@@ -486,8 +486,8 @@ struct FocusView: View {
                         Image(systemName: hasUnread ? "bell.fill" : "bell")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white.opacity(0.6))
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.06))
+                            .frame(width: DS.IconButton.md, height: DS.IconButton.md)
+                            .background(Color.white.opacity(DS.Glass.thin))
                             .clipShape(Circle())
                         
                         if hasUnread {
@@ -498,22 +498,18 @@ struct FocusView: View {
                         }
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
                 .accessibilityLabel(hasUnread ? "Notifications, unread messages" : "Notifications")
                 .accessibilityHint("Opens the notification center")
                 
-                Button {
-                    simpleTap()
-                    showingFocusInfoSheet = true
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
+                FFIconButton(
+                    icon: "info.circle",
+                    size: DS.IconButton.md,
+                    action: {
+                        simpleTap()
+                        showingFocusInfoSheet = true
+                    }
+                )
                 .accessibilityLabel("Information")
                 .accessibilityHint("Shows focus session information and tips")
             }
@@ -536,36 +532,26 @@ struct FocusView: View {
         HStack(spacing: 10) {
 
             // Music icon (left)
-            Button {
-                simpleTap()
-                showingSoundSheet = true
-            } label: {
-                Image(systemName: "headphones")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.75))
-                    .frame(width: 40, height: 40)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
+            FFIconButton(
+                icon: "headphones",
+                size: DS.IconButton.lg,
+                action: {
+                    simpleTap()
+                    showingSoundSheet = true
+                }
+            )
             .accessibilityLabel("Focus sound")
             .accessibilityHint("Opens the sound picker to select a focus sound")
 
             // Vibe / ambience icon (left)
-            Button {
-                simpleTap()
-                showingAmbientPicker = true
-            } label: {
-                Image(systemName: ambientMode.icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.75))
-                    .frame(width: 40, height: 40)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
+            FFIconButton(
+                icon: ambientMode.icon,
+                size: DS.IconButton.lg,
+                action: {
+                    simpleTap()
+                    showingAmbientPicker = true
+                }
+            )
             .accessibilityLabel("Ambiance mode, \(ambientMode.rawValue)")
             .accessibilityHint("Opens the ambiance picker to change the visual ambiance")
 
@@ -584,13 +570,14 @@ struct FocusView: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
-            .background(Color.white.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.md)
+            .background(
+                FFGlassBackground(
+                    cornerRadius: DS.Radius.lg,
+                    opacity: DS.Glass.thin,
+                    borderOpacity: DS.Glass.borderSubtle
+                )
             )
             .frame(maxWidth: .infinity)
         }
@@ -612,10 +599,10 @@ struct FocusView: View {
                         .clipShape(Circle())
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
                 .accessibilityLabel("Add preset")
                 .accessibilityHint("Opens the preset manager to create or manage focus presets")
 
@@ -649,8 +636,8 @@ struct FocusView: View {
                                     )
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm + 2)
                         .background(
                             Group {
                                 if isSelected {
@@ -670,7 +657,7 @@ struct FocusView: View {
                         )
                         .shadow(color: isSelected ? accentPrimary.opacity(0.3) : .clear, radius: isSelected ? 8 : 0)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                     .accessibilityLabel("\(preset.name) preset\(isSelected ? ", selected" : "")\(isLocked ? ", requires Pro upgrade" : "")")
                     .accessibilityHint(isLocked ? "Upgrade to Pro to use this preset" : (isSelected ? "Currently active preset" : "Tap to apply this preset"))
                 }
@@ -1179,13 +1166,13 @@ struct FocusView: View {
                 }
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white.opacity(0.7))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.04))
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(Color.white.opacity(DS.Glass.ultraThin))
                 .clipShape(Capsule())
-                .overlay(Capsule().stroke(Color.white.opacity(0.06), lineWidth: 1))
+                .overlay(Capsule().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
             .accessibilityLabel("Reset")
             .accessibilityHint(isRunning || isPaused ? "Resets the current session and returns to default settings" : "Resets all settings to default")
 
@@ -1205,13 +1192,13 @@ struct FocusView: View {
                 }
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white.opacity(0.7))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.04))
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(Color.white.opacity(DS.Glass.ultraThin))
                 .clipShape(Capsule())
-                .overlay(Capsule().stroke(Color.white.opacity(0.06), lineWidth: 1))
+                .overlay(Capsule().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
             .accessibilityLabel("Session length")
             .accessibilityHint(isRunning ? "Changing length during a session requires confirmation" : "Opens the time picker to set the session duration")
 
@@ -1228,8 +1215,8 @@ struct FocusView: View {
                 }
                 .font(.system(size: 16, weight: .bold))
                 .foregroundColor(.black)
-                .padding(.vertical, 14)
-                .padding(.horizontal, 24)
+                .padding(.vertical, DS.Spacing.md)
+                .padding(.horizontal, DS.Spacing.xl)
                 .background(
                     LinearGradient(
                         colors: isRunning ? [accentSecondary, accentPrimary] : [accentPrimary, accentSecondary],
@@ -1240,9 +1227,9 @@ struct FocusView: View {
                 .clipShape(Capsule())
                 .shadow(color: accentPrimary.opacity(0.3), radius: isRunning ? 10 : 16, x: 0, y: 8)
                 .scaleEffect(isRunning ? 0.98 : 1.0)
-                .animation(.spring(response: 0.25, dampingFraction: 0.85), value: isRunning)
+                .animation(DS.Animation.quick, value: isRunning)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
             .accessibilityLabel(primaryButtonTitle)
             .accessibilityHint(isRunning ? "Pauses the current focus session" : (isPaused ? "Resumes the paused focus session" : "Starts a new focus session"))
             .accessibilityAddTraits(isRunning ? .startsMediaSession : [])
@@ -1357,7 +1344,7 @@ struct FocusView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white.opacity(0.62))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, DS.Spacing.lg + 2)
 
                 HStack(spacing: 0) {
                     VStack(spacing: 6) {
@@ -1394,10 +1381,10 @@ struct FocusView: View {
                 }
                 .frame(height: 170)
                 .colorScheme(.dark)
-                .padding(.horizontal, 18)
-                .padding(.top, 8)
+                .padding(.horizontal, DS.Spacing.lg + 2)
+                .padding(.top, DS.Spacing.sm)
 
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Button {
                         simpleTap()
                         showingTimePicker = false
@@ -1406,15 +1393,15 @@ struct FocusView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white.opacity(0.70))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.white.opacity(0.06))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .padding(.vertical, DS.Spacing.md)
+                            .background(Color.white.opacity(DS.Glass.thin + 0.01))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                    .stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1)
                             )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
 
                     Button {
                         simpleTap()
@@ -1438,12 +1425,12 @@ struct FocusView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 6)
+                .padding(.horizontal, DS.Spacing.lg + 2)
+                .padding(.top, DS.Spacing.xs)
 
                 Spacer(minLength: 6)
             }
@@ -1886,7 +1873,7 @@ private struct CompletionOverlay: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, DS.Spacing.xl)
 
                 Text("Ready for another \(durationText) session")
                     .font(.system(size: 13, weight: .medium))
@@ -1905,22 +1892,22 @@ private struct CompletionOverlay: View {
                                 endPoint: .trailing
                             )
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                         .shadow(color: theme.accentPrimary.opacity(0.3), radius: 16, x: 0, y: 8)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
             }
-            .padding(24)
+            .padding(DS.Spacing.xxl)
             .background(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.xxl + 4, style: .continuous)
                     .fill(Color(red: 0.10, green: 0.10, blue: 0.12))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DS.Radius.xxl + 4, style: .continuous)
+                            .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
                     )
             )
             .shadow(color: .black.opacity(0.4), radius: 32, x: 0, y: 20)
-            .padding(.horizontal, 32)
+            .padding(.horizontal, DS.Spacing.xxxl)
             .scaleEffect(appear ? 1.0 : 0.95)
             .opacity(appear ? 1.0 : 0.0)
             .onAppear {

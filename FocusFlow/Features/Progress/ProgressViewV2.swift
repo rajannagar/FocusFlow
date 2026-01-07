@@ -56,52 +56,56 @@ struct ProgressViewV2: View {
                 // Premium animated background
                 PremiumAppBackground(theme: theme)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        // Header
-                        headerSection
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
+                VStack(spacing: 0) {
+                    // Header (sticky - outside ScrollView)
+                    headerSection
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.sm)
+                        .padding(.bottom, DS.Spacing.xxs)
+                    
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 20) {
+                            // Date Navigator
+                            dateNavigator
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Date Navigator
-                        dateNavigator
-                            .padding(.horizontal, 20)
+                            // Today Hero Card
+                            todayHeroCard
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Today Hero Card
-                        todayHeroCard
-                            .padding(.horizontal, 20)
+                            // Current Streak & Focus Score
+                            streakAndScoreSection
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Current Streak & Focus Score
-                        streakAndScoreSection
-                            .padding(.horizontal, 20)
+                            // Quick Stats Strip
+                            quickStatsStrip
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Quick Stats Strip
-                        quickStatsStrip
-                            .padding(.horizontal, 20)
+                            // Comparison with Last Week
+                            weekComparisonCard
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Comparison with Last Week
-                        weekComparisonCard
-                            .padding(.horizontal, 20)
+                            // Weekly Activity Chart
+                            weeklyActivityCard
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Weekly Activity Chart
-                        weeklyActivityCard
-                            .padding(.horizontal, 20)
+                            // Week Summary
+                            weekSummaryCard
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Week Summary
-                        weekSummaryCard
-                            .padding(.horizontal, 20)
+                            // Insights Grid
+                            insightsGrid
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Insights Grid
-                        insightsGrid
-                            .padding(.horizontal, 20)
+                            // Session Timeline
+                            sessionTimeline
+                                .padding(.horizontal, DS.Spacing.lg)
 
-                        // Session Timeline
-                        sessionTimeline
-                            .padding(.horizontal, 20)
-
-                        Spacer(minLength: 120)
+                            Spacer(minLength: 120)
+                        }
+                        .padding(.top, DS.Spacing.md)
+                        .padding(.bottom, 20)
                     }
-                    .padding(.bottom, 20)
                 }
             }
         }
@@ -281,18 +285,15 @@ struct ProgressViewV2: View {
 
             Spacer()
 
-            Button {
+            FFIconButton(
+                icon: "arrow.counterclockwise",
+                backgroundColor: .white.opacity(DS.Glass.subtle),
+                showBorder: false
+            ) {
                 Haptics.impact(.medium)
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                     selectedDate = Date()
                 }
-            } label: {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
-                    .frame(width: 36, height: 36)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(Circle())
             }
             .accessibilityLabel("Reset to today")
             .accessibilityHint("Returns the view to today's date")
@@ -323,9 +324,9 @@ struct ProgressViewV2: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white.opacity(0.6))
-                    .frame(width: 44, height: 44)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .frame(width: DS.IconButton.lg, height: DS.IconButton.lg)
+                    .background(Color.white.opacity(DS.Glass.thin))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .accessibilityLabel("Previous day")
             .accessibilityHint(pro.isPro ? "Goes to the previous day" : "Goes to the previous day, requires Pro for dates beyond 3 days ago")
@@ -350,12 +351,12 @@ struct ProgressViewV2: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(Color.white.opacity(0.04))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(height: DS.IconButton.lg)
+                .background(Color.white.opacity(DS.Glass.ultraThin))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                        .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
                 )
             }
             .accessibilityLabel("Date picker, \(dayTitle(selectedDate))\(cal.isDateInToday(selectedDate) ? ", today" : "")")
@@ -368,9 +369,9 @@ struct ProgressViewV2: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white.opacity(0.6))
-                    .frame(width: 44, height: 44)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .frame(width: DS.IconButton.lg, height: DS.IconButton.lg)
+                    .background(Color.white.opacity(DS.Glass.thin))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .accessibilityLabel("Next day")
             .accessibilityHint("Goes to the next day")
@@ -699,25 +700,7 @@ struct ProgressViewV2: View {
         let isUp = diff >= 0
         
         return VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("VS LAST WEEK")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
-                    .tracking(1.5)
-                
-                Button {
-                    Haptics.impact(.light)
-                    showComparisonInfo = true
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.3))
-                }
-                .accessibilityLabel("Week comparison information")
-                .accessibilityHint("Shows information about how the week comparison is calculated")
-                
-                Spacer()
-                
+            FFSectionHeader(title: "Vs Last Week", infoAction: { showComparisonInfo = true }) {
                 HStack(spacing: 4) {
                     Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
                         .font(.system(size: 11, weight: .bold))
@@ -730,6 +713,8 @@ struct ProgressViewV2: View {
                 .background((isUp ? Color.green : Color.red).opacity(0.15))
                 .clipShape(Capsule())
             }
+            .accessibilityLabel("Week comparison information")
+            .accessibilityHint("Shows information about how the week comparison is calculated")
             
             HStack(spacing: 16) {
                 comparisonBar(
@@ -805,14 +790,7 @@ struct ProgressViewV2: View {
     
     private var weeklyActivityCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("WEEKLY ACTIVITY")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
-                    .tracking(1.5)
-
-                Spacer()
-
+            FFSectionHeader(title: "Weekly Activity") {
                 Text(weekRangeTitle(for: displayWeekStart()))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white.opacity(0.5))
@@ -889,7 +867,7 @@ struct ProgressViewV2: View {
                             .foregroundColor(isSelected ? .white : (isFuture ? .white.opacity(0.2) : .white.opacity(0.5)))
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
                 .disabled(isLocked) // Disable interaction for locked bars
                 .accessibilityLabel("\(bar.0), \(formatDuration(TimeInterval(bar.1 * 60)))\(isSelected ? ", selected" : "")\(isLocked ? ", requires Pro upgrade" : "")")
                 .accessibilityHint(isLocked ? "Upgrade to Pro to view this date" : (isSelected ? "Currently selected date" : "Tap to view this date's progress"))
@@ -909,14 +887,7 @@ struct ProgressViewV2: View {
         let weekTasksData = tasksAgg(in: weekInt)
 
         return VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("WEEK SUMMARY")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
-                    .tracking(1.5)
-
-                Spacer()
-
+            FFSectionHeader(title: "Week Summary") {
                 Text("\(Int(weekProgress * 100))%")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundColor(theme.accentPrimary)
@@ -970,33 +941,20 @@ struct ProgressViewV2: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
     }
 
     // MARK: - Insights Grid
     
     private var insightsGrid: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("INSIGHTS")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
-                    .tracking(1.5)
-                
-                Button {
-                    Haptics.impact(.light)
-                    showInsightsInfo = true
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.3))
-                }
-                .accessibilityLabel("Insights information")
-                .accessibilityHint("Shows information about the insights metrics")
-                
-                Spacer()
-            }
+            FFSectionHeader(
+                title: "Insights",
+                infoAction: { showInsightsInfo = true }
+            )
+            .accessibilityLabel("Insights information")
+            .accessibilityHint("Shows information about the insights metrics")
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 insightCard(
@@ -1066,8 +1024,8 @@ struct ProgressViewV2: View {
             Spacer(minLength: 0)
         }
         .padding(12)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
     }
 
     // MARK: - Session Timeline
@@ -1076,14 +1034,7 @@ struct ProgressViewV2: View {
         let sessionsToday = sessions(in: dayInterval(selectedDate))
 
         return VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("SESSIONS")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
-                    .tracking(1.5)
-
-                Spacer()
-
+            FFSectionHeader(title: "Sessions") {
                 Text("\(sessionsToday.count) session\(sessionsToday.count == 1 ? "" : "s")")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white.opacity(0.5))
@@ -1793,9 +1744,9 @@ private struct GoalSheet: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.white.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .padding(.vertical, DS.Spacing.lg)
+                        .background(Color.white.opacity(DS.Glass.borderMedium))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                 }
 
                 Button {
@@ -1808,7 +1759,7 @@ private struct GoalSheet: View {
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
+                        .padding(.vertical, DS.Spacing.lg)
                         .background(
                             LinearGradient(
                                 colors: [theme.accentPrimary, theme.accentSecondary],
@@ -1816,7 +1767,7 @@ private struct GoalSheet: View {
                                 endPoint: .trailing
                             )
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                 }
             }
             .padding(.horizontal, 20)
@@ -1929,9 +1880,9 @@ private struct DatePickerSheet: View {
                             endPoint: .trailing
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, 30)
         }
         .background(Color(red: 0.08, green: 0.08, blue: 0.10))

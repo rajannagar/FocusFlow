@@ -48,7 +48,7 @@ struct FocusInfoSheet: View {
                                 .background(Color.white.opacity(0.10))
                                 .clipShape(Circle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(FFPressButtonStyle())
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
@@ -135,7 +135,7 @@ struct FocusInfoSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             .shadow(color: theme.accentPrimary.opacity(0.35), radius: 16, y: 8)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                     .padding(.horizontal, 20)
                     .padding(.top, 26)
                     .padding(.bottom, 40)

@@ -231,8 +231,8 @@ private struct XPProgressBar: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 4).fill(Color.white.opacity(0.1))
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: DS.Radius.xs - 4).fill(Color.white.opacity(0.1))
+                RoundedRectangle(cornerRadius: DS.Radius.xs - 4)
                     .fill(LinearGradient(colors: [color, color.opacity(0.7)], startPoint: .leading, endPoint: .trailing))
                     .frame(width: geo.size.width * progress)
             }
@@ -311,7 +311,7 @@ private struct BadgeCard: View {
             }
             .frame(width: size + 10)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 }
 
@@ -511,7 +511,7 @@ struct ProfileView: View {
 
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 24) {
-                            identityCard.padding(.top, 16)
+                            identityCard.padding(.top, DS.Spacing.lg)
                             
                             // Guest mode warning banner
                             if auth.state.isGuest {
@@ -537,7 +537,7 @@ struct ProfileView: View {
                                 .padding(.top, 8)
                                 .padding(.bottom, 100)
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, DS.Spacing.xl)
                     }
                 }
             }
@@ -586,42 +586,33 @@ struct ProfileView: View {
 
     private var identityCard: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(alignment: .center) {
                 if pro.isPro { ProBadge() }
                 Spacer()
                 
                 HStack(spacing: 10) {
-                    Button {
-                        Haptics.impact(.light)
+                    FFIconButton(
+                        icon: "pencil",
+                        backgroundColor: .white.opacity(DS.Glass.subtle),
+                        showBorder: false
+                    ) {
                         showingEditProfile = true
-                    } label: {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.06))
-                            .clipShape(Circle())
                     }
                     .accessibilityLabel("Edit profile")
                     .accessibilityHint("Opens the profile editor to change your name and avatar")
                     
-                    Button {
-                        Haptics.impact(.light)
+                    FFIconButton(
+                        icon: "gearshape.fill",
+                        backgroundColor: .white.opacity(DS.Glass.subtle),
+                        showBorder: false
+                    ) {
                         navigateToSettings = true
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.06))
-                            .clipShape(Circle())
                     }
                     .accessibilityLabel("Settings")
                     .accessibilityHint("Opens app settings and preferences")
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, DS.Spacing.xl)
 
             Button {
                 Haptics.impact(.light)
@@ -655,7 +646,7 @@ struct ProfileView: View {
                     }
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
             .accessibilityLabel("Profile avatar\(pro.isPro ? ", Level \(currentLevel)" : "")")
             .accessibilityHint("Opens the profile editor")
 
@@ -698,9 +689,9 @@ struct ProfileView: View {
                             .foregroundColor(currentLevel < 50 ? .white.opacity(0.4) : theme.accentPrimary)
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-                .padding(.bottom, 20)
+                .padding(.horizontal, DS.Spacing.xxl)
+                .padding(.top, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.xl)
             } else {
                 // XP/Levels teaser card for free users
                 Button {
@@ -760,11 +751,11 @@ struct ProfileView: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.white.opacity(0.4))
                     }
-                    .padding(16)
-                    .background(Color.white.opacity(0.04))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .padding(DS.Spacing.lg)
+                    .background(Color.white.opacity(DS.Glass.ultraThin))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                             .stroke(
                                 LinearGradient(
                                     colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.2)],
@@ -775,15 +766,15 @@ struct ProfileView: View {
                             )
                     )
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-                .padding(.bottom, 20)
+                .buttonStyle(FFPressButtonStyle())
+                .padding(.horizontal, DS.Spacing.xxl)
+                .padding(.top, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.xl)
             }
         }
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Color.white.opacity(0.06), lineWidth: 1))
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous).stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
     }
 
     @ViewBuilder private func profileAvatar(size: CGFloat) -> some View {
@@ -889,12 +880,12 @@ struct ProfileView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white.opacity(pro.isPro ? 0.3 : 0.2))
             }
-            .padding(16)
+            .padding(DS.Spacing.lg)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(pro.isPro ? 0.04 : 0.02))
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                    .fill(Color.white.opacity(pro.isPro ? DS.Glass.ultraThin + 0.01 : DS.Glass.ultraThin - 0.01))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                             .stroke(
                                 LinearGradient(
                                     colors: [theme.accentPrimary.opacity(pro.isPro ? 0.3 : 0.15), theme.accentSecondary.opacity(pro.isPro ? 0.2 : 0.1)],
@@ -906,7 +897,7 @@ struct ProfileView: View {
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
         .accessibilityLabel(pro.isPro ? "My Journey" : "My Journey, requires Pro upgrade")
         .accessibilityHint(pro.isPro ? "Opens your focus journey and daily summaries" : "Upgrade to Pro to unlock the journey view")
     }
@@ -915,12 +906,7 @@ struct ProfileView: View {
 
     private var badgesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("BADGES")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
-                    .tracking(1.5)
-                Spacer()
+            FFSectionHeader(title: "Badges") {
                 Button {
                     Haptics.impact(.light)
                     showingAllBadges = true
@@ -934,6 +920,7 @@ struct ProfileView: View {
                             .foregroundColor(theme.accentPrimary.opacity(0.6))
                     }
                 }
+                .buttonStyle(FFPressButtonStyle())
                 .accessibilityLabel("View all badges, \(unlockedBadges.count) of \(allBadges.count) unlocked")
                 .accessibilityHint("Opens the full badges collection")
             }
@@ -978,11 +965,11 @@ struct ProfileView: View {
                 .padding(.top, -6)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 8)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.sm)
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
     }
 
     // MARK: - All Time Section
@@ -1059,13 +1046,13 @@ struct ProfileView: View {
                     }
                 }
             }
-            .padding(12)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(DS.Spacing.md)
+            .background(Color.white.opacity(DS.Glass.ultraThin))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
         }
-        .padding(16)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(DS.Spacing.lg)
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
     }
 
     private func statCell(icon: String, value: String, label: String, color: Color) -> some View {
@@ -1088,9 +1075,9 @@ struct ProfileView: View {
 
             Spacer()
         }
-        .padding(12)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(DS.Spacing.md)
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
     }
 
     private func formatTime(_ seconds: TimeInterval) -> String {
@@ -1129,12 +1116,12 @@ struct ProfileView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                 }
-                .padding(.top, 4)
+                .padding(.top, DS.Spacing.xxs)
             }
         }
-        .padding(16)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(DS.Spacing.lg)
+        .background(Color.white.opacity(DS.Glass.ultraThin + 0.01))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 
     // MARK: - Guest Warning Banner
@@ -1176,15 +1163,15 @@ struct ProfileView: View {
                             endPoint: .trailing
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+.clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm - 2, style: .continuous))
             }
         }
-        .padding(16)
+        .padding(DS.Spacing.lg)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .fill(Color.orange.opacity(0.15))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                         .stroke(Color.orange.opacity(0.3), lineWidth: 1)
                 )
         )
@@ -1219,7 +1206,7 @@ struct ProfileView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.yellow.opacity(0.6))
             }
-            .padding(16)
+            .padding(DS.Spacing.lg)
             .background(
                 LinearGradient(
                     colors: [Color.yellow.opacity(0.15), Color.orange.opacity(0.1)],
@@ -1227,13 +1214,13 @@ struct ProfileView: View {
                     endPoint: .trailing
                 )
             )
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
     
     // MARK: - Badge Teaser Card (Free Users)
@@ -1310,12 +1297,12 @@ struct ProfileView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white.opacity(0.2))
             }
-            .padding(16)
+            .padding(DS.Spacing.lg)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.02))
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                    .fill(Color.white.opacity(DS.Glass.ultraThin - 0.01))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                             .stroke(
                                 LinearGradient(
                                     colors: [theme.accentPrimary.opacity(0.15), theme.accentSecondary.opacity(0.1)],
@@ -1327,7 +1314,7 @@ struct ProfileView: View {
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
         .accessibilityLabel("Badges, requires Pro upgrade")
         .accessibilityHint("Upgrade to Pro to unlock achievement badges")
     }
@@ -1388,16 +1375,16 @@ struct ProfileView: View {
                         endPoint: .trailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
         }
-        .padding(20)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(DS.Spacing.xl)
+        .background(Color.white.opacity(DS.Glass.ultraThin + 0.01))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
         )
     }
     
@@ -1636,7 +1623,7 @@ private struct BadgeDetailSheet: View {
                             .clipShape(Circle())
                             .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8) // Reduced padding, safe area will add more
@@ -1767,7 +1754,7 @@ private struct EditProfileSheet: View {
                             .clipShape(Circle())
                             .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -1853,41 +1840,23 @@ private struct EditProfileSheet: View {
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(.white.opacity(0.7))
 
-                        TextField("Your name", text: $name)
-                                .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .background(Color.white.opacity(0.10))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                )
-                            .tint(.white)
+                        FFLabeledTextField(
+                            label: "",
+                            placeholder: "Your name",
+                            text: $name
+                        )
                     }
                     .padding(.horizontal, 20)
 
                         // Save Button
-                    Button {
-                            Haptics.impact(.medium)
+                    FFPrimaryButton(
+                        title: "Save Changes",
+                        height: 54,
+                        cornerRadius: DS.Radius.md,
+                        theme: theme
+                    ) {
                         settings.displayName = name
                         dismiss()
-                    } label: {
-                            Text("Save Changes")
-                                .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(
-                                    LinearGradient(
-                                        colors: [theme.accentPrimary, theme.accentPrimary.opacity(0.8)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                                .shadow(color: theme.accentPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
                     .padding(.horizontal, 20)
                         .padding(.bottom, 32)
@@ -2046,7 +2015,7 @@ private struct AvatarPickerSheet: View {
                             .clipShape(Circle())
                             .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -2139,7 +2108,7 @@ private struct AvatarPickerSheet: View {
                                         .lineLimit(1)
                                 }
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(FFPressButtonStyle())
                         }
                     }
                     .padding(.horizontal, 20)

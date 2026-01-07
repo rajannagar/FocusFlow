@@ -102,9 +102,9 @@ struct FocusPresetEditorView: View {
                         ambianceSettings
                     }
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 8) // Reduced padding, safe area will add more
-                .padding(.bottom, 20) // Add bottom padding to prevent content cut-off by home indicator
+                .padding(.horizontal, DS.Spacing.lg + 2)
+                .padding(.top, DS.Spacing.sm)
+                .padding(.bottom, DS.Spacing.xl)
             }
             .ignoresSafeArea(edges: .bottom) // ✅ scroll flush to bottom
         }
@@ -145,12 +145,12 @@ struct FocusPresetEditorView: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.white.opacity(0.85))
-                    .frame(width: 34, height: 34)
-                    .background(Color.white.opacity(0.10))
+                    .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                    .background(Color.white.opacity(DS.Glass.regular))
                     .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                    .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
 
             Button {
                 saveAndClose()
@@ -158,8 +158,8 @@ struct FocusPresetEditorView: View {
                 Text("Save")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.black)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, DS.Spacing.md + 2)
+                    .padding(.vertical, DS.Spacing.sm + 2)
                     .background(
                         LinearGradient(
                             colors: [theme.accentPrimary, theme.accentSecondary],
@@ -170,7 +170,7 @@ struct FocusPresetEditorView: View {
                     .clipShape(Capsule())
                     .shadow(color: theme.accentPrimary.opacity(0.20), radius: 12, x: 0, y: 10)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
         }
     }
 
@@ -195,14 +195,14 @@ struct FocusPresetEditorView: View {
 
     private func sectionCard<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
-            .padding(16)
+            .padding(DS.Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous)
+                    .fill(Color.white.opacity(DS.Glass.ultraThin))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous)
+                            .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
                     )
             )
     }
@@ -218,13 +218,13 @@ struct FocusPresetEditorView: View {
             TextField("New Preset", text: $name)
                 .foregroundColor(.white)
                 .tint(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .padding(.horizontal, DS.Spacing.md + 2)
+                .padding(.vertical, DS.Spacing.sm + 2)
+                .background(Color.white.opacity(DS.Glass.thin))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg + 2, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DS.Radius.lg + 2, style: .continuous)
+                        .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
                 )
         }
     }
@@ -263,7 +263,7 @@ struct FocusPresetEditorView: View {
                 }
                 .padding(.vertical, 6)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
 
             Divider().background(Color.white.opacity(0.10))
 
@@ -295,7 +295,7 @@ struct FocusPresetEditorView: View {
                 }
                 .padding(.vertical, 6)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
         }
     }
 
@@ -332,8 +332,8 @@ struct FocusPresetEditorView: View {
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .foregroundColor(isUsingDefault ? .black : .white.opacity(0.85))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.sm)
                     .background(
                         Group {
                             if isUsingDefault {
@@ -350,7 +350,7 @@ struct FocusPresetEditorView: View {
                     .clipShape(Capsule())
                     .overlay(Capsule().stroke(Color.white.opacity(isUsingDefault ? 0.0 : 0.10), lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
 
                 ForEach(AppTheme.allCases) { theme in
                     let isSelected = !useDefaultTheme && presetTheme == theme
@@ -376,8 +376,8 @@ struct FocusPresetEditorView: View {
                                 .font(.system(size: 11, weight: .semibold))
                         }
                         .foregroundColor(isSelected ? .black : .white.opacity(0.85))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.vertical, DS.Spacing.sm)
                         .background(
                             Group {
                                 if isSelected {
@@ -394,7 +394,7 @@ struct FocusPresetEditorView: View {
                         .clipShape(Capsule())
                         .overlay(Capsule().stroke(Color.white.opacity(isSelected ? 0.0 : 0.10), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
             }
             .padding(.vertical, 2)
@@ -434,8 +434,8 @@ struct FocusPresetEditorView: View {
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .foregroundColor(isUsingDefault ? .black : .white.opacity(0.85))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.sm)
                     .background(
                         Group {
                             if isUsingDefault {
@@ -452,7 +452,7 @@ struct FocusPresetEditorView: View {
                     .clipShape(Capsule())
                     .overlay(Capsule().stroke(Color.white.opacity(isUsingDefault ? 0.0 : 0.10), lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
 
                 ForEach(AmbientMode.allCases) { mode in
                     let isSelected = !useDefaultAmbiance && presetAmbianceMode == mode
@@ -472,8 +472,8 @@ struct FocusPresetEditorView: View {
                                 .font(.system(size: 11, weight: .semibold))
                         }
                         .foregroundColor(isSelected ? .black : .white.opacity(0.85))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.vertical, DS.Spacing.sm)
                         .background(
                             Group {
                                 if isSelected {
@@ -490,7 +490,7 @@ struct FocusPresetEditorView: View {
                         .clipShape(Capsule())
                         .overlay(Capsule().stroke(Color.white.opacity(isSelected ? 0.0 : 0.10), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
             }
             .padding(.vertical, 2)
@@ -520,7 +520,7 @@ struct FocusPresetEditorView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white.opacity(0.62))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, DS.Spacing.lg + 2)
 
                 HStack(spacing: 0) {
                     VStack(spacing: 6) {
@@ -557,10 +557,10 @@ struct FocusPresetEditorView: View {
                 }
                 .frame(height: 170)
                 .colorScheme(.dark)
-                .padding(.horizontal, 18)
-                .padding(.top, 8)
+                .padding(.horizontal, DS.Spacing.lg + 2)
+                .padding(.top, DS.Spacing.sm)
 
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     Button {
                         Haptics.impact(.light)
                         showingDurationSheet = false
@@ -569,15 +569,15 @@ struct FocusPresetEditorView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white.opacity(0.70))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.white.opacity(0.06))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .padding(.vertical, DS.Spacing.md)
+                            .background(Color.white.opacity(DS.Glass.thin + 0.01))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                    .stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1)
                             )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
 
                     Button {
                         Haptics.impact(.light)
@@ -589,7 +589,7 @@ struct FocusPresetEditorView: View {
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, DS.Spacing.md)
                             .background(
                                 LinearGradient(
                                     colors: [theme.accentPrimary, theme.accentSecondary],
@@ -597,13 +597,13 @@ struct FocusPresetEditorView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                             .shadow(color: theme.accentPrimary.opacity(0.22), radius: 14, x: 0, y: 10)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 6)
+                .padding(.horizontal, DS.Spacing.lg + 2)
+                .padding(.top, DS.Spacing.xs)
 
                 Spacer(minLength: 6)
             }

@@ -12,4 +12,10 @@ enum Haptics {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(type)
     }
+    
+    static func selection() {
+        guard AppSettings.shared.hapticsEnabled else { return }
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
+    }
 }

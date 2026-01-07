@@ -111,14 +111,14 @@ struct AuthLandingView: View {
                 Spacer()
                 
                 // MARK: - Auth Buttons (Bottom)
-                VStack(spacing: 14) {
+                VStack(spacing: DS.Spacing.md) {
                     
                     // Apple Sign In
                     Button {
                         Haptics.impact(.medium)
                         startSignInWithApple()
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "apple.logo")
                                 .font(.system(size: 18, weight: .semibold))
                             Text(isSigningInApple ? "Signing in..." : "Continue with Apple")
@@ -128,9 +128,10 @@ struct AuthLandingView: View {
                         .frame(height: 56)
                         .background(Color.white)
                         .foregroundColor(.black)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                         .shadow(color: Color.white.opacity(0.1), radius: 10, y: 4)
                     }
+                    .buttonStyle(FFPressButtonStyle())
                     .disabled(isSigningInApple || isSigningInGoogle)
                     
                     // Google Sign In (Native SDK)
@@ -138,7 +139,7 @@ struct AuthLandingView: View {
                         Haptics.impact(.medium)
                         startSignInWithGoogle()
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: DS.Spacing.md) {
                             // Google "G" logo
                             Image("google_logo")
                                 .resizable()
@@ -149,14 +150,15 @@ struct AuthLandingView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color.white.opacity(0.1))
+                        .background(Color.white.opacity(DS.Glass.regular))
                         .foregroundColor(.white)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                .stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1)
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                     }
+                    .buttonStyle(FFPressButtonStyle())
                     .disabled(isSigningInApple || isSigningInGoogle)
                     
                     // Email Sign In
@@ -164,7 +166,7 @@ struct AuthLandingView: View {
                         Haptics.impact(.light)
                         emailSheetRoute = .signup
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "envelope.fill")
                                 .font(.system(size: 16, weight: .semibold))
                             Text("Continue with Email")
@@ -172,20 +174,21 @@ struct AuthLandingView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(Color.white.opacity(0.08))
+                        .background(Color.white.opacity(DS.Glass.regular))
                         .foregroundColor(.white)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                .stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1)
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                     }
+                    .buttonStyle(FFPressButtonStyle())
                     .disabled(isSigningInApple || isSigningInGoogle)
                     
                     // Divider
-                    HStack(spacing: 16) {
+                    HStack(spacing: DS.Spacing.lg) {
                         Rectangle()
-                            .fill(Color.white.opacity(0.15))
+                            .fill(Color.white.opacity(DS.Glass.borderMedium))
                             .frame(height: 1)
                         
                         Text("or")
@@ -193,7 +196,7 @@ struct AuthLandingView: View {
                             .foregroundColor(.white.opacity(0.4))
                         
                         Rectangle()
-                            .fill(Color.white.opacity(0.15))
+                            .fill(Color.white.opacity(DS.Glass.borderMedium))
                             .frame(height: 1)
                     }
                     .padding(.vertical, 4)
@@ -207,7 +210,7 @@ struct AuthLandingView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white.opacity(0.6))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                     .disabled(isSigningInApple || isSigningInGoogle)
                     
                     // Error Message
@@ -232,11 +235,11 @@ struct AuthLandingView: View {
                             .fontWeight(.semibold)
                     }
                     .font(.system(size: 14, weight: .medium))
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                     .padding(.top, 8)
                     .padding(.bottom, 8)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, 30)
                 .opacity(buttonsOpacity)
             }

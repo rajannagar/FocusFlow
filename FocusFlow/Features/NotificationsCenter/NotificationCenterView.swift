@@ -100,12 +100,12 @@ struct NotificationCenterView: View {
                         Image(systemName: "checklist")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.08))
+                            .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                            .background(Color.white.opacity(DS.Glass.regular))
                             .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
+                            .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
 
                     // Clear all button
                     Button {
@@ -115,12 +115,12 @@ struct NotificationCenterView: View {
                         Image(systemName: "trash")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.08))
+                            .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                            .background(Color.white.opacity(DS.Glass.regular))
                             .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
+                            .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
 
                 // Close button
@@ -131,12 +131,12 @@ struct NotificationCenterView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white.opacity(0.85))
-                        .frame(width: 34, height: 34)
-                        .background(Color.white.opacity(0.08))
+                        .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                        .background(Color.white.opacity(DS.Glass.regular))
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.08), lineWidth: 1))
+                        .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
             }
         }
     }
@@ -307,12 +307,12 @@ struct NotificationCenterView: View {
                     .padding(.top, 4)
             }
         }
-        .padding(14)
+        .padding(DS.Spacing.md + 2)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.lg + 2, style: .continuous)
                 .fill(Color.white.opacity(cardBackgroundOpacity))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.lg + 2, style: .continuous)
                         .stroke(Color.white.opacity(strokeOpacity), lineWidth: 1)
                 )
         )

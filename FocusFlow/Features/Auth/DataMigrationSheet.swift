@@ -131,7 +131,7 @@ struct DataMigrationSheet: View {
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, DS.Spacing.huge)
             
             Spacer()
         }
@@ -221,8 +221,8 @@ struct DataMigrationSheet: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
+                    .padding(.horizontal, DS.Spacing.xxl)
+                    .padding(.top, DS.Spacing.xl)
                 }
                 
                 // Action button - different based on auth state
@@ -241,10 +241,11 @@ struct DataMigrationSheet: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(hasAnySelection ? theme.accentPrimary : Color.white.opacity(0.2))
-                        .cornerRadius(12)
+                        .cornerRadius(DS.Radius.sm)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
+                    .buttonStyle(FFPressButtonStyle())
+                    .padding(.horizontal, DS.Spacing.xxl)
+                    .padding(.top, DS.Spacing.xl)
                 } else {
                     // User needs to sign in first
                     Button {
@@ -260,28 +261,29 @@ struct DataMigrationSheet: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(theme.accentPrimary)
-                        .cornerRadius(12)
+                        .cornerRadius(DS.Radius.sm)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
+                    .buttonStyle(FFPressButtonStyle())
+                    .padding(.horizontal, DS.Spacing.xxl)
+                    .padding(.top, DS.Spacing.xl)
                 }
                 
                 if let error = migrationError {
                     Text(error)
                         .font(.system(size: 13))
                         .foregroundColor(.red.opacity(0.8))
-                        .padding(.horizontal, 24)
-                        .padding(.top, 8)
+                        .padding(.horizontal, DS.Spacing.xxl)
+                        .padding(.top, DS.Spacing.sm)
                 }
             }
-            .padding(.bottom, 40)
+            .padding(.bottom, DS.Spacing.huge)
         }
     }
     
     // MARK: - Success View
     
     private var successView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xxl) {
             Spacer()
             
             Image(systemName: "checkmark.circle.fill")
@@ -296,7 +298,7 @@ struct DataMigrationSheet: View {
                 .font(.system(size: 15))
                 .foregroundColor(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, DS.Spacing.huge)
             
             Spacer()
             
@@ -309,10 +311,11 @@ struct DataMigrationSheet: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .background(theme.accentPrimary)
-                    .cornerRadius(12)
+                    .cornerRadius(DS.Radius.sm)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 40)
+            .buttonStyle(FFPressButtonStyle())
+            .padding(.horizontal, DS.Spacing.xxl)
+            .padding(.bottom, DS.Spacing.huge)
         }
     }
     
@@ -329,10 +332,10 @@ struct DataMigrationSheet: View {
                 .foregroundColor(.white.opacity(0.8))
             Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(12)
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.vertical, DS.Spacing.md)
+        .background(Color.white.opacity(DS.Glass.thin))
+        .cornerRadius(DS.Radius.sm)
     }
     
     private func migrationCheckbox(
@@ -379,15 +382,15 @@ struct DataMigrationSheet: View {
                 
                 Spacer()
             }
-            .padding(16)
-            .background(Color.white.opacity(0.05))
+            .padding(DS.Spacing.lg)
+            .background(Color.white.opacity(DS.Glass.thin))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                     .stroke(isSelected.wrappedValue ? color.opacity(0.5) : Color.clear, lineWidth: 1)
             )
-            .cornerRadius(12)
+            .cornerRadius(DS.Radius.sm)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
     
     // MARK: - Migration

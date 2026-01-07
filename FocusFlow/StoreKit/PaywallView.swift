@@ -186,9 +186,9 @@ struct PaywallView: View {
                     // Footer
                     footer
                         .padding(.top, 20)
-                        .padding(.bottom, 40)
+                        .padding(.bottom, DS.Spacing.huge)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, DS.Spacing.xxl)
             }
         }
         .onAppear {
@@ -486,10 +486,11 @@ struct PaywallView: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white.opacity(0.6))
-                    .frame(width: 32, height: 32)
-                    .background(Color.white.opacity(0.1))
+                    .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                    .background(Color.white.opacity(DS.Glass.regular))
                     .clipShape(Circle())
             }
+            .buttonStyle(FFPressButtonStyle())
         }
     }
 
@@ -503,14 +504,14 @@ struct PaywallView: View {
                     .frame(height: 180)
                     .frame(maxWidth: .infinity)
                     .background(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .fill(Color.white.opacity(0.03))
+                        RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                            .fill(Color.white.opacity(DS.Glass.ultraThin))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                            .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                     .opacity(appearAnimation ? 1 : 0)
                     .scaleEffect(appearAnimation ? 1 : 0.9)
             }
@@ -791,22 +792,22 @@ struct PaywallView: View {
                         .foregroundColor(.white.opacity(0.5))
                 }
             }
-            .padding(16)
+            .padding(DS.Spacing.lg)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                    .fill(isSelected ? Color.white.opacity(DS.Glass.regular) : Color.white.opacity(DS.Glass.ultraThin))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                     .stroke(
                         isSelected
                             ? LinearGradient(colors: [theme.accentPrimary, theme.accentSecondary], startPoint: .topLeading, endPoint: .bottomTrailing)
-                            : LinearGradient(colors: [Color.white.opacity(0.08)], startPoint: .top, endPoint: .bottom),
+                            : LinearGradient(colors: [Color.white.opacity(DS.Glass.borderSubtle)], startPoint: .top, endPoint: .bottom),
                         lineWidth: isSelected ? 2 : 1
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 
     // MARK: - CTA Section
@@ -881,13 +882,13 @@ struct PaywallView: View {
                 }
                 .padding(.top, 4)
             }
-            .padding(16)
+            .padding(DS.Spacing.lg)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .fill(Color.orange.opacity(0.1))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .stroke(Color.orange.opacity(0.3), lineWidth: 1)
             )
             
@@ -927,7 +928,7 @@ struct PaywallView: View {
                 }
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, DS.Spacing.lg)
                 .background(
                     LinearGradient(
                         colors: [theme.accentPrimary, theme.accentSecondary],
@@ -935,7 +936,7 @@ struct PaywallView: View {
                         endPoint: .trailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                 .shadow(color: theme.accentPrimary.opacity(0.4), radius: 12, y: 6)
             }
             .disabled(isBusy || selectedProduct == nil)
@@ -1001,9 +1002,9 @@ struct PaywallView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color.white.opacity(0.15))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .padding(.vertical, DS.Spacing.md + 2)
+                            .background(Color.white.opacity(DS.Glass.thick))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                 }
     }
@@ -1051,7 +1052,7 @@ struct PaywallView: View {
                     }
                     .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, DS.Spacing.lg)
                     .background(
                         LinearGradient(
                             colors: [theme.accentPrimary, theme.accentSecondary],
@@ -1059,7 +1060,7 @@ struct PaywallView: View {
                             endPoint: .trailing
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     .shadow(color: theme.accentPrimary.opacity(0.4), radius: 12, y: 6)
                 }
                 .disabled(isBusy || selectedProduct == nil)
@@ -1141,7 +1142,7 @@ struct ThemeSwatchesVisual: View {
     var body: some View {
         HStack(spacing: 12) {
             ForEach(0..<5, id: \.self) { i in
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: DS.Radius.sm)
                     .fill(
                         LinearGradient(
                             colors: colors[i],

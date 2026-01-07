@@ -29,17 +29,17 @@ struct FocusPresetManagerView: View {
 
             VStack(spacing: 14) {
                 header(accentPrimary: accentPrimary, accentSecondary: accentSecondary)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 18)
+                    .padding(.horizontal, DS.Spacing.lg + 2)
+                    .padding(.top, DS.Spacing.lg + 2)
 
                 explainer
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, DS.Spacing.lg + 2)
 
                 sectionHeader
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, DS.Spacing.lg + 2)
 
                 presetsList(accentPrimary: accentPrimary, accentSecondary: accentSecondary)
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, DS.Spacing.lg + 2)
 
                 // ✅ no Spacer/padding at bottom
             }
@@ -122,10 +122,10 @@ struct FocusPresetManagerView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white.opacity(0.85))
-                        .frame(width: 34, height: 34)
-                        .background(Color.white.opacity(0.10))
+                        .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                        .background(Color.white.opacity(DS.Glass.regular))
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                        .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
                     
                     if !ProGatingHelper.shared.canAddPreset(currentTotalCount: totalPresetCount) {
                         Image(systemName: "crown.fill")
@@ -141,7 +141,7 @@ struct FocusPresetManagerView: View {
                     }
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
 
             Button {
                 Haptics.impact(.light)
@@ -150,12 +150,12 @@ struct FocusPresetManagerView: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.white.opacity(0.85))
-                    .frame(width: 34, height: 34)
-                    .background(Color.white.opacity(0.10))
+                    .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                    .background(Color.white.opacity(DS.Glass.regular))
                     .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                    .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
         }
     }
 
@@ -195,13 +195,13 @@ struct FocusPresetManagerView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(14)
+        .padding(DS.Spacing.md + 2)
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .fill(Color.white.opacity(DS.Glass.ultraThin))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                        .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
                 )
         )
     }
@@ -227,20 +227,20 @@ struct FocusPresetManagerView: View {
                     Text("\(store.presets.count)")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.white.opacity(0.85))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.white.opacity(0.06))
+                        .padding(.horizontal, DS.Spacing.sm + 2)
+                        .padding(.vertical, DS.Spacing.xxs + 1)
+                        .background(Color.white.opacity(DS.Glass.thin))
                         .clipShape(Capsule())
-                        .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                        .overlay(Capsule().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
                 } else {
                     Text("\(totalPresetCount)/\(ProGatingHelper.freePresetLimit)")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.white.opacity(0.85))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.white.opacity(0.06))
+                        .padding(.horizontal, DS.Spacing.sm + 2)
+                        .padding(.vertical, DS.Spacing.xxs + 1)
+                        .background(Color.white.opacity(DS.Glass.thin))
                         .clipShape(Capsule())
-                        .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                        .overlay(Capsule().stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1))
                 }
             }
         }
@@ -270,7 +270,7 @@ struct FocusPresetManagerView: View {
                         } label: {
                             presetRow(preset, isLocked: isLocked, accentPrimary: accentPrimary, accentSecondary: accentSecondary)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(FFPressButtonStyle())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
@@ -311,7 +311,7 @@ struct FocusPresetManagerView: View {
                 .foregroundColor(.white.opacity(0.62))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, DS.Spacing.xxl)
 
             Button {
                 Haptics.impact(.light)
@@ -329,8 +329,8 @@ struct FocusPresetManagerView: View {
                         .font(.system(size: 13, weight: .bold))
                 }
                 .foregroundColor(.black)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, DS.Spacing.md + 2)
+                .padding(.vertical, DS.Spacing.sm + 2)
                 .background(
                     LinearGradient(
                         colors: [accentPrimary, accentSecondary],
@@ -341,16 +341,16 @@ struct FocusPresetManagerView: View {
                 .clipShape(Capsule())
                 .shadow(color: accentPrimary.opacity(0.20), radius: 12, x: 0, y: 10)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(FFPressButtonStyle())
         }
-        .padding(16)
+        .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+            RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous)
+                .fill(Color.white.opacity(DS.Glass.ultraThin + 0.01))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 26, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous)
+                        .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
                 )
         )
     }
@@ -460,14 +460,14 @@ struct FocusPresetManagerView: View {
                 .imageScale(.small)
                 .foregroundColor(.white.opacity(0.50))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md + 2)
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.white.opacity(isActive ? 0.06 : (isLocked ? 0.02 : 0.04)))
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .fill(Color.white.opacity(isActive ? DS.Glass.thin + 0.01 : (isLocked ? DS.Glass.ultraThin - 0.01 : DS.Glass.ultraThin + 0.01)))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.white.opacity(isActive ? 0.14 : (isLocked ? 0.04 : 0.08)), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                        .stroke(Color.white.opacity(isActive ? DS.Glass.borderStrong - 0.01 : (isLocked ? DS.Glass.ultraThin + 0.01 : DS.Glass.regular)), lineWidth: 1)
                 )
         )
     }

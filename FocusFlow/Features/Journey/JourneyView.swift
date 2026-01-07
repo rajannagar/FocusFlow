@@ -118,9 +118,9 @@ struct JourneyView: View {
                     .foregroundColor(.white.opacity(0.7))
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.top, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.md)
     }
     
     // MARK: - Empty State
@@ -160,9 +160,9 @@ struct JourneyView: View {
             VStack(spacing: 0) {
                 // Insights Section
                 insightsSection
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-                    .padding(.bottom, 20)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.top, DS.Spacing.md)
+                    .padding(.bottom, DS.Spacing.xl)
                 
                 // Title
                 VStack(spacing: 8) {
@@ -174,7 +174,7 @@ struct JourneyView: View {
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, DS.Spacing.xxl)
                 
                 // Timeline
                 LazyVStack(spacing: 0) {
@@ -185,8 +185,8 @@ struct JourneyView: View {
                                     weekSummaries: getWeekSummaries(endingAt: index),
                                     theme: theme
                                 )
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 16)
+                                .padding(.horizontal, DS.Spacing.xl)
+                                .padding(.bottom, DS.Spacing.lg)
                             }
                             
                             DailySummaryCard(
@@ -196,7 +196,7 @@ struct JourneyView: View {
                                 isLast: index == filteredSummaries.count - 1,
                                 hasAppeared: appearedCards.contains(summary.id)
                             )
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, DS.Spacing.xl)
                             .onAppear {
                                 if !appearedCards.contains(summary.id) {
                                     Haptics.impact(.soft)
@@ -252,10 +252,10 @@ struct JourneyView: View {
                     
                     Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, DS.Spacing.md + 2)
+                .padding(.vertical, DS.Spacing.sm + 2)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                         .fill((weekComparisonPositive ? Color.green : Color.orange).opacity(0.12))
                 )
             }
@@ -290,13 +290,13 @@ struct JourneyView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white.opacity(0.5))
         }
-        .padding(14)
+        .padding(DS.Spacing.md + 2)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                .fill(Color.white.opacity(DS.Glass.ultraThin))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                         .stroke(color.opacity(0.2), lineWidth: 1)
                 )
         )

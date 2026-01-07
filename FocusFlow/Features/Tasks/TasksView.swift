@@ -111,33 +111,34 @@ struct TasksView: View {
             VStack(spacing: 0) {
                 // Header
                 headerSection
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
+                    .padding(.bottom, DS.Spacing.xxs)
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         // Date Navigator
                         dateNavigator
-                            .padding(.horizontal, 20)
-                            .padding(.top, 12)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.top, DS.Spacing.md)
                         
                         // Date Strip
                         dateStrip
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, DS.Spacing.lg)
                         
                         // Summary Card
                         summaryCard
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, DS.Spacing.lg)
                         
                         // Quick Stats
                         if !visibleTasks.isEmpty {
                             quickStats
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, DS.Spacing.lg)
                         }
                         
                         // Tasks Section
                         tasksSection
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, DS.Spacing.lg)
                         
                         Spacer(minLength: 120)
                     }
@@ -290,32 +291,26 @@ struct TasksView: View {
             
             // Reset button (only show when there are completions)
             if completedCount > 0 {
-                Button {
+                FFIconButton(
+                    icon: "arrow.counterclockwise",
+                    backgroundColor: .white.opacity(DS.Glass.subtle),
+                    showBorder: false
+                ) {
                     Haptics.impact(.medium)
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                         vm.resetCompletions(for: day, calendar: cal)
                     }
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(Circle())
                 }
             }
             
             // Info button
-            Button {
-                Haptics.impact(.light)
+            FFIconButton(
+                icon: "info.circle",
+                iconSize: 18,
+                backgroundColor: .white.opacity(DS.Glass.subtle),
+                showBorder: false
+            ) {
                 showingInfoSheet = true
-            } label: {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
-                    .frame(width: 36, height: 36)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(Circle())
             }
         }
     }
@@ -373,8 +368,8 @@ struct TasksView: View {
             }
         )
         .frame(height: 72)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
     }
     
     // MARK: - Summary Card
@@ -444,13 +439,13 @@ struct TasksView: View {
                 
                 Spacer()
             }
-            .padding(16)
+            .padding(DS.Spacing.lg)
         }
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
         )
     }
     
@@ -505,9 +500,9 @@ struct TasksView: View {
                 .foregroundColor(.white.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.vertical, DS.Spacing.md)
+        .background(Color.white.opacity(DS.Glass.ultraThin))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
     }
     
     // MARK: - Tasks Section
@@ -515,14 +510,7 @@ struct TasksView: View {
     private var tasksSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Section Header
-            HStack {
-                Text("TASKS")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
-                    .tracking(1.5)
-                
-                Spacer()
-                
+            FFSectionHeader(title: "Tasks") {
                 if !visibleTasks.isEmpty {
                     Button {
                         Haptics.impact(.light)
@@ -557,6 +545,7 @@ struct TasksView: View {
                         .background(theme.accentPrimary.opacity(0.15))
                         .clipShape(Capsule())
                     }
+                    .buttonStyle(FFPressButtonStyle())
                 }
             }
             
@@ -587,7 +576,7 @@ struct TasksView: View {
                 } label: {
                     taskRow(task, isLocked: isLocked)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(FFPressButtonStyle())
                 .disabled(isLocked) // Prevent any interaction with locked tasks
                 .accessibilityLabel("\(task.title)\(done ? ", completed" : "")\(isLocked ? ", requires Pro upgrade" : "")")
                 .accessibilityHint(isLocked ? "Upgrade to Pro to use this task" : (done ? "Tap to mark as incomplete" : "Tap to mark as complete"))
@@ -717,14 +706,14 @@ struct TasksView: View {
                     .clipShape(Capsule())
             }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 14)
+        .padding(.vertical, DS.Spacing.md)
+        .padding(.horizontal, DS.Spacing.md)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(done ? 0.03 : (isLocked ? 0.02 : 0.05)))
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .fill(Color.white.opacity(done ? DS.Glass.ultraThin : (isLocked ? 0.02 : DS.Glass.thin)))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(isLocked ? 0.04 : 0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                        .stroke(Color.white.opacity(isLocked ? DS.Glass.ultraThin : DS.Glass.borderSubtle), lineWidth: 1)
                 )
         )
     }
@@ -780,8 +769,8 @@ struct TasksView: View {
                     }
                 }
                 .foregroundColor(.black)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
+                .padding(.horizontal, DS.Spacing.xxl)
+                .padding(.vertical, DS.Spacing.md)
                 .background(
                     LinearGradient(
                         colors: [theme.accentPrimary, theme.accentSecondary],
@@ -888,7 +877,7 @@ struct TasksView: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
     
     // MARK: - Actions
@@ -1216,13 +1205,13 @@ private struct DatePill: View {
                     }
                 }
             )
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg - 6, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.lg - 6, style: .continuous)
                     .stroke(isToday && !isSelected ? theme.accentPrimary.opacity(0.5) : Color.clear, lineWidth: 1.5)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
         .accessibilityLabel("\(weekday), \(dayNumber)\(isToday ? ", today" : "")\(isSelected ? ", selected" : "")")
         .accessibilityHint(isSelected ? "Currently selected date" : "Tap to select this date")
     }
@@ -1258,14 +1247,14 @@ private struct QuickAddSheet: View {
                 TextField("What needs to be done?", text: $title)
                     .font(.system(size: 16))
                     .foregroundColor(.white)
-                    .padding(16)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .padding(DS.Spacing.lg)
+                    .background(Color.white.opacity(DS.Glass.thin + 0.01))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg - 6))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DS.Radius.lg - 6)
+                            .stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1)
                     )
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, DS.Spacing.xl)
                 
                 // Duration chips
                 VStack(alignment: .leading, spacing: 10) {
@@ -1304,39 +1293,26 @@ private struct QuickAddSheet: View {
                 
                 // Buttons
                 HStack(spacing: 12) {
-                    Button {
+                    FFSecondaryButton(
+                        title: "Cancel",
+                        height: 52,
+                        cornerRadius: DS.Radius.md,
+                        backgroundOpacity: DS.Glass.borderMedium,
+                        borderOpacity: 0
+                    ) {
                         dismiss()
-                    } label: {
-                        Text("Cancel")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color.white.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     
-                    Button {
+                    FFPrimaryButton(
+                        title: "Add Task",
+                        isDisabled: title.trimmingCharacters(in: .whitespaces).isEmpty,
+                        height: 52,
+                        cornerRadius: DS.Radius.md,
+                        theme: theme
+                    ) {
                         guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                        Haptics.impact(.medium)
                         onSave(title.trimmingCharacters(in: .whitespaces), selectedDuration)
-                    } label: {
-                        Text("Add Task")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                LinearGradient(
-                                    colors: [theme.accentPrimary, theme.accentSecondary],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
-                    .opacity(title.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 30)
@@ -1399,23 +1375,13 @@ private struct JumpToDateSheet: View {
                 
                 Spacer()
                 
-                Button {
-                    Haptics.impact(.medium)
+                FFPrimaryButton(
+                    title: "Go to Date",
+                    height: 52,
+                    cornerRadius: DS.Radius.md,
+                    theme: theme
+                ) {
                     onDone(tempDate)
-                } label: {
-                    Text("Go to Date")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            LinearGradient(
-                                colors: [theme.accentPrimary, theme.accentSecondary],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 30)
@@ -1499,13 +1465,18 @@ private struct TaskEditorSheet: View {
                                 .tracking(1)
                             
                             TextField("What needs to be done?", text: $title)
-                                .font(.system(size: 16))
+                                .font(.system(size: DS.Font.body))
                                 .foregroundColor(.white)
-                                .padding(14)
-                                .background(Color.white.opacity(0.06))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .padding(DS.Spacing.lg)
+                                .background(Color.white.opacity(DS.Glass.regular))
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                        .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
+                                )
+                                .tint(.white)
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, DS.Spacing.xl)
                         
                         // Notes Section
                         VStack(alignment: .leading, spacing: 8) {
@@ -1515,14 +1486,19 @@ private struct TaskEditorSheet: View {
                                 .tracking(1)
                             
                             TextField("Add details...", text: $notes, axis: .vertical)
-                                .font(.system(size: 15))
+                                .font(.system(size: DS.Font.callout))
                                 .foregroundColor(.white)
                                 .lineLimit(3...6)
-                                .padding(14)
-                                .background(Color.white.opacity(0.06))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .padding(DS.Spacing.lg)
+                                .background(Color.white.opacity(DS.Glass.regular))
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                        .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
+                                )
+                                .tint(.white)
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, DS.Spacing.xl)
                         
                         // Schedule Section
                         VStack(alignment: .leading, spacing: 12) {
@@ -2016,7 +1992,7 @@ private struct TaskEditorSheet: View {
                                                 .stroke(Color.white.opacity(isSelected ? 0 : 0.1), lineWidth: 1)
                                         )
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(FFPressButtonStyle())
                             }
                         }
                         

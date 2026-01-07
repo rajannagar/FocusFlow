@@ -96,14 +96,14 @@ struct FlowTaskCard: View {
                 }
             }
         }
-        .padding(14)
+        .padding(DS.Spacing.lg)
         .background(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.08).opacity(0.8),
-                            Color.white.opacity(0.08).opacity(0.5)
+                            Color.white.opacity(DS.Glass.regular).opacity(0.8),
+                            Color.white.opacity(DS.Glass.regular).opacity(0.5)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -111,9 +111,9 @@ struct FlowTaskCard: View {
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
                 .stroke(
-                    isCompleted ? theme.accentPrimary.opacity(0.3) : Color.white.opacity(0.1),
+                    isCompleted ? theme.accentPrimary.opacity(0.3) : Color.white.opacity(DS.Glass.borderMedium),
                     lineWidth: 1
                 )
         )
@@ -830,14 +830,14 @@ struct FlowTasksListCard: View {
                 }
             }
         }
-        .padding(14)
+        .padding(DS.Spacing.lg)
         .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.white.opacity(0.08).opacity(0.6))
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
+                .fill(Color.white.opacity(DS.Glass.regular).opacity(0.6))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
+                .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
         )
     }
     

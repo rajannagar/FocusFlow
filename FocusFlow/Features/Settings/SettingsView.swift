@@ -150,9 +150,9 @@ struct SettingsView: View {
             }
             .opacity(0)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.top, DS.Spacing.lg)
+        .padding(.bottom, DS.Spacing.md)
     }
     
     private var settingsContent: some View {
@@ -173,7 +173,7 @@ struct SettingsView: View {
                 }
                 aboutSection
             }
-            .padding(20)
+            .padding(DS.Spacing.xl)
         }
     }
     
@@ -345,7 +345,7 @@ struct SettingsView: View {
                     .foregroundColor(isSelected ? .white : .white.opacity(0.5))
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
         .accessibilityLabel("\(t.displayName) theme\(isSelected ? ", selected" : "")\(isLocked ? ", requires Pro upgrade" : "")")
         .accessibilityHint(isLocked ? "Upgrade to Pro to use this theme" : (isSelected ? "Currently active theme" : "Tap to apply this theme"))
     }
@@ -450,12 +450,12 @@ struct SettingsView: View {
                     
                     Spacer()
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(Color.red.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
                         .stroke(Color.red.opacity(0.2), lineWidth: 1)
                 )
             }
@@ -506,12 +506,12 @@ struct SettingsView: View {
                     
                     Spacer()
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(Color.orange.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
                         .stroke(Color.orange.opacity(0.2), lineWidth: 1)
                 )
             }
@@ -531,7 +531,7 @@ struct SettingsView: View {
                 }
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     LinearGradient(
                         colors: [theme.accentPrimary, theme.accentSecondary],
@@ -539,7 +539,7 @@ struct SettingsView: View {
                         endPoint: .trailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .disabled(syncCoordinator.isSyncing || networkMonitor.isOffline)
             .opacity((syncCoordinator.isSyncing || networkMonitor.isOffline) ? 0.6 : 1.0)
@@ -574,7 +574,7 @@ struct SettingsView: View {
                 }
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     LinearGradient(
                         colors: [theme.accentPrimary, theme.accentSecondary],
@@ -582,7 +582,7 @@ struct SettingsView: View {
                         endPoint: .trailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
         }
     }
@@ -616,7 +616,7 @@ struct SettingsView: View {
                 }
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                .padding(.vertical, DS.Spacing.sm)
                 .background(
                     LinearGradient(
                         colors: [theme.accentPrimary, theme.accentSecondary],
@@ -624,7 +624,7 @@ struct SettingsView: View {
                         endPoint: .trailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
         }
     }
@@ -820,20 +820,20 @@ struct SettingsSectionView<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
                 .font(.system(size: 11, weight: .bold, design: .rounded))
                 .foregroundColor(.white.opacity(0.4))
                 .tracking(1.5)
 
-            VStack(spacing: 12) {
+            VStack(spacing: DS.Spacing.md) {
                 content()
             }
             .font(.system(size: 14, weight: .medium))
             .foregroundColor(.white)
-            .padding(12)
-            .background(Color.white.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(DS.Spacing.md)
+            .background(Color.white.opacity(DS.Glass.thin))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
         }
     }
 }
@@ -873,19 +873,19 @@ struct ResetConfirmationSheet: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.10))
+                            .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                            .background(Color.white.opacity(DS.Glass.regular))
                             .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                            .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 20)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.sm)
+                .padding(.bottom, DS.Spacing.xl)
                 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         // Warning Icon
                         ZStack {
                             Circle()
@@ -896,7 +896,7 @@ struct ResetConfirmationSheet: View {
                                 .font(.system(size: 36, weight: .semibold))
                                 .foregroundColor(.red.opacity(0.9))
                         }
-                        .padding(.top, 8)
+                        .padding(.top, DS.Spacing.sm)
                         
                         // Title
                         Text("Reset All Data")
@@ -920,20 +920,20 @@ struct ResetConfirmationSheet: View {
                         
                         // Backup Info or Tip
                         if isCreatingBackup {
-                            HStack(spacing: 12) {
+                            HStack(spacing: DS.Spacing.md) {
                                 ProgressView()
                                     .tint(.blue)
                                 Text("Creating backup...")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.blue.opacity(0.9))
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
+                            .padding(.vertical, DS.Spacing.md)
+                            .padding(.horizontal, DS.Spacing.lg)
                             .background(Color.blue.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal, 20)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                            .padding(.horizontal, DS.Spacing.xl)
                         } else if backupManager.hasBackup {
-                            HStack(spacing: 12) {
+                            HStack(spacing: DS.Spacing.md) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(.green.opacity(0.9))
                                     .font(.system(size: 16))
@@ -951,13 +951,13 @@ struct ResetConfirmationSheet: View {
                                 }
                                 Spacer()
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
+                            .padding(.vertical, DS.Spacing.md)
+                            .padding(.horizontal, DS.Spacing.lg)
                             .background(Color.green.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal, 20)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                            .padding(.horizontal, DS.Spacing.xl)
                         } else {
-                            HStack(spacing: 12) {
+                            HStack(spacing: DS.Spacing.md) {
                                 Image(systemName: "lightbulb.fill")
                                     .foregroundColor(.yellow.opacity(0.9))
                                     .font(.system(size: 16))
@@ -966,16 +966,16 @@ struct ResetConfirmationSheet: View {
                                     .foregroundColor(.white.opacity(0.8))
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
+                            .padding(.vertical, DS.Spacing.md)
+                            .padding(.horizontal, DS.Spacing.lg)
                             .background(Color.yellow.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal, 20)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                            .padding(.horizontal, DS.Spacing.xl)
                         }
                         
                         // Error Message
                         if let error = resetError {
-                            HStack(spacing: 12) {
+                            HStack(spacing: DS.Spacing.md) {
                                 Image(systemName: "exclamationmark.circle.fill")
                                     .foregroundColor(.red.opacity(0.9))
                                     .font(.system(size: 16))
@@ -984,11 +984,11 @@ struct ResetConfirmationSheet: View {
                                     .foregroundColor(.red.opacity(0.9))
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
+                            .padding(.vertical, DS.Spacing.md)
+                            .padding(.horizontal, DS.Spacing.lg)
                             .background(Color.red.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal, 20)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                            .padding(.horizontal, DS.Spacing.xl)
                         }
                         
                         // Confirmation Text Field
@@ -1003,13 +1003,13 @@ struct ResetConfirmationSheet: View {
                                 .autocorrectionDisabled()
                                 .font(.system(size: 16, weight: .medium, design: .monospaced))
                                 .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .background(Color.white.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.vertical, DS.Spacing.md + 2)
+                                .background(Color.white.opacity(DS.Glass.regular))
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(isResetEnabled ? Color.red.opacity(0.5) : Color.white.opacity(0.2), lineWidth: 1.5)
+                                    RoundedRectangle(cornerRadius: DS.Radius.sm)
+                                        .stroke(isResetEnabled ? Color.red.opacity(0.5) : Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1.5)
                                 )
                                 .onAppear {
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -1017,7 +1017,7 @@ struct ResetConfirmationSheet: View {
                                     }
                                 }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, DS.Spacing.xl)
                         
                         // Action Buttons
                         VStack(spacing: 12) {
@@ -1039,7 +1039,7 @@ struct ResetConfirmationSheet: View {
                                 }
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                                .padding(.vertical, DS.Spacing.lg)
                                 .background(
                                     LinearGradient(
                                         colors: isResetEnabled && !isCreatingBackup ? [Color.blue, Color.blue.opacity(0.8)] : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
@@ -1047,7 +1047,7 @@ struct ResetConfirmationSheet: View {
                                         endPoint: .bottomTrailing
                                     )
                                 )
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                             }
                             .disabled(!isResetEnabled || isCreatingBackup)
                             
@@ -1065,7 +1065,7 @@ struct ResetConfirmationSheet: View {
                                 }
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                                .padding(.vertical, DS.Spacing.lg)
                                 .background(
                                     LinearGradient(
                                         colors: isResetEnabled ? [Color.red.opacity(0.8), Color.red.opacity(0.6)] : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
@@ -1073,7 +1073,7 @@ struct ResetConfirmationSheet: View {
                                         endPoint: .bottomTrailing
                                     )
                                 )
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                             }
                             .disabled(!isResetEnabled)
                             
@@ -1087,11 +1087,12 @@ struct ResetConfirmationSheet: View {
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(.white.opacity(0.7))
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
+                                    .padding(.vertical, DS.Spacing.lg)
                             }
+                            .buttonStyle(FFPressButtonStyle())
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 32)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxxl)
                     }
                 }
             }
@@ -1134,19 +1135,19 @@ struct DeleteAccountConfirmationSheet: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.10))
+                            .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
+                            .background(Color.white.opacity(DS.Glass.regular))
                             .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
+                            .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(FFPressButtonStyle())
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 20)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.sm)
+                .padding(.bottom, DS.Spacing.xl)
                 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DS.Spacing.xxl) {
                         // Warning Icon
                         ZStack {
                             Circle()
@@ -1179,10 +1180,10 @@ struct DeleteAccountConfirmationSheet: View {
                                 DataLossRow(icon: "xmark.circle.fill", text: "This action CANNOT be undone")
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, DS.Spacing.xl)
                         
                         // Pro subscription warning
-                        HStack(spacing: 12) {
+                        HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "crown.fill")
                                 .foregroundColor(.yellow.opacity(0.9))
                                 .font(.system(size: 16))
@@ -1191,15 +1192,15 @@ struct DeleteAccountConfirmationSheet: View {
                                 .foregroundColor(.white.opacity(0.8))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 16)
+                        .padding(.vertical, DS.Spacing.md)
+                        .padding(.horizontal, DS.Spacing.lg)
                         .background(Color.yellow.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .padding(.horizontal, 20)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                        .padding(.horizontal, DS.Spacing.xl)
                         
                         // Error Message
                         if let error = deleteError {
-                            HStack(spacing: 12) {
+                            HStack(spacing: DS.Spacing.md) {
                                 Image(systemName: "exclamationmark.circle.fill")
                                     .foregroundColor(.red.opacity(0.9))
                                     .font(.system(size: 16))
@@ -1208,11 +1209,11 @@ struct DeleteAccountConfirmationSheet: View {
                                     .foregroundColor(.red.opacity(0.9))
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
+                            .padding(.vertical, DS.Spacing.md)
+                            .padding(.horizontal, DS.Spacing.lg)
                             .background(Color.red.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal, 20)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                            .padding(.horizontal, DS.Spacing.xl)
                         }
                         
                         // Confirmation Text Field
@@ -1227,13 +1228,13 @@ struct DeleteAccountConfirmationSheet: View {
                                 .autocorrectionDisabled()
                                 .font(.system(size: 16, weight: .medium, design: .monospaced))
                                 .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .background(Color.white.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.vertical, DS.Spacing.md + 2)
+                                .background(Color.white.opacity(DS.Glass.regular))
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(isDeleteEnabled ? Color.red.opacity(0.5) : Color.white.opacity(0.2), lineWidth: 1.5)
+                                    RoundedRectangle(cornerRadius: DS.Radius.sm)
+                                        .stroke(isDeleteEnabled ? Color.red.opacity(0.5) : Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1.5)
                                 )
                                 .onAppear {
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -1241,10 +1242,10 @@ struct DeleteAccountConfirmationSheet: View {
                                     }
                                 }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, DS.Spacing.xl)
                         
                         // Action Buttons
-                        VStack(spacing: 12) {
+                        VStack(spacing: DS.Spacing.md) {
                             // Delete Account Button
                             Button {
                                 Haptics.impact(.heavy)
@@ -1264,7 +1265,7 @@ struct DeleteAccountConfirmationSheet: View {
                                 }
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                                .padding(.vertical, DS.Spacing.lg)
                                 .background(
                                     LinearGradient(
                                         colors: isDeleteEnabled && !isDeleting ? [Color.red.opacity(0.9), Color.red.opacity(0.7)] : [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
@@ -1272,7 +1273,7 @@ struct DeleteAccountConfirmationSheet: View {
                                         endPoint: .bottomTrailing
                                     )
                                 )
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                             }
                             .disabled(!isDeleteEnabled || isDeleting)
                             
@@ -1286,11 +1287,12 @@ struct DeleteAccountConfirmationSheet: View {
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(.white.opacity(0.7))
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
+                                    .padding(.vertical, DS.Spacing.lg)
                             }
+                            .buttonStyle(FFPressButtonStyle())
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 32)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxxl)
                     }
                 }
             }

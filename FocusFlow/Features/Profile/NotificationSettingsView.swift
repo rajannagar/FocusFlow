@@ -64,8 +64,8 @@ struct NotificationSettingsView: View {
                     
                     Spacer(minLength: 40)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.lg)
             }
         }
         .navigationBarHidden(true)
@@ -85,10 +85,11 @@ struct NotificationSettingsView: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white.opacity(0.7))
-                    .frame(width: 40, height: 40)
-                    .background(Color.white.opacity(0.06))
+                    .frame(width: DS.IconButton.lg, height: DS.IconButton.lg)
+                    .background(Color.white.opacity(DS.Glass.thin))
                     .clipShape(Circle())
             }
+            .buttonStyle(FFPressButtonStyle())
             
             Spacer()
             
@@ -134,7 +135,7 @@ struct NotificationSettingsView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, DS.Spacing.md)
                     .background(
                         LinearGradient(
                             colors: [theme.accentPrimary, theme.accentSecondary],
@@ -142,14 +143,14 @@ struct NotificationSettingsView: View {
                             endPoint: .trailing
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
         }
-        .padding(16)
+        .padding(DS.Spacing.lg)
         .background(Color.orange.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .stroke(Color.orange.opacity(0.3), lineWidth: 1)
         )
     }
@@ -244,7 +245,7 @@ struct NotificationSettingsView: View {
                 
                 if prefs.dailyReminderEnabled {
                     Divider()
-                        .background(Color.white.opacity(0.1))
+                        .background(Color.white.opacity(DS.Glass.regular))
                     
                     HStack {
                         Text("Reminder Time")
@@ -295,9 +296,9 @@ struct NotificationSettingsView: View {
                 
                 if prefs.dailyNudgesEnabled {
                     Divider()
-                        .background(Color.white.opacity(0.1))
+                        .background(Color.white.opacity(DS.Glass.regular))
                     
-                    VStack(spacing: 12) {
+                    VStack(spacing: DS.Spacing.md) {
                         nudgeRow(label: "Morning", time: "9:00 AM", icon: "sunrise.fill")
                         nudgeRow(label: "Afternoon", time: "2:00 PM", icon: "sun.max.fill")
                         nudgeRow(label: "Evening", time: "8:00 PM", icon: "moon.fill")
@@ -384,7 +385,7 @@ struct NotificationSettingsView: View {
                 
                 if prefs.dailyRecapEnabled {
                     Divider()
-                        .background(Color.white.opacity(0.1))
+                        .background(Color.white.opacity(DS.Glass.regular))
                     
                     HStack {
                         Text("Recap Time")
@@ -481,7 +482,7 @@ struct NotificationSettingsView: View {
                 }
                 
                 Divider()
-                    .background(Color.white.opacity(0.1))
+                    .background(Color.white.opacity(DS.Glass.regular))
                 
                 Button {
                     Haptics.impact(.light)
@@ -543,12 +544,12 @@ struct NotificationSettingsView: View {
     
     private func settingsCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
-            .padding(16)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(DS.Spacing.lg)
+            .background(Color.white.opacity(DS.Glass.ultraThin))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
             )
     }
     

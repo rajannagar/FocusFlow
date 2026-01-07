@@ -269,9 +269,9 @@ struct FlowVoiceInputView: View {
                     Text("Cancel")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.white.opacity(0.7))
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(Color.white.opacity(0.1))
+                        .padding(.horizontal, DS.Spacing.xxl)
+                        .padding(.vertical, DS.Spacing.md)
+                        .background(Color.white.opacity(DS.Glass.borderMedium))
                         .cornerRadius(25)
                 }
                 
@@ -287,8 +287,8 @@ struct FlowVoiceInputView: View {
                                 .font(.system(size: 15, weight: .semibold))
                         }
                         .foregroundColor(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, DS.Spacing.xxl)
+                        .padding(.vertical, DS.Spacing.md)
                         .background(
                             LinearGradient(
                                 colors: [theme.accentPrimary, theme.accentSecondary],

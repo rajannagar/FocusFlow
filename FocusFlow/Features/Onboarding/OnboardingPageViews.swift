@@ -251,8 +251,8 @@ struct OnboardingHabitsPage: View {
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.vertical, DS.Spacing.md)
             .background(Color.orange.opacity(0.15))
             .clipShape(Capsule())
             
@@ -264,10 +264,10 @@ struct OnboardingHabitsPage: View {
                 // XP Bar
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: DS.Radius.xs - 2)
                             .fill(Color.white.opacity(0.1))
                         
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: DS.Radius.xs - 2)
                             .fill(
                                 LinearGradient(
                                     colors: [theme.accentPrimary, theme.accentSecondary],
@@ -279,7 +279,7 @@ struct OnboardingHabitsPage: View {
                         
                         // Shimmer effect
                         if xpProgress > 0 {
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: DS.Radius.xs - 2)
                                 .fill(
                                     LinearGradient(
                                         colors: [.clear, .white.opacity(0.3), .clear],
@@ -307,9 +307,9 @@ struct OnboardingHabitsPage: View {
                         .foregroundColor(.white.opacity(0.6))
                 }
             }
-            .padding(20)
-            .background(Color.white.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(DS.Spacing.xl)
+            .background(Color.white.opacity(DS.Glass.thin))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .opacity(levelOpacity)
             
             Spacer()
@@ -402,17 +402,17 @@ struct OnboardingPersonalizePage: View {
                 TextField("Your name", text: $manager.onboardingData.displayName)
                     .font(.system(size: 17, weight: .medium))
                     .foregroundColor(.white)
-                    .padding(16)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(DS.Spacing.lg)
+                    .background(Color.white.opacity(DS.Glass.regular))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg - 2, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DS.Radius.lg - 2, style: .continuous)
+                            .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
                     )
                     .tint(manager.onboardingData.selectedTheme.accentPrimary)
                     .focused($isNameFocused)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, DS.Spacing.xxl)
             .opacity(contentOpacity)
             
             Spacer()
@@ -437,10 +437,10 @@ struct OnboardingPersonalizePage: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, DS.Spacing.xxs)
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, DS.Spacing.xxl)
             .opacity(contentOpacity)
             
             Spacer()
@@ -459,7 +459,7 @@ struct OnboardingPersonalizePage: View {
                     GridItem(.flexible()),
                     GridItem(.flexible()),
                     GridItem(.flexible())
-                ], spacing: 16) {
+                ], spacing: DS.Spacing.lg) {
                     ForEach(AppTheme.allCases) { appTheme in
                         ThemeOptionButton(
                             theme: appTheme,
@@ -470,7 +470,7 @@ struct OnboardingPersonalizePage: View {
                     }
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, DS.Spacing.xxl)
             .opacity(contentOpacity)
             
             Spacer()
@@ -511,15 +511,15 @@ private struct GoalOptionButton: View {
                     ? AnyShapeStyle(LinearGradient(colors: [theme.accentPrimary, theme.accentSecondary], startPoint: .topLeading, endPoint: .bottomTrailing))
                     : AnyShapeStyle(Color.white.opacity(0.08))
             )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? Color.clear : Color.white.opacity(0.1), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                    .stroke(isSelected ? Color.clear : Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
             )
             .scaleEffect(isSelected ? 1.05 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 }
 
@@ -564,7 +564,7 @@ private struct ThemeOptionButton: View {
             .scaleEffect(isSelected ? 1.1 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 }
 

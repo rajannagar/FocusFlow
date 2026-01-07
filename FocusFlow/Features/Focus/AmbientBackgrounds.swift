@@ -1502,7 +1502,7 @@ private struct AmbientModeCard: View {
             )
             .shadow(color: isSelected ? theme.accentPrimary.opacity(0.2) : .clear, radius: 12, x: 0, y: 6)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 }
 

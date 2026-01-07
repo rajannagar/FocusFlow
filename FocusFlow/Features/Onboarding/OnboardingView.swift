@@ -60,15 +60,15 @@ struct OnboardingView: View {
                             Text("Skip")
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.white.opacity(0.5))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.vertical, DS.Spacing.sm)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(FFPressButtonStyle())
                     }
                 }
                 .frame(height: 44)
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.top, DS.Spacing.sm)
                 
                 // Page content
                 TabView(selection: $manager.currentPage) {
@@ -145,7 +145,7 @@ struct OnboardingView: View {
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundColor(.white.opacity(0.5))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(FFPressButtonStyle())
                             }
                         } else {
                             // Continue button for other pages
@@ -209,13 +209,13 @@ struct OnboardingView: View {
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.white.opacity(0.5))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(FFPressButtonStyle())
                             .padding(.top, 4)
                         }
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
+                .padding(.horizontal, DS.Spacing.xxl)
+                .padding(.bottom, DS.Spacing.huge)
             }
         }
         .fullScreenCover(isPresented: $showingAuthSheet) {
@@ -277,19 +277,19 @@ private struct OnboardingButton: View {
                                 endPoint: .trailing
                             )
                         } else {
-                            Color.white.opacity(0.1)
+                            Color.white.opacity(DS.Glass.regular)
                         }
                     }
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.white.opacity(isPrimary ? 0 : 0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                        .stroke(Color.white.opacity(isPrimary ? 0 : DS.Glass.borderSubtle), lineWidth: 1)
                 )
                 .shadow(color: isPrimary ? theme.accentPrimary.opacity(0.4) : .clear, radius: 12, y: 4)
                 .scaleEffect(isPressed ? 0.97 : 1.0)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
         .pressEvents {
             withAnimation(.easeInOut(duration: 0.1)) {
                 isPressed = true
@@ -340,14 +340,14 @@ private struct AuthProviderButton: View {
                     .foregroundColor(.white.opacity(0.6))
             }
             .frame(width: 80, height: 64)
-            .background(Color.white.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color.white.opacity(DS.Glass.regular))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                    .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FFPressButtonStyle())
     }
 }
 

@@ -333,8 +333,8 @@ struct FlowChatView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: voiceManager.transcribedText.isEmpty)
                 .padding(.bottom, 16)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 20)
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xl)
         }
         .onAppear {
             voicePulseAnimation = true
@@ -363,9 +363,9 @@ struct FlowChatView: View {
                 VStack(spacing: 0) {
                     // Header
                     flowHeaderSection
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.sm)
+                        .padding(.bottom, DS.Spacing.xxs)
                     
                     // Messages area
                     messagesScrollView(geometry: geo)
@@ -382,9 +382,9 @@ struct FlowChatView: View {
                     
                     // Input area
                     inputSection
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .padding(.bottom, 4)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.md)
+                        .padding(.bottom, DS.Spacing.xxs)
                 }
             }
         }
@@ -896,7 +896,7 @@ struct FlowChatView: View {
                             endPoint: .trailing
                         )
                     )
-                    .cornerRadius(14)
+                    .cornerRadius(DS.Radius.sm)
                     .shadow(color: theme.accentPrimary.opacity(0.3), radius: 12, x: 0, y: 6)
                 }
                 .padding(.horizontal, 40)
@@ -1053,12 +1053,12 @@ struct FlowInfoSheet: View {
                                 .foregroundColor(.white.opacity(0.7))
                                 .multilineTextAlignment(.center)
                         }
-                        .padding(16)
+                        .padding(DS.Spacing.lg)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: DS.Radius.sm)
                                 .fill(Color.yellow.opacity(0.1))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
+                                    RoundedRectangle(cornerRadius: DS.Radius.sm)
                                         .stroke(Color.yellow.opacity(0.2), lineWidth: 1)
                                 )
                         )
@@ -1116,13 +1116,13 @@ struct FlowCapabilitySection: View {
             .padding(.leading, 26)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
+        .padding(DS.Spacing.lg)
         .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
+                .fill(Color.white.opacity(DS.Glass.thin))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DS.Radius.sm)
+                        .stroke(Color.white.opacity(DS.Glass.regular), lineWidth: 1)
                 )
         )
     }
@@ -1155,14 +1155,14 @@ struct ExamplePromptButton: View {
                         )
                     )
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.06))
+                RoundedRectangle(cornerRadius: DS.Radius.sm)
+                    .fill(Color.white.opacity(DS.Glass.subtle))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DS.Radius.sm)
+                            .stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1)
                     )
             )
         }
@@ -1386,7 +1386,7 @@ struct FlowMessageBubble: View {
     }
     
     private var bubbleBackground: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
             .fill(
                 message.sender == .user
                     ? LinearGradient(
@@ -1395,15 +1395,15 @@ struct FlowMessageBubble: View {
                         endPoint: .bottomTrailing
                     )
                     : LinearGradient(
-                        colors: [Color.white.opacity(0.12), Color.white.opacity(0.06)],
+                        colors: [Color.white.opacity(DS.Glass.thick), Color.white.opacity(DS.Glass.subtle)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .stroke(
-                        message.sender == .user ? Color.clear : Color.white.opacity(0.08),
+                        message.sender == .user ? Color.clear : Color.white.opacity(DS.Glass.regular),
                         lineWidth: 1
                     )
             )
@@ -1416,7 +1416,7 @@ struct FlowMessageBubble: View {
     @ViewBuilder
     private var streamingOverlay: some View {
         if message.state == .streaming {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .stroke(
                     LinearGradient(
                         colors: [theme.accentPrimary.opacity(0.5), theme.accentSecondary.opacity(0.3)],
