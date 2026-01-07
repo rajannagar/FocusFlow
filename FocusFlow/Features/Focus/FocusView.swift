@@ -271,6 +271,15 @@ struct FocusView: View {
             .onReceive(NotificationCenter.default.publisher(for: Notification.Name("FocusFlow.startFocusFromAI"))) { notification in
                 handleAIStartFocus(notification)
             }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("FocusFlow.endFocusFromAI"))) { _ in
+                handleAIEndFocus()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("FocusFlow.extendFocusFromAI"))) { notification in
+                handleAIExtendFocus(notification)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("FocusFlow.setIntentionFromAI"))) { notification in
+                handleAISetIntention(notification)
+            }
         
         return viewWithNotifications
             .onChange(of: scenePhase) { _, newPhase in
@@ -768,10 +777,29 @@ struct FocusView: View {
         
         let sessionName = notification.userInfo?["sessionName"] as? String
         
+        #if DEBUG
+        print("[FocusView] handleAIStartFocus - minutes: \(minutes), userInfo: \(notification.userInfo ?? [:])")
+        #endif
+        
         // If a preset is specified, apply it first
-        if let presetID = notification.userInfo?["presetID"] as? UUID,
+        // Handle both UUID object and String UUID
+        var presetUUID: UUID?
+        if let uuid = notification.userInfo?["presetID"] as? UUID {
+            presetUUID = uuid
+        } else if let uuidString = notification.userInfo?["presetID"] as? String {
+            presetUUID = UUID(uuidString: uuidString)
+        }
+        
+        if let presetID = presetUUID,
            let preset = presetStore.presets.first(where: { $0.id == presetID }) {
+            #if DEBUG
+            print("[FocusView] Applying preset: \(preset.name)")
+            #endif
             applyPreset(preset)
+        } else {
+            #if DEBUG
+            print("[FocusView] No preset found or presetID is nil")
+            #endif
         }
         
         // Update the timer duration
@@ -790,7 +818,43 @@ struct FocusView: View {
         }
         
         #if DEBUG
-        print("[FocusView] AI started focus: \(minutes) min, name: \(sessionName ?? "none")")
+        print("[FocusView] AI started focus: \(minutes) min, preset: \(presetUUID?.uuidString ?? "none"), name: \(sessionName ?? "none")")
+        #endif
+    }
+    
+    private func handleAIEndFocus() {
+        if isRunning || isPaused {
+            viewModel.resetToIdleKeepDuration()
+            
+            #if DEBUG
+            print("[FocusView] AI ended focus session")
+            #endif
+        }
+    }
+    
+    private func handleAIExtendFocus(_ notification: Notification) {
+        guard let minutes = notification.userInfo?["minutes"] as? Int, minutes > 0 else { return }
+        
+        if isRunning || isPaused {
+            // Add minutes to remaining time
+            let additionalSeconds = minutes * 60
+            viewModel.remainingSeconds += additionalSeconds
+            viewModel.totalSeconds += additionalSeconds
+            
+            #if DEBUG
+            print("[FocusView] AI extended focus: +\(minutes) min")
+            #endif
+        }
+    }
+    
+    private func handleAISetIntention(_ notification: Notification) {
+        guard let text = notification.userInfo?["text"] as? String, !text.isEmpty else { return }
+        
+        self.sessionName = text
+        hasEditedIntention = true
+        
+        #if DEBUG
+        print("[FocusView] AI set intention: \(text)")
         #endif
     }
 

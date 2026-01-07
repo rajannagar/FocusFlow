@@ -3,9 +3,9 @@ import SwiftUI
 enum AppTab: Int, Hashable {
     case focus = 0
     case tasks = 1
-    case progress = 2
-    case profile = 3
-    case ai = 4
+    case flow = 2      // Renamed from ai to flow
+    case progress = 3
+    case profile = 4
 }
 
 struct ContentView: View {
@@ -21,6 +21,9 @@ struct ContentView: View {
 
     // ✅ Use ObservedObject for a singleton
     @ObservedObject private var recovery = PasswordRecoveryManager.shared
+    
+    // ✅ Flow AI Navigation Coordinator
+    @ObservedObject private var flowNav = FlowNavigationCoordinator.shared
     
     // MARK: - Guest Migration State
     
@@ -154,30 +157,67 @@ struct ContentView: View {
         .sheet(isPresented: $showMigrationSheet) {
             DataMigrationSheet(theme: appSettings.profileTheme)
         }
+        // MARK: - Flow AI Navigation Sheets
+        .sheet(item: $flowNav.sheetToPresent) { sheet in
+            flowSheetContent(for: sheet)
+        }
+        .sheet(isPresented: $flowNav.showPaywall) {
+            PaywallView(context: flowNav.paywallContext)
+                .environmentObject(appSettings)
+        }
+    }
+    
+    @ViewBuilder
+    private func flowSheetContent(for sheet: FlowNavigationCoordinator.FlowSheet) -> some View {
+        switch sheet {
+        case .presetManager:
+            FocusPresetManagerView()
+            
+        case .settings:
+            NavigationStack {
+                SettingsView()
+            }
+            .environmentObject(appSettings)
+            
+        case .notificationCenter:
+            NavigationStack {
+                NotificationCenterView()
+                    .navigationTitle("Notifications")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .environmentObject(appSettings)
+        }
     }
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
             FocusView()
+                .flowHints(context: .focusTab, theme: appSettings.profileTheme)
                 .tabItem { Label("Focus", systemImage: "timer") }
                 .tag(AppTab.focus)
 
             TasksView()
+                .flowHints(context: .tasksTab, theme: appSettings.profileTheme)
                 .tabItem { Label("Tasks", systemImage: "checklist") }
                 .tag(AppTab.tasks)
 
-            AIChatView()
-                .tabItem { Label("AI", systemImage: "sparkles") }
-                .tag(AppTab.ai)
+            NavigationStack {
+                FlowChatView()
+            }
+            .tabItem { Label("Flow", systemImage: "sparkles") }
+            .tag(AppTab.flow)
 
             ProgressViewV2()
+                .flowHints(context: .progressTab, theme: appSettings.profileTheme)
                 .tabItem { Label("Progress", systemImage: "chart.bar") }
                 .tag(AppTab.progress)
 
             ProfileView(navigateToJourney: $navigateToJourney)
+                .flowHints(context: .profileTab, theme: appSettings.profileTheme)
                 .tabItem { Label("Profile", systemImage: "person.circle") }
                 .tag(AppTab.profile)
         }
+        .flowNavigationBound(selectedTab: $selectedTab)
         .syncWithAppState()
         .dismissKeyboardOnTap()
     }
