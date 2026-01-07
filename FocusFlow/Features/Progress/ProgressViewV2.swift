@@ -266,7 +266,7 @@ struct ProgressViewV2: View {
                         .resizable()
                         .renderingMode(.original)
                         .scaledToFit()
-                        .frame(width: 24, height: 24)
+                        .frame(width: 26, height: 26)
                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
 
                     Text("Progress")
@@ -288,7 +288,7 @@ struct ProgressViewV2: View {
                 }
             } label: {
                 Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
                     .frame(width: 36, height: 36)
                     .background(Color.white.opacity(0.06))

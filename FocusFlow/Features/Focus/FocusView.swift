@@ -448,15 +448,15 @@ struct FocusView: View {
         let name = appSettings.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasUnread = notifications.notifications.contains { !$0.isRead }
         
-        return HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 6) {
+        return HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 10) {
                     Image("Focusflow_Logo")
                         .resizable()
                         .renderingMode(.original)
                         .scaledToFit()
-                        .frame(width: 24, height: 24)
-                        .shadow(color: .black.opacity(0.30), radius: 8, x: 0, y: 4)
+                        .frame(width: 26, height: 26)
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                     
                     Text("FocusFlow")
                         .font(.system(size: 24, weight: .bold))
@@ -476,7 +476,7 @@ struct FocusView: View {
             
             Spacer()
             
-            // ✅ Only keep Bell + Info on the top-right
+            // Bell + Info buttons
             HStack(spacing: 10) {
                 Button {
                     simpleTap()
@@ -484,8 +484,8 @@ struct FocusView: View {
                 } label: {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: hasUnread ? "bell.fill" : "bell")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.70))
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.6))
                             .frame(width: 36, height: 36)
                             .background(Color.white.opacity(0.06))
                             .clipShape(Circle())

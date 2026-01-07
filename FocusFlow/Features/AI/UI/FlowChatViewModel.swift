@@ -374,7 +374,7 @@ final class FlowChatViewModel: ObservableObject {
     
     private func updateStatusCard() {
         let calendar = Calendar.autoupdatingCurrent
-        let now = Date()
+        let today = Date()
         
         // Today's progress
         let todaySessions = ProgressStore.shared.sessions.filter { calendar.isDateInToday($0.date) }
@@ -382,10 +382,9 @@ final class FlowChatViewModel: ObservableObject {
         let goalMinutes = ProgressStore.shared.dailyGoalMinutes
         let percentage = goalMinutes > 0 ? min(100, (todayMinutes * 100) / goalMinutes) : 0
         
-        // Today's tasks
+        // Today's tasks - use proper occurs() logic to match TasksView
         let todayTasks = TasksStore.shared.tasks.filter { task in
-            guard let reminder = task.reminderDate else { return false }
-            return calendar.isDateInToday(reminder)
+            task.occurs(on: today, calendar: calendar)
         }
         
         statusCard = StatusCardData(
@@ -396,10 +395,11 @@ final class FlowChatViewModel: ObservableObject {
             sessionsCount: todaySessions.count
         )
     }
+    }
     
     // MARK: - Quick Actions
     
-    private func updateQuickActions() {
+    func updateQuickActions() {
         let calendar = Calendar.autoupdatingCurrent
         let now = Date()
         let hour = calendar.component(.hour, from: now)
@@ -453,7 +453,7 @@ final class FlowChatViewModel: ObservableObject {
         
         quickActions = Array(actions.prefix(4))
     }
-}
+
 
 // MARK: - Supporting Types
 

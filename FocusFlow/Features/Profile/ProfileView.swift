@@ -590,31 +590,31 @@ struct ProfileView: View {
                 if pro.isPro { ProBadge() }
                 Spacer()
                 
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Button {
                         Haptics.impact(.light)
                         showingEditProfile = true
                     } label: {
                         Image(systemName: "pencil")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.6))
                             .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.08))
+                            .background(Color.white.opacity(0.06))
                             .clipShape(Circle())
                     }
                     .accessibilityLabel("Edit profile")
                     .accessibilityHint("Opens the profile editor to change your name and avatar")
                     
-                Button {
-                    Haptics.impact(.light)
-                    navigateToSettings = true
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
-                        .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.08))
-                        .clipShape(Circle())
+                    Button {
+                        Haptics.impact(.light)
+                        navigateToSettings = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.6))
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.06))
+                            .clipShape(Circle())
                     }
                     .accessibilityLabel("Settings")
                     .accessibilityHint("Opens app settings and preferences")
