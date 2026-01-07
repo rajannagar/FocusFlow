@@ -1,212 +1,570 @@
-# FocusFlow
+# FocusFlow - Comprehensive Application Overview
 
-**Be Present** – The all-in-one iOS app for focused work.
+**FocusFlow** is a **cross-platform productivity app** that combines Pomodoro-style focus timers with AI-powered task management and multi-device cloud synchronization.
 
-FocusFlow is a premium focus timer, task manager, and progress tracker. Beautiful, private, and built for deep work.
-
-**Version:** 1.2.1  
-**Status:** 🟡 In Development (15/17 P1 tasks complete, 1 skipped, 1 deferred; P3-2 completed)
-
-[![App Store](https://img.shields.io/badge/App%20Store-Download-blue?logo=apple)](https://apps.apple.com/app/focusflow-be-present/id6739000000)
+**Current Date**: January 7, 2026  
+**Latest Version**: v2.0+ (Supabase V2 Architecture)
 
 ---
 
-## 📁 Project Structure
+## 📋 Quick Navigation
+
+1. **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete technical architecture & system design
+2. **[FEATURES.md](FEATURES.md)** - All features explained (Free & Pro)
+3. **[PRO_VS_FREE.md](PRO_VS_FREE.md)** - Pricing comparison & monetization strategy
+4. **[CLOUD_SYNC.md](CLOUD_SYNC.md)** - Data synchronization & cloud infrastructure
+5. **[AI_FLOW.md](AI_FLOW.md)** - Focus AI assistant (GPT-4o powered)
+6. **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)** - Supabase tables & data models
+7. **[API_REFERENCE.md](API_REFERENCE.md)** - REST API endpoints & edge functions
+
+---
+
+## 🎯 What is FocusFlow?
+
+FocusFlow is a **comprehensive productivity ecosystem** designed to help users:
+
+- ✅ **Focus Better** - Distraction-free Pomodoro timer with ambient sounds & visuals
+- ✅ **Manage Tasks** - Organize, prioritize, and track task completion with reminders
+- ✅ **Track Progress** - XP system, streaks, levels, journey reviews (Pro)
+- ✅ **Sync Everywhere** - iPhone, iPad, Mac (future) with bidirectional cloud sync
+- ✅ **Use AI** - GPT-4o powered "Flow" assistant for smart task management
+- ✅ **Customize Experience** - 10+ themes, 11+ sounds, 14+ ambient backgrounds
+
+---
+
+## 🏗️ System Architecture at a Glance
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     FocusFlow App (SwiftUI)                │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Features:                                                  │
+│  ├─ Focus Timer (Audio + Visual)                           │
+│  ├─ Task Management (CRUD + Sync)                          │
+│  ├─ Presets (Pomodoro Variants)                            │
+│  ├─ Progress Tracking (XP, Levels, Streaks)                │
+│  ├─ AI Chat (Flow) - GPT-4o                                │
+│  ├─ Notifications (Local + In-App)                         │
+│  ├─ Widgets (Small, Medium, Large) + Live Activity         │
+│  └─ Onboarding (Multi-step setup flow)                     │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│           Core Infrastructure (Swift)                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Local Managers:                                            │
+│  ├─ TasksStore (Observable state)                          │
+│  ├─ FocusTimerViewModel (Session management)               │
+│  ├─ JourneyManager (Analytics & summaries)                 │
+│  ├─ NotificationPreferencesStore (User prefs)              │
+│  └─ ProGatingHelper (Free vs Pro logic)                    │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│         Cloud Infrastructure (Supabase V2)                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Authentication:                                            │
+│  ├─ AuthManagerV2 (Auth state machine)                     │
+│  └─ Session token persistence                              │
+│                                                             │
+│  Sync Engines (Pro only):                                   │
+│  ├─ TasksSyncEngine ↔ tasks table                          │
+│  ├─ SessionsSyncEngine ↔ focus_sessions table              │
+│  ├─ PresetsSyncEngine ↔ focus_presets table                │
+│  ├─ SettingsSyncEngine ↔ user_settings table               │
+│  └─ Conflict Resolution (timestamp-based)                  │
+│                                                             │
+│  Infrastructure:                                            │
+│  ├─ SyncCoordinator (Orchestration)                        │
+│  ├─ SyncQueue (Offline-safe persistence)                   │
+│  └─ LocalTimestampTracker (Merge logic)                    │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│         AI Backend (Supabase Edge Function)                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Flow Service:                                              │
+│  ├─ Message handling (non-streaming + streaming)           │
+│  ├─ Action execution (create/update/delete)                │
+│  ├─ Context building (smart, lazy-loaded)                  │
+│  └─ Session management (multi-turn conversations)          │
+│                                                             │
+│  GPT-4o Integration:                                        │
+│  ├─ System prompt (productivity coach)                      │
+│  ├─ Function calling (OpenAI tools)                        │
+│  └─ Token management (2000 token limit)                    │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│    Supabase PostgreSQL Database                            │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Tables:                                                    │
+│  ├─ users (Auth profiles)                                  │
+│  ├─ tasks (All user tasks)                                 │
+│  ├─ task_completions (Completion records)                  │
+│  ├─ focus_sessions (Session history)                       │
+│  ├─ focus_presets (Custom presets)                         │
+│  └─ user_settings (Preferences & goals)                    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📱 Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **iPhone** | ✅ Fully Supported | Primary platform, optimized for all versions |
+| **iPad** | ✅ Fully Supported | Tablet-optimized UI for larger screens |
+| **Mac** | 🔄 Planned | Coming in future versions |
+| **Web** | ✅ Webapp (Next.js) | Management dashboard at `focusflow-webapp/` |
+| **Marketing Site** | ✅ Next.js | Landing page at `focusflow-site/` |
+
+---
+
+## 🔐 Authentication & Authorization
+
+### **Sign-In Methods**
+- ✅ **Email/Password** (Supabase Auth)
+- ✅ **Google OAuth** (OAuth2)
+- ✅ **Apple Sign-In** (OAuth2)
+- ✅ **Guest Mode** (Local-only, no account needed)
+
+### **Pro Status Handling**
+- Pro status determined by StoreKit 2 subscription
+- Supabase mirrors subscription state in `users.is_pro` table
+- Free users can still pull cloud data (read-only)
+- Pro users get full bidirectional sync
+
+---
+
+## 💾 Data Storage Strategy
+
+### **Local Storage (All Users)**
+```
+UserDefaults with namespaced keys:
+├─ focusflow_tasks_state_guest (Guest mode)
+├─ focusflow_tasks_state_cloud_{userId} (After sign-in)
+├─ focusflow_presets_state_{namespace}
+├─ focusflow_sessions_state_{namespace}
+├─ focusflow_settings_{namespace}
+└─ focusflow_goal_history_{namespace}
+```
+
+### **Cloud Storage (Pro Only for Push)**
+```
+Supabase PostgreSQL:
+├─ users table (auth + metadata)
+├─ tasks table (with updated_at for conflicts)
+├─ task_completions table (daily tracking)
+├─ focus_sessions table (with duration & preset)
+├─ focus_presets table (custom presets)
+└─ user_settings table (goals, notifications, preferences)
+```
+
+### **Conflict Resolution**
+- **Strategy**: Last-write-wins (timestamp-based)
+- **Field**: `updated_at` on all tables
+- **Process**: During initial pull, newer cloud data overwrites local
+- **Ongoing**: Periodic sync every 30 seconds (configurable)
+
+---
+
+## 🎮 Core Features Breakdown
+
+### **1. Focus Timer**
+- **Duration**: 5 - 90 minutes (customizable)
+- **Audio**: 11+ ambient sounds (Pro)
+- **Visual**: 14+ background modes (Pro)
+- **Controls**: Start, Pause, Resume, Stop
+- **Persistence**: Survives app close/lock
+- **Statistics**: Logged as FocusSession with duration, preset, sound
+
+### **2. Task Management**
+- **Free**: 3 active tasks maximum
+- **Pro**: Unlimited active tasks
+- **Features**: 
+  - Create, edit, complete, delete
+  - Set due dates & reminders
+  - Repeat rules (daily, weekly, etc)
+  - Drag-to-reorder
+  - Unlimited completed task history
+  - Batch operations (Pro AI feature)
+
+### **3. Focus Presets**
+- **Free**: 3 default presets (Deep Work, Study, Writing)
+- **Pro**: Create unlimited custom presets
+- **Configuration**: Duration, sound, ambiance mode
+- **Quick Access**: Tap preset to start session instantly
+- **Recommendations**: Flow AI suggests presets based on time of day
+
+### **4. Progress Tracking (Pro)**
+- **XP System**: Earn points per focus minute
+- **Levels**: 50 levels total (unlocked progressively)
+- **Streaks**: Consecutive days with focus activity
+- **Journey View**: Daily summaries + weekly reviews
+- **Analytics**: 
+  - Total focus time (this week, month, all-time)
+  - Most-used presets & sounds
+  - Best focus day/time
+  - Task completion rate
+  - Productivity trends
+
+### **5. Focus AI (Flow) - Pro Only**
+- **Model**: GPT-4o (most advanced OpenAI model)
+- **Access**: "Flow" tab + Spotlight bubble overlay
+- **Capabilities**:
+  - ✅ Create multiple tasks in one message
+  - ✅ Update tasks with natural language
+  - ✅ Delete/complete tasks
+  - ✅ Recommend presets & session lengths
+  - ✅ Show productivity insights
+  - ✅ Start focus sessions
+  - ✅ Voice input (speak instead of type)
+  - ✅ Remember conversation history
+  - ✅ Proactive hints & nudges
+
+### **6. Cloud Sync (Pro)**
+- **Bidirectional**: Local ↔ Cloud (real-time)
+- **Engines**: 4 sync engines (tasks, sessions, presets, settings)
+- **Queue**: Offline-safe persistence queue
+- **Conflict Resolution**: Timestamp-based merge
+- **Merge Strategy**: >7 days offline triggers smart merge
+- **Devices**: iPhone, iPad, Mac (future)
+
+### **7. Notifications**
+- **Local Notifications**: System notifications for reminders
+- **In-App Notifications**: Toast-style messages
+- **Types**: Task reminders, streak milestones, achievement unlocks
+- **Customization**: Per-feature toggle in settings
+
+### **8. Widgets**
+- **Small**: View focus stats (Free)
+- **Medium**: Tasks list + stats (Pro)
+- **Large**: Weekly overview (Pro)
+- **Interactive**: Start/stop sessions from widget (Pro)
+- **Live Activity**: Dynamic Island integration (Pro)
+
+---
+
+## 💳 Monetization Model
+
+### **Free Tier Features**
+- ✅ Full focus timer
+- ✅ 3 active tasks
+- ✅ 1 task reminder
+- ✅ 3 default presets
+- ✅ 2 themes
+- ✅ 3 sounds
+- ✅ 3 ambient modes
+- ✅ Small widget (view-only)
+- ✅ 3 days session history
+- ✅ Cloud data pull (one-time, read-only)
+- ✅ Local data storage
+
+### **Pro Subscription ($59.99/year)**
+- ✅ Everything in Free, plus:
+- ✅ Unlimited active tasks
+- ✅ Unlimited reminders
+- ✅ Unlimited custom presets
+- ✅ 10 total themes (8 premium)
+- ✅ 11 total sounds (8 premium)
+- ✅ 14 total ambient modes (11 premium)
+- ✅ All widgets (interactive)
+- ✅ Live Activity + Dynamic Island
+- ✅ Full session history (all-time)
+- ✅ Bidirectional cloud sync
+- ✅ Multi-device support
+- ✅ XP & Levels system
+- ✅ Journey view & analytics
+- ✅ Focus AI (Flow) - GPT-4o
+- ✅ Voice input
+- ✅ External music (Spotify, Apple Music)
+- ✅ Early access to new features
+
+### **Paywall Contexts**
+When users hit a Pro feature, a context-aware paywall appears:
+- `task` - "Unlock Unlimited Tasks"
+- `preset` - "Create Unlimited Presets"
+- `theme` - "Unlock All 10 Themes"
+- `sound` - "Unlock All 11 Sounds"
+- `ambiance` - "Unlock All 14 Backgrounds"
+- `history` - "Your Complete History"
+- `xpLevels` - "Track Your Progress"
+- `journey` - "Your Focus Journey"
+- `widget` - "Interactive Widgets"
+- `liveActivity` - "Focus from Dynamic Island"
+- `externalMusic` - "Connect Your Music"
+- `cloudSync` - "Sync Everywhere"
+- `ai` - "Focus AI Assistant"
+
+---
+
+## 🗂️ Project Structure
 
 ```
 FocusFlow/
+├── FocusFlow/                           # iOS App (SwiftUI)
+│   ├── App/
+│   │   ├── FocusFlowApp.swift          # App entry point
+│   │   ├── AppDelegate.swift           # Lifecycle management
+│   │   ├── AppSyncManager.swift        # Notification bridge
+│   │   ├── ContentView.swift           # Main navigation
+│   │   ├── FocusFlowLaunchView.swift   # Splash screen
+│   │   └── PremiumAppBackground.swift  # Theme backgrounds
+│   │
+│   ├── Core/                            # Core systems
+│   │   ├── AppSettings/                # App configuration
+│   │   ├── Logging/                    # Debug logging
+│   │   ├── Notifications/              # Push notifications
+│   │   ├── UI/                         # Shared UI components
+│   │   └── Utilities/                  # Helper functions
+│   │
+│   ├── Features/                        # Feature modules
+│   │   ├── Focus/                      # Pomodoro timer + sounds
+│   │   ├── Tasks/                      # Task management
+│   │   ├── Presets/                    # Focus presets editor
+│   │   ├── AI/                         # GPT-4o Flow assistant
+│   │   │   ├── Service/               # API communication
+│   │   │   ├── Core/                  # Business logic
+│   │   │   ├── Actions/               # Task actions
+│   │   │   ├── Proactive/             # Hints & nudges
+│   │   │   ├── Voice/                 # Voice input
+│   │   │   └── UI/                    # Chat interface
+│   │   ├── Progress/                   # XP, levels, streaks
+│   │   ├── Journey/                    # Analytics & reviews
+│   │   ├── Profile/                    # Settings & account
+│   │   ├── Auth/                       # Sign-in / sign-out
+│   │   ├── Settings/                   # App preferences
+│   │   ├── Onboarding/                 # First-run experience
+│   │   └── NotificationsCenter/        # Notification UI
+│   │
+│   ├── Infrastructure/                  # Backend integration
+│   │   └── Cloud/
+│   │       ├── SupabaseManager.swift   # Supabase client
+│   │       ├── AuthManagerV2.swift     # Auth state machine
+│   │       ├── SyncCoordinator.swift   # Sync orchestration
+│   │       ├── SyncQueue.swift         # Offline-safe queue
+│   │       ├── Engines/                # 4 sync engines
+│   │       └── GuestMigrationManager.swift
+│   │
+│   ├── Shared/                          # Shared types
+│   │   ├── FocusSessionAttributes.swift # Live Activity
+│   │   ├── FocusSessionBridge.swift     # Widget bridge
+│   │   └── Intents/                     # AppKit intents
+│   │
+│   ├── Resources/                       # Assets
+│   │   └── Localizable.strings
+│   │
+│   └── StoreKit/                        # In-app purchases
+│       ├── ProEntitlementManager.swift  # Store management
+│       └── PaywallView.swift            # Purchase UI
 │
-├── 📁 docs/                      # Documentation
-│   └── IMPLEMENTATION_PLAN.md    # Launch implementation plan & progress
+├── FocusFlowWidgets/                    # Widget extension
+│   ├── FocusFlowWidget.swift            # Widget definitions
+│   ├── FocusSessionLiveActivity.swift   # Live Activity
+│   ├── WidgetDataProvider.swift         # Data bridge
+│   └── Assets/
 │
-├── 📁 FocusFlow/                 # iOS App Source Code
-│   ├── App/                      # App lifecycle & entry points
-│   ├── Core/                     # Core functionality
-│   │   ├── AppSettings/          # User preferences
-│   │   ├── Logging/              # Debug logging & sync logs
-│   │   ├── Notifications/        # Notification system
-│   │   ├── UI/                   # Reusable UI components
-│   │   └── Utilities/            # Helpers (ProGatingHelper, haptics, network, etc.)
-│   ├── Features/                 # Feature modules
-│   │   ├── Auth/                 # Authentication flows & guest migration
-│   │   ├── Focus/                # Focus timer, ambient sounds & backgrounds
-│   │   ├── Journey/              # Daily summary timeline (Pro only)
-│   │   ├── NotificationsCenter/  # In-app notification center
-│   │   ├── Onboarding/           # First-run experience
-│   │   ├── Presets/              # Custom focus presets
-│   │   ├── Profile/              # User profile & settings
-│   │   ├── Progress/             # XP, levels & stats (Pro only)
-│   │   └── Tasks/                # Task management
-│   ├── Infrastructure/           # Backend & sync
-│   │   └── Cloud/                # Supabase, auth, sync engines
-│   ├── Resources/                # Assets, sounds, entitlements
-│   ├── Shared/                   # Code shared with widgets
-│   └── StoreKit/                 # In-app purchases & paywall
+├── focusflow-webapp/                    # Web dashboard (Next.js)
+│   ├── app/                            # Next.js app router
+│   ├── components/                      # React components
+│   ├── contexts/                        # React contexts
+│   ├── hooks/                           # Custom hooks
+│   ├── lib/                             # Utilities
+│   ├── stores/                          # Zustand state (optional)
+│   └── types/                           # TypeScript types
 │
-├── 📁 FocusFlowWidgets/          # Widget Extension
-│   └── ...                       # Home screen & Live Activity widgets
+├── focusflow-site/                      # Marketing site (Next.js)
+│   ├── app/                            # Homepage + pages
+│   ├── components/                      # Marketing components
+│   ├── lib/                             # Utilities
+│   └── public/                          # Static assets
 │
-├── 📁 FocusFlow.xcodeproj/       # Xcode Project
+├── supabase/                            # Database + Edge Functions
+│   ├── config.toml                      # Supabase config
+│   ├── functions/                       # Edge functions
+│   │   └── flow/                       # GPT-4o endpoint
+│   └── migrations/                      # SQL migrations
 │
-├── 📁 softcomputers-site/        # Marketing Website (Next.js)
-│   ├── app/                      # Pages
-│   ├── components/               # React components
-│   ├── hooks/                    # Custom hooks
-│   └── lib/                      # Utilities & constants
-│
-├── 📁 supabase/                  # Backend Functions
-│   └── functions/
-│       └── delete-user/          # Account deletion edge function
-│
-├── .gitignore                    # Git ignore rules
-└── README.md                     # This file
+└── FocusFlow.xcodeproj/                 # Xcode project
+
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🔄 Data Flow Example
 
-### Prerequisites
-
-- **Xcode 16+** (uses File System Synchronized Groups)
-- **iOS 18.6+** deployment target
-- **Node.js 18+** (for website development)
-
-### iOS App
-
-1. Open `FocusFlow.xcodeproj` in Xcode
-2. Select your development team in Signing & Capabilities
-3. Build and run on simulator or device
-
-### Website
-
-```bash
-cd softcomputers-site
-npm install
-npm run dev
+### **Creating a Task (Free User)**
+```
+User taps "+" in Tasks tab
+  ↓
+TasksView sends FFTaskItem to TasksStore
+  ↓
+TasksStore updates local state (@Published)
+  ↓
+TasksStore saves to UserDefaults (guest namespace)
+  ↓
+UI re-renders, task appears in list
+  ✅ Done - No cloud sync
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+### **Creating a Task (Pro User, Signed In)**
+```
+User taps "+" in Tasks tab
+  ↓
+TasksView sends FFTaskItem to TasksStore
+  ↓
+TasksStore updates local state (@Published)
+  ↓
+TasksStore saves to UserDefaults (cloud namespace)
+  ↓
+AppSyncManager observes local change
+  ↓
+SyncQueue queues PUSH operation
+  ↓
+Background process sends to Supabase
+  ↓
+TasksSyncEngine updates tasks table
+  ↓
+Other devices' TasksSyncEngine pulls change (periodic)
+  ↓
+Tasks appear on all devices
+  ✅ Done - Full sync
+```
+
+### **Completing a Focus Session (Pro User)**
+```
+Session timer completes
+  ↓
+FocusTimerViewModel logs FocusSession
+  ↓
+Session saved to local UserDefaults
+  ↓
+AppSyncManager notifies JourneyManager
+  ↓
+JourneyManager updates XP, streak, level
+  ↓
+SyncQueue queues PUSH for both
+  ↓
+SessionsSyncEngine + SettingsSyncEngine push to cloud
+  ↓
+Next sync, other devices pull session
+  ↓
+XP/streak updates appear everywhere
+  ✅ Done - Cross-device achievement
+```
 
 ---
 
-## 🎯 Key Features
+## 🚀 Getting Started for Developers
 
-### Focus Timer
-- **14 Ambient Backgrounds** – Aurora, Rain, Ocean, Forest, Stars, and more
-- **11 Focus Sounds** – Light Rain, Fireplace, Soft Ambience, and more
-- **Custom Presets** – Save your perfect focus setup
-- **Live Activity** – Timer in Dynamic Island (Pro only)
+### **Prerequisites**
+- Xcode 15+ with iOS 16+ deployment target
+- CocoaPods (for dependencies)
+- Supabase project with API keys
+- OpenAI API key (for Flow AI)
+- StoreKit configuration for testing purchases
 
-### Task Management
-- **Smart Tasks** – Recurring tasks with reminders & duration estimates
-- **Task Limits** – Free: 3 tasks | Pro: Unlimited
+### **Setup Steps**
+1. Clone the repository
+2. Create `Config.xcconfig` with API keys
+3. Run `pod install` (if using CocoaPods)
+4. Open `FocusFlow.xcodeproj` in Xcode
+5. Select target and run on simulator/device
 
-### Progress & Gamification
-- **XP & Levels** – 50 levels to unlock, earn XP for sessions & tasks (Pro only)
-- **Achievement Badges** – Unlock badges for milestones (Pro only)
-- **Journey View** – Daily summaries & weekly reviews (Pro only)
-- **Progress History** – Free: Last 3 days | Pro: Full history
-
-### Customization
-- **10 Themes** – Forest, Neon, Peach, Cyber, Ocean, Sunrise, Amber, Mint, Royal, Slate
-- **Free Themes** – Forest, Neon (2)
-- **Pro Themes** – All 10 themes
-
-### Sync & Cloud
-- **Cloud Sync** – Sync across devices with Supabase (Pro + SignedIn only)
-- **Guest Mode** – Use without an account (local only)
-- **Data Migration** – Seamless guest → account migration
-
-### Platform Features
-- **Widgets** – Home screen widgets (Free: view-only | Pro: full interactivity)
-- **Live Activity** – Dynamic Island integration (Pro only)
-- **External Music** – Spotify, Apple Music, YouTube Music integration (Pro only)
-
-### Privacy & Security
-- **Privacy First** – No tracking, no ads
-- **Secure Authentication** – Email/Password & Google Sign-In
-- **End-to-End Sync** – Your data, encrypted
+### **Key Configuration**
+- `FlowConfig.swift` - All API endpoints
+- `ProGatingHelper.swift` - Free/Pro limits
+- `AppSettings.swift` - Default preferences
 
 ---
 
-## 💎 Free vs Pro
+## 📊 Key Metrics & KPIs
 
-| Feature | Free | Pro |
-|---------|------|-----|
-| **Themes** | 2 (Forest, Neon) | 10 (All themes) |
-| **Focus Sounds** | 3 | 11 (All sounds) |
-| **Ambient Backgrounds** | 3 (Minimal, Stars, Forest) | 14 (All backgrounds) |
-| **Presets** | 3 total | Unlimited |
-| **Tasks** | 3 total | Unlimited |
-| **Progress History** | Last 3 days | Full history |
-| **XP & Levels** | ❌ Hidden | ✅ 50 levels |
-| **Achievement Badges** | ❌ Hidden | ✅ All badges |
-| **Journey View** | ❌ Locked | ✅ Full access |
-| **Cloud Sync** | ❌ | ✅ (requires sign-in) |
-| **Widgets** | View-only | Full interactivity |
-| **Live Activity** | ❌ | ✅ |
-| **External Music** | ❌ | ✅ |
+### **User Engagement**
+- Daily active users (DAU)
+- Weekly active users (WAU)
+- Session completion rate (%)
+- Average session duration
+- Focus time per user (minutes/day)
 
----
+### **Task Management**
+- Tasks created per user
+- Task completion rate (%)
+- Active task count (average)
+- Reminder engagement (%)
 
-## 🔧 Tech Stack
+### **Monetization**
+- Free to Pro conversion rate (%)
+- Pro subscriber count
+- Churn rate
+- Lifetime value (LTV)
+- Paywall context performance
 
-### iOS App
-- **SwiftUI** – Modern declarative UI
-- **Supabase** – Authentication & database
-- **StoreKit 2** – In-app purchases & subscriptions
-- **WidgetKit** – Home screen widgets
-- **ActivityKit** – Live Activities
-- **Google Sign-In** – Social authentication
-
-### Website
-- **Next.js 14** – App Router, React Server Components
-- **TypeScript** – Type safety
-- **Tailwind CSS** – Styling
-- **AWS Amplify** – Hosting
+### **Quality**
+- Crash rate
+- App launch time
+- Sync success rate
+- Data consistency rate
 
 ---
 
-## 📊 Development Status
+## 🔒 Security & Privacy
 
-### ✅ Completed (15/17 P1 tasks + P3-2)
-- ✅ PaywallView with contextual support
-- ✅ ProGatingHelper (centralized gating logic)
-- ✅ Guest → Account Migration
-- ✅ Theme Gating (2 free, 8 Pro)
-- ✅ Sound Gating (3 free, 8 Pro)
-- ✅ Ambiance Gating (3 free, 11 Pro)
-- ✅ Preset Gating (3 max free, unlimited Pro)
-- ✅ Task Gating (3 max free, unlimited Pro)
-- ✅ Progress History Gating (3 days free)
-- ✅ XP/Levels Gating (Pro only)
-- ✅ Badges Gating (Pro only - teaser card for free users)
-- ✅ Journey View Gating (Pro only)
-- ✅ Widget Gating (Pro only for interactivity)
-- ✅ Live Activity Gating (Pro only)
-- ✅ External Music Gating (Pro only)
-- ✅ Sync Status UI in ProfileView
-- ✅ Accessibility Pass (VoiceOver support, labels & hints)
+### **Authentication**
+- ✅ Supabase Auth (industry-standard)
+- ✅ OAuth2 for third-party providers
+- ✅ Secure token storage (Keychain)
+- ✅ Token refresh on demand
 
-### ⏭️ Skipped (1 task)
-- ⏭️ Task Reminders Gating (free users can use reminders on their 3 tasks)
+### **Data Protection**
+- ✅ HTTPS for all API calls
+- ✅ Row-level security (RLS) on Supabase
+- ✅ User data isolated by user_id
+- ✅ No tracking without consent
 
-### ⏳ Remaining P1 Tasks (1)
-- ⏸️ Cloud Sync Gating (DEFERRED - to be completed later)
+### **Privacy**
+- ✅ Local-first storage (before sign-in)
+- ✅ Optional cloud sync
+- ✅ Clear data deletion on sign-out
+- ✅ GDPR-compliant data handling
 
-See [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for full details.
+---
+
+## 📖 Documentation Files
+
+This README provides the overview. See detailed docs for:
+
+1. **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical deep-dive into system design
+2. **[FEATURES.md](FEATURES.md)** - Complete feature list with examples
+3. **[PRO_VS_FREE.md](PRO_VS_FREE.md)** - Monetization & pricing details
+4. **[CLOUD_SYNC.md](CLOUD_SYNC.md)** - Sync architecture & conflict resolution
+5. **[AI_FLOW.md](AI_FLOW.md)** - Focus AI system & capabilities
+6. **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)** - Supabase table structures
+7. **[API_REFERENCE.md](API_REFERENCE.md)** - REST API & edge function docs
+
+---
+
+## 🤝 Contributing
+
+Developers should:
+1. Follow existing code structure
+2. Use reactive patterns (Combine, @Published)
+3. Implement proper error handling
+4. Add unit tests for business logic
+5. Document complex features
+6. Use meaningful commit messages
 
 ---
 
 ## 📄 License
 
-Copyright © 2025 Soft Computers. All rights reserved.
+All rights reserved. FocusFlow is proprietary software.
 
 ---
 
-## 📧 Contact
-
-- **Email**: Info@softcomputers.ca
-- **Website**: [softcomputers.ca](https://www.softcomputers.ca)
-
+**Last Updated**: January 7, 2026  
+**Status**: Production Ready (v2.0+)

@@ -372,17 +372,33 @@ struct FocusFlowApp: App {
 /// Root view that decides whether to show onboarding or main content
 struct RootView: View {
     @EnvironmentObject private var onboardingManager: OnboardingManager
+    @State private var showLaunch = true
     
     var body: some View {
         ZStack {
-            if onboardingManager.hasCompletedOnboarding {
-                ContentView()
-                    .transition(.opacity.combined(with: .scale(scale: 1.02)))
-            } else {
-                OnboardingView()
+            Group {
+                if onboardingManager.hasCompletedOnboarding {
+                    ContentView()
+                        .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                } else {
+                    OnboardingView()
+                        .transition(.opacity)
+                }
+            }
+            .opacity(showLaunch ? 0 : 1)
+            
+            if showLaunch {
+                FocusFlowLaunchView()
                     .transition(.opacity)
             }
         }
+        .background(Color.black.ignoresSafeArea())
+        .animation(.easeInOut(duration: 0.6), value: showLaunch)
         .animation(.easeInOut(duration: 0.4), value: onboardingManager.hasCompletedOnboarding)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+                showLaunch = false
+            }
+        }
     }
 }

@@ -157,9 +157,31 @@ final class FocusPresetStore: ObservableObject {
         isApplyingNamespaceOrRemote = true
         defer { isApplyingNamespaceOrRemote = false }
 
-        presets = []
-
-        loadPresets()
+        // ✅ CRITICAL FIX: Don't set presets = [] here - it causes UI to show empty
+        // Instead, only load if data exists, otherwise preserve current state for sync
+        
+        if let data = UserDefaults.standard.data(forKey: key(Keys.presets)) {
+            #if DEBUG
+            print("[FocusPresetStore] 📖 Loading presets for namespace: \(activeNamespace)")
+            #endif
+            do {
+                presets = try JSONDecoder().decode([FocusPreset].self, from: data)
+                #if DEBUG
+                print("[FocusPresetStore] ✅ Loaded \(presets.count) presets")
+                #endif
+            } catch {
+                #if DEBUG
+                print("[FocusPresetStore] ❌ Failed to load presets: \(error)")
+                #endif
+                presets = []
+            }
+        } else {
+            // New namespace with no saved data - don't clear, let sync populate
+            #if DEBUG
+            print("[FocusPresetStore] ℹ️ No saved presets for namespace \(activeNamespace) - preserving current state for sync")
+            #endif
+        }
+        
         // ✅ Don't load active preset from storage - presets should only be active when:
         // 1. User explicitly selects one in the current session
         // 2. A focus session is running with that preset
@@ -175,7 +197,7 @@ final class FocusPresetStore: ObservableObject {
             LocalTimestampTracker.shared.clearAllTimestamps(namespace: oldNamespace)
         }
         
-        if newNamespace == "guest" {
+        if newNamespace == "guest" && presets.isEmpty {
             _ = seedDefaultsIfNeeded()
         }
 

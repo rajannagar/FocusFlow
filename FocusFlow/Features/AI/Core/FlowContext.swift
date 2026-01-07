@@ -16,11 +16,17 @@ final class FlowContext: ObservableObject {
     
     // MARK: - Memory
     
-    @Published private(set) var memory = FlowMemory()
+    @Published private(set) var memory = FlowMemoryManager.shared.memory
     
     private init() {
         setupObservers()
-        loadMemory()
+        migrateLegacyMemoryIfNeeded()
+        FlowMemoryManager.shared.$memory
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] updated in
+                self?.memory = updated
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Public Methods
@@ -49,8 +55,7 @@ final class FlowContext: ObservableObject {
     
     /// Update memory with new insights
     func updateMemory(_ update: (inout FlowMemory) -> Void) {
-        update(&memory)
-        saveMemory()
+        FlowMemoryManager.shared.updateMemory(update)
     }
     
     // MARK: - Private Methods
@@ -421,30 +426,14 @@ final class FlowContext: ObservableObject {
         return streak
     }
     
-    // MARK: - Memory Persistence
-    
-    private let memoryKey = "flow_memory_v1"
-    
-    private func loadMemory() {
-        guard let data = UserDefaults.standard.data(forKey: memoryKey) else { return }
-        
-        do {
-            memory = try JSONDecoder().decode(FlowMemory.self, from: data)
-        } catch {
-            #if DEBUG
-            print("[FlowContext] Failed to load memory: \(error)")
-            #endif
-        }
-    }
-    
-    private func saveMemory() {
-        do {
-            let data = try JSONEncoder().encode(memory)
-            UserDefaults.standard.set(data, forKey: memoryKey)
-        } catch {
-            #if DEBUG
-            print("[FlowContext] Failed to save memory: \(error)")
-            #endif
+    // MARK: - Legacy Migration
+
+    private func migrateLegacyMemoryIfNeeded() {
+        let legacyKey = "flow_memory_v1"
+        guard let data = UserDefaults.standard.data(forKey: legacyKey) else { return }
+        if let legacy = try? JSONDecoder().decode(FlowMemory.self, from: data) {
+            FlowMemoryManager.shared.updateMemory { $0 = legacy }
+            UserDefaults.standard.removeObject(forKey: legacyKey)
         }
     }
 }

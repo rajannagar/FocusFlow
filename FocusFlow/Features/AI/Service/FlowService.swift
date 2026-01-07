@@ -196,9 +196,9 @@ final class FlowService {
                 ["sender": msg.sender == .user ? "user" : "assistant", "text": msg.content]
             }
         
-        // Trim context if needed
+        // Trim context if needed, keeping the important system preamble intact
         let safeContext = context.count > FlowConfig.maxContextCharacters
-            ? String(context.suffix(FlowConfig.maxContextCharacters))
+            ? String(context.prefix(FlowConfig.maxContextCharacters))
             : context
         
         return [

@@ -6,36 +6,13 @@
 //
 
 import SwiftUI
-import UserNotifications
 
 // MARK: - Main Onboarding View
 
 struct OnboardingView: View {
     @StateObject private var manager = OnboardingManager.shared
     @State private var dragOffset: CGFloat = 0
-    @State private var showingAuthSheet = false
     @ObservedObject private var authManager = AuthManagerV2.shared
-    
-    // Notification permission request helper
-    private func requestNotificationPermission(completion: @escaping () -> Void) {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-            DispatchQueue.main.async {
-                UserDefaults.standard.set(true, forKey: "ff_hasRequestedNotificationPermission")
-                
-                if granted {
-                    Haptics.notification(.success)
-                } else {
-                    Haptics.notification(.warning)
-                }
-                
-                #if DEBUG
-                print("[Onboarding] Notification permission: \(granted ? "granted" : "denied")")
-                #endif
-                
-                completion()
-            }
-        }
-    }
     
     var body: some View {
         ZStack {
@@ -72,282 +49,46 @@ struct OnboardingView: View {
                 
                 // Page content
                 TabView(selection: $manager.currentPage) {
-                    OnboardingWelcomePage(theme: manager.onboardingData.selectedTheme)
-                        .tag(0)
-                    
-                    OnboardingFocusPage(theme: manager.onboardingData.selectedTheme)
-                        .tag(1)
-                    
-                    OnboardingHabitsPage(theme: manager.onboardingData.selectedTheme)
-                        .tag(2)
-                    
-                    OnboardingPersonalizePage(
+                    // Page 0: Simple intro
+                    OnboardingIntroPage(
+                        theme: manager.onboardingData.selectedTheme,
+                        manager: manager
+                    )
+                    .tag(0)
+
+                    // Page 1: Quick tour of pillars
+                    OnboardingTourPage(
+                        theme: manager.onboardingData.selectedTheme,
+                        manager: manager
+                    )
+                    .tag(1)
+
+                    // Page 2: Quick preferences (goal, reminders, theme)
+                    OnboardingQuickPrefsPage(
+                        theme: manager.onboardingData.selectedTheme,
+                        manager: manager
+                    )
+                    .tag(2)
+
+                    // Page 3: Notifications permission step
+                    OnboardingNotificationPermissionPage(
                         theme: manager.onboardingData.selectedTheme,
                         manager: manager
                     )
                     .tag(3)
-                    
-                    OnboardingNotificationsPage(
+
+                    // Page 4: Finish (recap + CTA + auth)
+                    OnboardingFinishPage(
                         theme: manager.onboardingData.selectedTheme,
                         manager: manager
                     )
                     .tag(4)
-                    
-                    OnboardingReadyPage(
-                        theme: manager.onboardingData.selectedTheme,
-                        displayName: manager.onboardingData.displayName
-                    )
-                    .tag(5)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: manager.currentPage)
-                
-                // Bottom controls
-                VStack(spacing: 20) {
-                    // Page indicators
-                    HStack(spacing: 8) {
-                        ForEach(0..<manager.totalPages, id: \.self) { index in
-                            Capsule()
-                                .fill(index == manager.currentPage
-                                      ? manager.onboardingData.selectedTheme.accentPrimary
-                                      : Color.white.opacity(0.2))
-                                .frame(
-                                    width: index == manager.currentPage ? 24 : 8,
-                                    height: 8
-                                )
-                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: manager.currentPage)
-                        }
-                    }
-                    
-                    // Action button
-                    if manager.currentPage < manager.totalPages - 1 {
-                        // Notification permission page - special button
-                        if manager.currentPage == 4 {
-                            VStack(spacing: 12) {
-                                OnboardingButton(
-                                    title: "Enable Notifications",
-                                    theme: manager.onboardingData.selectedTheme,
-                                    isPrimary: true
-                                ) {
-                                    requestNotificationPermission {
-                                        // Move to next page after permission dialog
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                            manager.nextPage()
-                                        }
-                                    }
-                                }
-                                
-                                Button(action: {
-                                    Haptics.impact(.light)
-                                    manager.nextPage()
-                                }) {
-                                    Text("Maybe Later")
-                                        .font(.system(size: 15, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.5))
-                                }
-                                .buttonStyle(FFPressButtonStyle())
-                            }
-                        } else {
-                            // Continue button for other pages
-                            OnboardingButton(
-                                title: manager.currentPage == 0 ? "Get Started" : "Continue",
-                                theme: manager.onboardingData.selectedTheme
-                            ) {
-                                manager.nextPage()
-                            }
-                        }
-                    } else {
-                        // Final page - Complete button + Auth options
-                        VStack(spacing: 16) {
-                            OnboardingButton(
-                                title: "Start Focusing",
-                                theme: manager.onboardingData.selectedTheme,
-                                isPrimary: true
-                            ) {
-                                manager.completeOnboarding()
-                            }
-                            
-                            // Divider
-                            HStack(spacing: 12) {
-                                Rectangle()
-                                    .fill(Color.white.opacity(0.15))
-                                    .frame(height: 1)
-                                
-                                Text("or sign in to sync")
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.4))
-                                
-                                Rectangle()
-                                    .fill(Color.white.opacity(0.15))
-                                    .frame(height: 1)
-                            }
-                            .padding(.horizontal, 20)
-                            
-                            // Auth provider buttons
-                            HStack(spacing: 12) {
-                                AuthProviderButton(provider: .apple) {
-                                    Haptics.impact(.medium)
-                                    showingAuthSheet = true
-                                }
-                                
-                                AuthProviderButton(provider: .google) {
-                                    Haptics.impact(.medium)
-                                    showingAuthSheet = true
-                                }
-                                
-                                AuthProviderButton(provider: .email) {
-                                    Haptics.impact(.medium)
-                                    showingAuthSheet = true
-                                }
-                            }
-                            
-                            // Guest option
-                            Button(action: {
-                                manager.completeOnboarding()
-                            }) {
-                                Text("Continue as guest")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.5))
-                            }
-                            .buttonStyle(FFPressButtonStyle())
-                            .padding(.top, 4)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.xxl)
-                .padding(.bottom, DS.Spacing.huge)
-            }
-        }
-        .fullScreenCover(isPresented: $showingAuthSheet) {
-            AuthLandingView()
-        }
-        .onChange(of: authManager.state) { oldState, newState in
-            // When auth completes (signed in or guest), finish onboarding
-            if showingAuthSheet {
-                // Check if state changed from signedOut/unknown to signedIn/guest
-                let wasSignedOut = (oldState == .signedOut || oldState == .unknown)
-                let isNowSignedIn = (newState.isSignedIn || newState == .guest)
-                
-                if wasSignedOut && isNowSignedIn {
-                    // Auth completed successfully - finish onboarding
-                    manager.completeOnboarding()
-                    showingAuthSheet = false
-                }
-            }
-        }
-        .onChange(of: showingAuthSheet) { oldValue, newValue in
-            // If user dismisses auth sheet without signing in, complete onboarding as guest
-            if oldValue == true && newValue == false {
-                // Check if we're still signed out (user cancelled or dismissed)
-                // If they're signed in or guest, the state onChange already handled it
-                if case .signedOut = authManager.state {
-                    // User dismissed without signing in - complete as guest
-                    manager.completeOnboarding()
-                }
-            }
-        }
-    }
-}
 
-// MARK: - Onboarding Button
-
-private struct OnboardingButton: View {
-    let title: String
-    let theme: AppTheme
-    var isPrimary: Bool = true
-    let action: () -> Void
-    
-    @State private var isPressed = false
-    
-    var body: some View {
-        Button(action: {
-            action()
-        }) {
-            Text(title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(isPrimary ? .black : .white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(
-                    Group {
-                        if isPrimary {
-                            LinearGradient(
-                                colors: [theme.accentPrimary, theme.accentSecondary],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        } else {
-                            Color.white.opacity(DS.Glass.regular)
-                        }
-                    }
-                )
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                        .stroke(Color.white.opacity(isPrimary ? 0 : DS.Glass.borderSubtle), lineWidth: 1)
-                )
-                .shadow(color: isPrimary ? theme.accentPrimary.opacity(0.4) : .clear, radius: 12, y: 4)
-                .scaleEffect(isPressed ? 0.97 : 1.0)
-        }
-        .buttonStyle(FFPressButtonStyle())
-        .pressEvents {
-            withAnimation(.easeInOut(duration: 0.1)) {
-                isPressed = true
-            }
-        } onRelease: {
-            withAnimation(.easeInOut(duration: 0.1)) {
-                isPressed = false
             }
         }
-    }
-}
-
-// MARK: - Auth Provider Button
-
-private enum AuthProvider {
-    case apple, google, email
-    
-    var iconName: String {
-        switch self {
-        case .apple: return "apple.logo"
-        case .google: return "g.circle.fill"
-        case .email: return "envelope.fill"
-        }
-    }
-    
-    var label: String {
-        switch self {
-        case .apple: return "Apple"
-        case .google: return "Google"
-        case .email: return "Email"
-        }
-    }
-}
-
-private struct AuthProviderButton: View {
-    let provider: AuthProvider
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: provider.iconName)
-                    .font(.system(size: 22))
-                    .foregroundColor(.white)
-                
-                Text(provider.label)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            .frame(width: 80, height: 64)
-            .background(Color.white.opacity(DS.Glass.regular))
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                    .stroke(Color.white.opacity(DS.Glass.borderSubtle), lineWidth: 1)
-            )
-        }
-        .buttonStyle(FFPressButtonStyle())
     }
 }
 
@@ -423,28 +164,6 @@ private struct FloatingParticle: Identifiable {
     let size: CGFloat
     var opacity: Double
     var color: Color
-}
-
-// MARK: - Press Events Modifier
-
-private struct PressEventsModifier: ViewModifier {
-    var onPress: () -> Void
-    var onRelease: () -> Void
-    
-    func body(content: Content) -> some View {
-        content
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in onPress() }
-                    .onEnded { _ in onRelease() }
-            )
-    }
-}
-
-private extension View {
-    func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
-        modifier(PressEventsModifier(onPress: onPress, onRelease: onRelease))
-    }
 }
 
 // MARK: - Preview

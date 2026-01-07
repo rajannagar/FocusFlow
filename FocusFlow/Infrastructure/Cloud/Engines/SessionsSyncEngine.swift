@@ -99,6 +99,9 @@ final class SessionsSyncEngine {
     // MARK: - Pull from Remote
 
     func pullFromRemote(userId: UUID) async throws {
+        // ✅ CRITICAL: Set userId in case pullFromRemote is called directly (non-Pro initial pull)
+        self.userId = userId
+        
         let client = SupabaseManager.shared.client
 
         // Fetch all sessions

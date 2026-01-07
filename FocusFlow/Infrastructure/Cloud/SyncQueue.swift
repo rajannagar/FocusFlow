@@ -261,6 +261,14 @@ final class SyncQueue: ObservableObject {
             return
         }
         
+        // ✅ Only process queue if user has Pro subscription
+        guard ProGatingHelper.shared.canUseCloudSync else {
+            #if DEBUG
+            print("[SyncQueue] Skipping sync - requires Pro + SignedIn")
+            #endif
+            return
+        }
+        
         isProcessing = true
         defer { isProcessing = false }
         

@@ -304,15 +304,26 @@ extension FlowActionHandler {
         
         let updatedTask = FFTaskItem(
             id: existingTask.id,
+            sortIndex: existingTask.sortIndex,
             title: title ?? existingTask.title,
+            notes: existingTask.notes,
             reminderDate: reminderDate ?? existingTask.reminderDate,
+            repeatRule: existingTask.repeatRule,
+            customWeekdays: existingTask.customWeekdays,
             durationMinutes: durationMinutes
         )
         
-        TasksStore.shared.upsert(updatedTask)
+        // Preserve additional task metadata
+        var fullTask = updatedTask
+        fullTask.convertToPreset = existingTask.convertToPreset
+        fullTask.presetCreated = existingTask.presetCreated
+        fullTask.excludedDayKeys = existingTask.excludedDayKeys
+        fullTask.createdAt = existingTask.createdAt
+        
+        TasksStore.shared.upsert(fullTask)
         
         #if DEBUG
-        print("[FlowActionHandler] ✅ Updated task: \(updatedTask.title)")
+        print("[FlowActionHandler] ✅ Updated task: \(fullTask.title)")
         #endif
     }
     

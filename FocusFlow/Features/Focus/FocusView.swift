@@ -777,11 +777,13 @@ struct FocusView: View {
             presetUUID = UUID(uuidString: uuidString)
         }
         
+        var matchedPreset: FocusPreset?
         if let presetID = presetUUID,
            let preset = presetStore.presets.first(where: { $0.id == presetID }) {
             #if DEBUG
             print("[FocusView] Applying preset: \(preset.name)")
             #endif
+            matchedPreset = preset
             applyPreset(preset)
         } else {
             #if DEBUG
@@ -792,20 +794,28 @@ struct FocusView: View {
         // Update the timer duration
         viewModel.updateMinutes(minutes)
         
-        // Set session name if provided
+        // Resolve a meaningful session name for AI-started sessions
+        let resolvedSessionName: String
         if let name = sessionName, !name.isEmpty {
-            self.sessionName = name
+            resolvedSessionName = name
+        } else if let presetName = matchedPreset?.name {
+            resolvedSessionName = presetName
+        } else if minutes <= 10 {
+            resolvedSessionName = "Break for \(minutes) min"
+        } else {
+            resolvedSessionName = "Focus for \(minutes) min"
         }
+        self.sessionName = resolvedSessionName
         
         // Start the focus session (with small delay for UI sync)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if self.isIdle || self.isCompleted {
-                self.viewModel.toggle(sessionName: sessionName ?? self.currentSessionDisplayName)
+                self.viewModel.toggle(sessionName: resolvedSessionName)
             }
         }
         
         #if DEBUG
-        print("[FocusView] AI started focus: \(minutes) min, preset: \(presetUUID?.uuidString ?? "none"), name: \(sessionName ?? "none")")
+        print("[FocusView] AI started focus: \(minutes) min, preset: \(presetUUID?.uuidString ?? "none"), name: \(resolvedSessionName)")
         #endif
     }
     

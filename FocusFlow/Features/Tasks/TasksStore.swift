@@ -253,10 +253,28 @@ final class TasksStore: ObservableObject {
             }
         }
 
+        // ✅ CRITICAL FIX: Save current state to old key BEFORE switching to new key
+        // This prevents data loss when switching namespaces
+        save(storageKey: activeStorageKey)
+        
         // lock key first
         lastStorageKey = activeStorageKey
         activeStorageKey = nextKey
-        load(storageKey: nextKey)
+        
+        // ✅ Only load the new key if it exists, otherwise preserve current state
+        // This prevents the UI from showing empty state before sync data arrives
+        #if DEBUG
+        print("[TasksStore] 🔄 Auth state changed: switching from \(lastStorageKey ?? "none") to \(nextKey)")
+        #endif
+        
+        if let existingData = UserDefaults.standard.data(forKey: nextKey) {
+            load(storageKey: nextKey)
+        } else {
+            #if DEBUG
+            print("[TasksStore] ℹ️ New namespace \(nextKey) is empty - preserving current state for sync")
+            #endif
+            // Don't load - preserve current state for sync to populate
+        }
     }
     
     private func getActiveNamespace() -> String {
@@ -293,13 +311,24 @@ final class TasksStore: ObservableObject {
             encoder.dateEncodingStrategy = .iso8601
             let data = try encoder.encode(state)
             UserDefaults.standard.set(data, forKey: storageKey)
+            
+            #if DEBUG
+            print("[TasksStore] ✅ Successfully saved \(ordered.count) tasks to UserDefaults key: \(storageKey)")
+            #endif
         } catch {
-            print("TasksStore: Failed to save tasks: \(error)")
+            print("[TasksStore] ❌ Failed to save tasks: \(error)")
         }
     }
 
     private func load(storageKey: String) {
+        #if DEBUG
+        print("[TasksStore] 📖 Loading from storageKey: \(storageKey)")
+        #endif
+        
         guard let data = UserDefaults.standard.data(forKey: storageKey) else {
+            #if DEBUG
+            print("[TasksStore] ℹ️ No data found in UserDefaults for key: \(storageKey)")
+            #endif
             tasks = []
             completedOccurrenceKeys = []
             return
@@ -309,6 +338,10 @@ final class TasksStore: ObservableObject {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             let state = try decoder.decode(LocalState.self, from: data)
+            
+            #if DEBUG
+            print("[TasksStore] ✅ Loaded \(state.tasks.count) tasks from UserDefaults")
+            #endif
 
             var loaded = state.tasks
             let uniqueCount = Set(loaded.map { $0.sortIndex }).count
@@ -334,8 +367,22 @@ final class TasksStore: ObservableObject {
 
 extension TasksStore {
     func applyRemoteState(tasks newTasks: [FFTaskItem], completionKeys newKeys: Set<String>) {
+        #if DEBUG
+        print("[TasksStore] 📥 applyRemoteState called with \(newTasks.count) tasks, \(newKeys.count) completions")
+        #endif
+        
         isApplyingState = true
-        defer { isApplyingState = false }
+        defer { 
+            isApplyingState = false
+            // ✅ CRITICAL: Save after applying remote state so data persists
+            #if DEBUG
+            print("[TasksStore] 💾 Saving \(self.tasks.count) tasks to \(self.activeStorageKey)")
+            #endif
+            save()
+            #if DEBUG
+            print("[TasksStore] ✅ Saved to UserDefaults with key: \(self.activeStorageKey)")
+            #endif
+        }
         self.tasks = newTasks
         self.completedOccurrenceKeys = newKeys
     }

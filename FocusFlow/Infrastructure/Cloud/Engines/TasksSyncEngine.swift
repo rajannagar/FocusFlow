@@ -101,6 +101,10 @@ final class TasksSyncEngine {
     // MARK: - Pull from Remote
     
     func pullFromRemote(userId: UUID) async throws {
+        // ✅ CRITICAL: Set userId in case pullFromRemote is called directly (non-Pro initial pull)
+        // This ensures applyRemoteToLocal() can access the userId
+        self.userId = userId
+        
         let client = SupabaseManager.shared.client
         
         // Fetch tasks
@@ -483,11 +487,20 @@ final class TasksSyncEngine {
     // MARK: - Apply Remote to Local
     
     private func applyRemoteToLocal(tasks: [TaskDTO], completions: [TaskCompletionDTO]) {
+        #if DEBUG
+        print("[TasksSyncEngine] 🔄 applyRemoteToLocal called with \(tasks.count) tasks, \(completions.count) completions")
+        #endif
+        
         isApplyingRemote = true
         defer { isApplyingRemote = false }
         
         let store = TasksStore.shared
-        guard let userId = userId else { return }
+        guard let userId = userId else {
+            #if DEBUG
+            print("[TasksSyncEngine] ❌ No userId - cannot apply remote state")
+            #endif
+            return
+        }
         let namespace = userId.uuidString
         
         // ✅ NEW: Merge remote tasks with local, preserving newer local changes

@@ -179,6 +179,9 @@ final class SettingsSyncEngine {
     // MARK: - Pull
 
     func pullFromRemote(userId: UUID) async throws {
+        // ✅ CRITICAL: Set userId in case pullFromRemote is called directly (non-Pro initial pull)
+        self.userId = userId
+        
         let client = SupabaseManager.shared.client
 
         // ✅ Avoid .single() so first-time users (0 rows) don't throw PGRST116

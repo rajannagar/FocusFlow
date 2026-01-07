@@ -97,7 +97,27 @@ final class ProgressStore: ObservableObject {
         lastNamespace = activeNamespace
         activeNamespace = newNamespace
 
-        load()
+        // ✅ CRITICAL FIX: Only load if data exists, otherwise preserve current state for sync
+        // This prevents the UI from showing empty state before sync data arrives
+        #if DEBUG
+        print("[ProgressStore] 🔄 Auth state changed: switching namespace to \(newNamespace)")
+        #endif
+        
+        if defaults.object(forKey: key(Keys.sessions)) != nil {
+            load()
+            #if DEBUG
+            print("[ProgressStore] 📖 Loaded \(sessions.count) sessions from new namespace")
+            #endif
+        } else {
+            #if DEBUG
+            print("[ProgressStore] ℹ️ No sessions in new namespace - preserving current state for sync")
+            #endif
+            // Don't load - preserve current state for sync to populate
+            // But do load goal minutes if they exist
+            if defaults.object(forKey: key(Keys.goalMinutes)) != nil {
+                dailyGoalMinutes = defaults.integer(forKey: key(Keys.goalMinutes))
+            }
+        }
     }
 
     // MARK: - Derived stats
