@@ -395,7 +395,6 @@ final class FlowChatViewModel: ObservableObject {
             sessionsCount: todaySessions.count
         )
     }
-    }
     
     // MARK: - Quick Actions
     
@@ -453,6 +452,7 @@ final class FlowChatViewModel: ObservableObject {
         
         quickActions = Array(actions.prefix(4))
     }
+}
 
 
 // MARK: - Supporting Types
