@@ -1,0 +1,540 @@
+'use client';
+
+import Link from 'next/link';
+import { Container } from '@/components';
+import { CONTACT_EMAIL } from '@/lib/constants';
+
+export default function PrivacyClient() {
+  const sections = [
+    { id: 'summary', title: 'Summary' },
+    { id: 'data-stored', title: 'Data the App Stores' },
+    { id: 'data-location', title: 'Where Your Data is Stored' },
+    { id: 'not-collected', title: 'What We Do Not Collect' },
+    { id: 'data-use', title: 'How We Use Data' },
+    { id: 'sharing', title: 'Sharing' },
+    { id: 'ai-assistant', title: 'AI Assistant (Flow)' },
+    { id: 'diagnostics', title: 'Diagnostics' },
+    { id: 'retention', title: 'Retention' },
+    { id: 'your-rights', title: 'Your Rights' },
+    { id: 'account-deletion', title: 'Account Deletion' },
+    { id: 'children', title: "Children's Privacy" },
+    { id: 'changes', title: 'Changes' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[var(--background)]">
+      
+      {/* Clean Header */}
+      <section className="pt-12 md:pt-20 pb-8 md:pb-12 border-b border-[var(--border)]">
+        <Container>
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] mb-4">
+              <Link href="/" className="hover:text-[var(--foreground)] transition-colors">Home</Link>
+              <span>/</span>
+              <span>Privacy Policy</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-[var(--foreground)] mb-4">Privacy Policy</h1>
+            <p className="text-[var(--foreground-muted)]">
+              Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </Container>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-12 md:py-16">
+        <Container>
+          <div className="max-w-3xl mx-auto">
+            
+            {/* Introduction */}
+            <div className="prose-section mb-12">
+              <p className="text-lg text-[var(--foreground-muted)] leading-relaxed">
+                This Privacy Policy explains how FocusFlow - Be Present ("FocusFlow", "the app") handles your information. 
+                Soft Computers ("we", "us", "our") is the developer of FocusFlow.
+              </p>
+              <p className="text-lg text-[var(--foreground-muted)] leading-relaxed mt-4">
+                <strong className="text-[var(--foreground)]">Effective Date:</strong> January 9, 2026
+              </p>
+            </div>
+
+            {/* Table of Contents */}
+            <nav className="mb-12 p-6 bg-[var(--background-subtle)] rounded-lg border border-[var(--border)]">
+              <h2 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-4">Contents</h2>
+              <ol className="grid md:grid-cols-2 gap-2">
+                {sections.map((section, i) => (
+                  <li key={section.id}>
+                    <a 
+                      href={`#${section.id}`}
+                      className="text-sm text-[var(--foreground-muted)] hover:text-[var(--accent-primary)] transition-colors"
+                    >
+                      {i + 1}. {section.title}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+
+            {/* Sections */}
+            <div className="space-y-12">
+              
+              {/* 1. Summary */}
+              <section id="summary">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  1. Summary
+                </h2>
+                <ul className="space-y-3 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Guest Mode:</strong> Your data is stored locally on your device only.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Signed-in Mode:</strong> Your data may be synced to a secure cloud backend to support backup and multi-device use.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>We do not sell personal information and the app is not ad-supported.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>We do not require photo library access (avatars are symbol-based).</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>You can delete your account and all associated data at any time from within the app.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">AI Assistant:</strong> FocusFlow includes an optional AI assistant ("Flow") powered by OpenAI. When you use Flow, your messages and relevant app data are processed by OpenAI&apos;s GPT-4 model. See section 7 for details.</span>
+                  </li>
+                    </ul>
+              </section>
+
+              {/* 2. Data the App Stores */}
+              <section id="data-stored">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  2. Data the App Stores
+                </h2>
+                <p className="text-[var(--foreground-muted)] mb-4">Depending on how you use FocusFlow, we may store:</p>
+                <ul className="space-y-3 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Account data (Signed-in Mode only):</strong> Email address (if provided), display name, and authentication identifiers.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Focus data:</strong> Session duration, timestamps, session names/intentions, ambient background selections, focus sound preferences, and derived statistics (streaks, total time, etc.).</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Task data:</strong> Task titles, notes, schedules, reminders, duration estimates, completion records, and task status.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Preset data:</strong> Custom focus presets including names, durations, ambient background selections, focus sound preferences, and theme preferences.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Progress data:</strong> XP points, level progression, achievement badges, journey milestones, and historical session data.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Settings & preferences:</strong> Theme selections (10 available), daily goals, reminder preferences, sound/haptic settings, avatar selection, and app customization options.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">AI conversation data (Optional):</strong> If you use the Flow AI assistant, your messages to Flow and Flow&apos;s responses are stored locally on your device and synced to our servers if you are signed in. This enables conversation history across your devices.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Notification preferences:</strong> Your notification settings including daily reminders, task reminders, and notification schedules.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Subscription data:</strong> Apple handles all payment information through StoreKit. We only receive confirmation of your FocusFlow Pro subscription status (active, expired, cancelled) to enable or disable Pro features.</span>
+                  </li>
+                      </ul>
+              </section>
+
+              {/* 3. Where Your Data is Stored */}
+              <section id="data-location">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  3. Where Your Data is Stored
+                </h2>
+                <ul className="space-y-3 text-[var(--foreground-muted)] mb-4">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Guest Mode:</strong> On your device only. Data is never sent to our servers.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Signed-in Mode:</strong> Synced to a secure cloud backend (Supabase) used to provide the service.</span>
+                  </li>
+                </ul>
+                <p className="text-[var(--foreground-muted)]">
+                  We use access controls and row-level security (RLS) policies designed to isolate each user&apos;s data and prevent unauthorized access. Supabase infrastructure is hosted on Amazon Web Services (AWS) with data centers primarily in the United States.
+                </p>
+              </section>
+
+              {/* 4. What We Do Not Collect */}
+              <section id="not-collected">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  4. What We Do Not Collect
+                </h2>
+                <ul className="space-y-3 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>We do not request access to your photos, contacts, or precise location.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>We do not use analytics or tracking SDKs.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>We do not display advertisements.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>We do not sell personal information.</span>
+                  </li>
+                    </ul>
+              </section>
+
+              {/* 5. How We Use Data */}
+              <section id="data-use">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  5. How We Use Data
+                </h2>
+                <ul className="space-y-3 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>To provide the app&apos;s features (focus sessions, tasks, progress tracking, achievements, personalization, AI assistance).</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>To sync your data across devices when you choose to sign in.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>To provide cloud backup of your data.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>To power the AI assistant (Flow) by sending your queries and relevant context to OpenAI for processing.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>To send you notifications about focus sessions, task reminders, and app activity when you enable notifications.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>To respond to support requests and improve app reliability.</span>
+                  </li>
+                </ul>
+              </section>
+
+              {/* 6. Sharing and Third-Party Services */}
+              <section id="sharing">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  6. Sharing and Third-Party Services
+                </h2>
+                <p className="text-[var(--foreground-muted)] mb-4">We share data only when necessary to operate the service:</p>
+                <ul className="space-y-3 text-[var(--foreground-muted)] mb-4">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Cloud infrastructure (Supabase):</strong> We use Supabase (supabase.com) for authentication, database hosting, and backend services. Supabase processes your account data, synced app data, and provides secure storage. Supabase&apos;s privacy policy applies: <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">supabase.com/privacy</a></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">AI service provider (OpenAI):</strong> When you use the Flow AI assistant, your messages and relevant app context are sent to OpenAI (openai.com) for processing by their GPT-4 model. OpenAI&apos;s data retention and privacy policy applies. See section 7 for detailed information about AI data processing.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Authentication providers:</strong> If you sign in with Apple or Google, those services receive standard authentication data (email, name, authentication tokens) according to their respective authentication protocols.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Payment processing (Apple):</strong> All subscription purchases are processed by Apple through the App Store. Apple handles all payment information. We only receive confirmation of subscription status.</span>
+                  </li>
+                  <liAI Assistant (Flow) */}
+              <section id="ai-assistant">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  7. AI Assistant (Flow)
+                </h2>
+                
+                <p className="text-[var(--foreground-muted)] mb-4">
+                  FocusFlow includes an optional AI assistant feature called "Flow" that helps you manage your tasks, analyze your productivity, and interact with the app using natural language.
+                </p>
+
+                <h9. Retention */}
+              <section id="retention">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  9. Data
+                <ul className="space-y-2 text-[var(--foreground-muted)] mb-4">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Your messages to Flow</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Recent conversation history (last 10 messages)</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Your tasks (titles, notes, due dates, completion status)</span>
+                  </li> within 30 days. Note that data sent to OpenAI via the Flow AI assistant follows OpenAI&apos;s retention policy (up to 30 days).</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Backup data:</strong> Local device backups created through the app are stored on your device until manually deleted or until you delete the app.</span>
+                  </li>
+                    </ul>
+              </section>
+
+              {/* 10. Your Rights */}
+              <section id="your-rights">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  10. Your Rights and Data Control
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Your app settings and preferences</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>"Export My Data" feature in Settings to download all your data as a JSON file. This includes your sessions, tasks, presets, settings, progress data, and AI conversation history
+                    <span>Your display name</span>
+                  </li>
+                </ul>
+
+                <h3 className="text-lg font-semibold text-[var(--foreground)] mb-3 mt-6">Data Processing by OpenAI</h3>
+                <ul className="space-y-3 text-[var(--foreground-muted)] mb-4">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>rol AI conversations:</strong> Clear your Flow AI conversation history at any time from Settings. This removes messages from our servers but not from OpenAI (they auto-delete after 30 days).</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Contact us:</strong> Email <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent-primary)] hover:underline">{CONTACT_EMAIL}</a> for any privacy-related requests, questions, or concerns.</span>
+                  </li>
+                      </ul>
+                
+                <h3 className="text-lg font-semibold text-[var(--foreground)] mb-3 mt-6">GDPR Rights (European Users)</h3>
+                <p className="text-[var(--foreground-muted)] mb-3">If you are in the European Economic Area, you have additional rights under GDPR:</p>
+                <ul className="space-y-2 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Right to data portability (export in machine-readable format)</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Right to object to processing</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Right to rectification (correct inaccurate data)</span>
+                  </li>
+                  <li className="flex gap-3">, AI conversations) will be permanently removed from our servers within 30 days</li>
+                        <li>This action cannot be undone</li>
+                </ol>
+                <p className="text-[var(--foreground-muted)] mb-4 text-sm">
+                  <strong>Note:</strong> Data previously sent to OpenAI via the Flow AI assistant follows OpenAI&apos;s retention policy and will be automatically deleted after 30 days from the date it was sent.
+                </p<span>Right to restrict processing</span>
+                  </li>
+                  <li className="flex gap-3">
+                   2. Children's Privacy */}
+              <section id="children">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  12. Children&apos;
+              </section>
+
+              {/* 11. Account Deletion */}
+              <section id="account-deletion">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  11<span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">No Training:</strong> OpenAI has confirmed that data sent via their API is not used to train or improve their models.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Security:</strong> All communication with OpenAI is encrypted in transit using HTTPS/TLS.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">OpenAI Privacy Policy:</strong> OpenAI&apos;s privacy policy applies to data processed by their service. Review it at: <a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline">openai.com/policies/privacy-policy</a></span>
+                  <3. Changes */}
+              <section id="changes">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  13className="text-lg font-semibold text-[var(--foreground)] mb-3 mt-6">Your Control Over AI Features</h3>
+                <ul className="space-y-3 text-[var(--foreground-muted)] mb-4">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Optional:</strong> Using Flow is completely optional. You can use all other FocusFlow features without ever interacting with the AI assistant.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Clear Conversations:</strong> You can clear your Flow conversation history at any time from Settings → AI Settings → Clear Conversation History.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Account Deletion:</strong> Deleting your account removes all Flow conversations from our servers.</span>
+                  </li>
+                </ul>
+
+                <h3 className="text-lg font-semibold text-[var(--foreground)] mb-3 mt-6">AI Accuracy Disclaimer</h3>
+                <div className="p-4 bg-[var(--background-subtle)] rounded-lg border border-[var(--border)]">
+                  <p className="text-[var(--foreground-muted)]">
+                    <strong className="text-[var(--foreground)]">Important:</strong> Flow&apos;s responses are generated by artificial intelligence and may not always be accurate, complete, or appropriate. AI can make mistakes, misinterpret context, or provide incorrect information. Do not rely on Flow for critical decisions, medical advice, legal guidance, or financial planning. Always verify AI-generated information and use your own judgment. We are not responsible for actions taken based on Flow&apos;s responses.
+                  </p>
+                </div>
+
+                <h3 className="text-lg font-semibold text-[var(--foreground)] mb-3 mt-6">International Data Transfer</h3>
+                <p className="text-[var(--foreground-muted)]">
+                  OpenAI operates globally, and your data may be transferred to, stored, and processed in the United States or other countries where OpenAI maintains facilities. By using Flow, you consent to this transfer of information.
+                </p>
+              </section>
+
+              {/* 8. Diagnostics */}
+              <section id="diagnostics">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  8. Diagnostics and Crash Reporting
+                </h2>
+                <p className="text-[var(--foreground-muted)]">
+                  iOS may generate diagnostics such as crash logs depending on your device settings. If diagnostics are available to us through App Store Connect, we use them only to troubleshoot and improve app stability. These reports do not contain personally identifiable information and are used solely for debugging purposes
+                    <span><strong className="text-[var(--foreground)]">Authentication providers:</strong> If you sign in with Apple or Google, those services receive standard authentication data.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Legal requirements:</strong> We may disclose data if required by law.</span>
+                  </li>
+                      </ul>
+                <p className="text-[var(--foreground-muted)]">We do not sell personal information to third parties.</p>
+              </section>
+
+              {/* 7. Diagnostics */}
+              <section id="diagnostics">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  7. Diagnostics
+                </h2>
+                <p className="text-[var(--foreground-muted)]">
+                  iOS may generate diagnostics such as crash logs depending on your device settings. If diagnostics are available to us through App Store Connect, we use them only to troubleshoot and improve app stability.
+                    </p>
+              </section>
+
+              {/* 8. Retention */}
+              <section id="retention">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  8. Retention
+                </h2>
+                <ul className="space-y-3 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Guest Mode:</strong> Data remains on your device until you delete the app or use the "Reset All Data" feature.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Signed-in Mode:</strong> Synced data is retained to provide the service until you delete your account.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">After account deletion:</strong> All your data is permanently removed from our servers.</span>
+                  </li>
+                    </ul>
+              </section>
+
+              {/* 9. Your Rights */}
+              <section id="your-rights">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  9. Your Rights
+                </h2>
+                <p className="text-[var(--foreground-muted)] mb-4">You have the right to:</p>
+                <ul className="space-y-3 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Access your data:</strong> View all your data within the app (Profile, Progress, Tasks, Settings).</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Export your data:</strong> Use the backup/export feature within the app to export your data as a JSON file containing all your sessions, tasks, presets, and settings.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Delete your data:</strong> Use "Delete Account" in the app settings to permanently remove all your data.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span><strong className="text-[var(--foreground)]">Contact us:</strong> Email <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent-primary)] hover:underline">{CONTACT_EMAIL}</a> for any privacy-related requests.</span>
+                  </li>
+                      </ul>
+              </section>
+
+              {/* 10. Account Deletion */}
+              <section id="account-deletion">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  10. Account Deletion
+                </h2>
+                <p className="text-[var(--foreground-muted)] mb-4">You can delete your account at any time from within the app:</p>
+                <ol className="space-y-2 text-[var(--foreground-muted)] mb-4 list-decimal list-inside">
+                        <li>Open FocusFlow and navigate to Profile → Settings</li>
+                        <li>Scroll to the "Account" section and tap "Delete Account"</li>
+                        <li>Confirm deletion by typing "DELETE" when prompted</li>
+                        <li>All your data (sessions, tasks, presets, progress, settings) will be permanently removed from our servers</li>
+                        <li>This action cannot be undone</li>
+                </ol>
+                <p className="text-[var(--foreground-muted)] text-sm italic">
+                  <strong>Important:</strong> If you have an active FocusFlow Pro subscription, please cancel it through your Apple ID account settings (Settings → [Your Name] → Subscriptions) before deleting your account to avoid further charges. Account deletion does not automatically cancel your subscription.
+                      </p>
+              </section>
+
+              {/* 11. Children's Privacy */}
+              <section id="children">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  11. Children's Privacy
+                </h2>
+                <p className="text-[var(--foreground-muted)]">
+                  FocusFlow is not directed at children under the age of 13 (or the minimum age required in your jurisdiction). We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent-primary)] hover:underline">{CONTACT_EMAIL}</a> and we will promptly delete such information.
+                    </p>
+              </section>
+
+              {/* 12. Changes */}
+              <section id="changes">
+                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
+                  12. Changes to This Privacy Policy
+                </h2>
+                <p className="text-[var(--foreground-muted)] mb-4">
+                  We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors. When we make changes, we will:
+                </p>
+                <ul className="space-y-3 text-[var(--foreground-muted)]">
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Update the "Last updated" date at the top of this policy</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>Post the updated policy on this page</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[var(--accent-primary)]">•</span>
+                    <span>For material changes, notify users through the app or via email</span>
+                  </li>
+                </ul>
+                <p className="text-[var(--foreground-muted)] mt-4">
+                  We encourage you to review this policy periodically to stay informed about how we protect your information. Your continued use of FocusFlow after changes to this policy constitutes acceptance of those changes.
+                    </p>
+              </section>
+
+            </div>
+
+            {/* Contact Footer */}
+            <div className="mt-16 pt-8 border-t border-[var(--border)]">
+              <p className="text-[var(--foreground-muted)] text-center">
+                Questions about this policy? Contact us at{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent-primary)] hover:underline font-medium">
+                  {CONTACT_EMAIL}
+                </a>
+              </p>
+            </div>
+
+          </div>
+        </Container>
+      </section>
+    </div>
+  );
+}

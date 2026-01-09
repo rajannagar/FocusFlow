@@ -4,7 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { APP_STORE_URL, CONTACT_EMAIL, COMPANY_LOCATION, SITE_DESCRIPTION } from '@/lib/constants';
-import { Download, Mail, MapPin, Sparkles, ArrowUpRight } from 'lucide-react';
+import { 
+  Download, Mail, MapPin, Sparkles, ArrowUpRight, 
+  Heart, Timer, CheckSquare, TrendingUp, User,
+  Shield, Zap, ExternalLink
+} from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -17,39 +21,66 @@ export default function Footer() {
 
   const isPricingPage = isActive('/pricing');
 
+  // Footer link groups
+  const productLinks = [
+    { href: '/features', label: 'Features' },
+    { href: '/pricing', label: 'Pricing' },
+    { href: APP_STORE_URL, label: 'Download', external: true },
+  ];
+
+  const companyLinks = [
+    { href: '/about', label: 'About Us' },
+    { href: `mailto:${CONTACT_EMAIL}`, label: 'Contact', external: true },
+    { href: '/support', label: 'Support' },
+    { href: '/webapp', label: 'Sign In' },
+  ];
+
+  const legalLinks = [
+    { href: '/privacy', label: 'Privacy Policy' },
+    { href: '/terms', label: 'Terms of Service' },
+  ];
+
+  // Feature highlights for footer
+  const highlights = [
+    { icon: Timer, label: 'Focus Timer' },
+    { icon: CheckSquare, label: 'Smart Tasks' },
+    { icon: TrendingUp, label: 'Progress' },
+    { icon: Shield, label: 'Privacy First' },
+  ];
+
   return (
     <footer className="relative border-t border-[var(--border)] bg-[var(--background-elevated)]">
       {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)]/50 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--background)]/50 pointer-events-none" />
       
-      <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Main Footer Content */}
         <div className="py-12 md:py-16 lg:py-20">
-          <div className="grid md:grid-cols-12 gap-8 md:gap-12 lg:gap-16">
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-8 md:gap-10 lg:gap-16">
             
-            {/* Brand Column - Takes more space */}
-            <div className="md:col-span-5 lg:col-span-4">
+            {/* Brand Column */}
+            <div className="col-span-2 md:col-span-5 lg:col-span-4">
+              {/* Logo */}
               <Link 
                 href="/" 
-                className="group relative inline-flex items-center gap-2.5 md:gap-3 mb-6"
+                className="group relative inline-flex items-center gap-3 mb-6"
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               >
                 <div className="relative flex-shrink-0">
-                  <div className="absolute -inset-1 bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute -inset-2 bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <Image
                     src="/focusflow-logo.png"
                     alt="FocusFlow"
-                    width={40}
-                    height={40}
+                    width={44}
+                    height={44}
                     className="relative transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
-                <div className="relative min-w-0">
-                  {/* Main text with gradient - matching header style */}
-                  <span className="relative z-10 text-2xl font-bold tracking-tight block whitespace-nowrap">
+                <div className="relative">
+                  <span className="text-2xl font-bold tracking-tight block whitespace-nowrap">
                     <span className="bg-gradient-to-r from-[var(--foreground)] via-[var(--accent-primary)] to-[var(--foreground)] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
                       Focus
                     </span>
@@ -57,30 +88,16 @@ export default function Footer() {
                       Flow
                     </span>
                     {isPricingPage && (
-                      <span className="ml-2 bg-gradient-to-r from-[#D4A853] via-[#F4D03F] via-[#F7DC6F] to-[#D4A853] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
+                      <span className="ml-2 bg-gradient-to-r from-[#D4A853] via-[#F4D03F] to-[#D4A853] bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient">
                         Pro
                       </span>
                     )}
                   </span>
-                  {/* Glow effect on hover */}
-                  <span className="absolute inset-0 text-2xl font-bold tracking-tight opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm whitespace-nowrap">
-                    <span className="bg-gradient-to-r from-[var(--accent-primary)]/60 via-[var(--accent-secondary)]/60 to-[var(--accent-primary)]/60 bg-clip-text text-transparent">
-                      Focus
-                    </span>
-                    <span className="bg-gradient-to-r from-[var(--accent-secondary)]/60 via-[var(--accent-primary)]/60 to-[var(--accent-secondary)]/60 bg-clip-text text-transparent">
-                      Flow
-                    </span>
-                    {isPricingPage && (
-                      <span className="ml-2 bg-gradient-to-r from-[#D4A853]/60 via-[#F4D03F]/60 to-[#D4A853]/60 bg-clip-text text-transparent">
-                        Pro
-                      </span>
-                    )}
-                </span>
-                  {/* Animated underline accent */}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-primary)] group-hover:w-full transition-all duration-700 rounded-full" />
                 </div>
               </Link>
-              <p className="text-sm md:text-base text-[var(--foreground-muted)] leading-relaxed mb-6 max-w-md font-light">
+
+              {/* Description */}
+              <p className="text-sm md:text-base text-[var(--foreground-muted)] leading-relaxed mb-6 max-w-sm">
                 {SITE_DESCRIPTION}
               </p>
               
@@ -89,7 +106,7 @@ export default function Footer() {
                 href={APP_STORE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-[var(--accent-primary)]/30 mb-6"
+                className="group relative inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-[var(--accent-primary)]/25 mb-8"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -97,105 +114,124 @@ export default function Footer() {
                 <span className="relative z-10">Download on App Store</span>
               </a>
 
-              {/* Location & Contact */}
+              {/* Contact Info */}
               <div className="space-y-3">
                 <a
                   href={`mailto:${CONTACT_EMAIL}`}
-                  className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] hover:text-[var(--accent-primary)] transition-colors group"
+                  className="flex items-center gap-2.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--accent-primary)] transition-colors group"
                 >
-                  <Mail className="w-4 h-4" strokeWidth={2} />
+                  <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={2} />
                   <span>{CONTACT_EMAIL}</span>
                 </a>
-                <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)]">
+                <div className="flex items-center gap-2.5 text-sm text-[var(--foreground-muted)]">
                   <MapPin className="w-4 h-4" strokeWidth={2} />
                   <span>{COMPANY_LOCATION}</span>
                 </div>
               </div>
             </div>
 
-            {/* Product Column */}
-            <div className="md:col-span-2 lg:col-span-2">
-              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-6 uppercase tracking-wider">
+            {/* Product Links */}
+            <div className="col-span-1 md:col-span-2">
+              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-5 uppercase tracking-wider">
                 Product
               </h3>
               <nav className="flex flex-col gap-3">
-                <Link
-                  href="/features"
-                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                >
-                  Features
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
-                </Link>
-                <Link
-                  href="/pricing"
-                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                >
-                  Pricing
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
-                </Link>
-                <a
-                  href={APP_STORE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                >
-                  Download
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
-                </a>
+                {productLinks.map((link) => (
+                  link.external ? (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                      {link.label}
+                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                    </a>
+                  ) : (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                      {link.label}
+                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                    </Link>
+                  )
+                ))}
               </nav>
             </div>
 
-            {/* Company Column */}
-            <div className="md:col-span-2 lg:col-span-2">
-              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-6 uppercase tracking-wider">
+            {/* Company Links */}
+            <div className="col-span-1 md:col-span-2">
+              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-5 uppercase tracking-wider">
                 Company
               </h3>
               <nav className="flex flex-col gap-3">
-                <Link
-                  href="/about"
-                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                >
-                  About Us
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
-                </Link>
-                <a
-                  href={`mailto:${CONTACT_EMAIL}`}
-                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                >
-                  Contact
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
-                </a>
-                <Link
-                  href="/webapp"
-                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                >
-                  Sign In
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
-                </Link>
+                {companyLinks.map((link) => (
+                  link.external ? (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      target={link.href.startsWith('mailto:') ? undefined : '_blank'}
+                      rel={link.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                      className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                      {link.label}
+                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                    </a>
+                  ) : (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                      {link.label}
+                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                    </Link>
+                  )
+                ))}
               </nav>
             </div>
 
-            {/* Legal Column */}
-            <div className="md:col-span-3 lg:col-span-4">
-              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-6 uppercase tracking-wider">
+            {/* Legal Links + Highlights */}
+            <div className="col-span-2 md:col-span-3 lg:col-span-4">
+              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-5 uppercase tracking-wider">
                 Legal
               </h3>
-              <nav className="flex flex-col gap-3">
-                <Link
-                  href="/privacy"
-                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                >
-                  Privacy Policy
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
-                </Link>
-                <Link
-                  href="/terms"
-                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2 group"
-                >
-                  Terms of Service
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2} />
-                </Link>
+              <nav className="flex flex-col gap-3 mb-8">
+                {legalLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                  >
+                    {link.label}
+                    <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                  </Link>
+                ))}
               </nav>
+
+              {/* Feature Highlights */}
+              <div className="hidden md:block">
+                <h4 className="text-xs font-medium text-[var(--foreground-subtle)] mb-3 uppercase tracking-wider">
+                  Features
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {highlights.map((item, i) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <div 
+                        key={i}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground-muted)]"
+                      >
+                        <IconComponent className="w-3 h-3 text-[var(--accent-primary)]" />
+                        {item.label}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -203,13 +239,13 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="py-6 md:py-8 border-t border-[var(--border)]">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-[var(--foreground-muted)] font-light">
+            <div className="text-sm text-[var(--foreground-muted)] text-center md:text-left">
               © {currentYear} FocusFlow. Made by{' '}
               <span className="text-[var(--foreground)] font-medium">Soft Computers</span>. All rights reserved.
             </div>
             <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)]">
-              <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" strokeWidth={2} />
-              <span className="font-light">Built with intention</span>
+              <Heart className="w-4 h-4 text-rose-400 animate-pulse-slow" fill="currentColor" strokeWidth={0} />
+              <span>Built with intention</span>
             </div>
           </div>
         </div>

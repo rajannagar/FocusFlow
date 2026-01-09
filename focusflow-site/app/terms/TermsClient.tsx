@@ -1,19 +1,63 @@
 'use client';
 
+import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components';
+import { useThrottledMouse } from '@/hooks';
 import { CONTACT_EMAIL } from '@/lib/constants';
+import { 
+  FileText, Shield, User, CreditCard, Bot, AlertTriangle, 
+  Scale, Lock, Trash2, ChevronRight, Mail
+} from 'lucide-react';
+
+// Animated section wrapper
+const AnimatedSection = ({ 
+  children, 
+  className = ''
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+}) => {
+  const ref = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setIsVisible(true);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section 
+      ref={ref}
+      className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'} ${className}`}
+    >
+      {children}
+    </section>
+  );
+};
 
 export default function TermsClient() {
+  const mousePosition = useThrottledMouse();
+  const [activeSection, setActiveSection] = useState('');
+
   const sections = [
     { id: 'acceptance', title: 'Acceptance of Terms' },
     { id: 'service', title: 'Description of Service' },
     { id: 'accounts', title: 'User Accounts' },
     { id: 'subscription', title: 'FocusFlow Pro Subscription' },
+    { id: 'ai-terms', title: 'AI Assistant Terms' },
     { id: 'acceptable-use', title: 'Acceptable Use' },
     { id: 'intellectual-property', title: 'Intellectual Property' },
     { id: 'user-content', title: 'User Content' },
     { id: 'privacy', title: 'Data and Privacy' },
+    { id: 'third-party', title: 'Third-Party Services' },
     { id: 'deletion', title: 'Account Deletion' },
     { id: 'disclaimers', title: 'Disclaimers' },
     { id: 'liability', title: 'Limitation of Liability' },
@@ -24,389 +68,444 @@ export default function TermsClient() {
     { id: 'contact', title: 'Contact' },
   ];
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: '-100px 0px -60% 0px' }
+    );
+
+    sections.forEach((section) => {
+      const el = document.getElementById(section.id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="min-h-screen bg-[var(--background)] overflow-x-hidden">
       
-      {/* Clean Header */}
-      <section className="pt-12 md:pt-20 pb-8 md:pb-12 border-b border-[var(--border)]">
+      {/* ═══════════════════════════════════════════════════════════════
+          HERO
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="relative pt-24 pb-12 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          <div 
+            className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full blur-[150px] opacity-[0.05] transition-transform duration-[3000ms] ease-out"
+            style={{
+              background: `radial-gradient(circle, rgba(139, 92, 246, 0.8) 0%, transparent 70%)`,
+              transform: `translate(${mousePosition.x * 0.01}px, ${mousePosition.y * 0.01}px)`,
+            }}
+          />
+        </div>
+        
         <Container>
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] mb-4">
-              <Link href="/" className="hover:text-[var(--foreground)] transition-colors">Home</Link>
-              <span>/</span>
-              <span>Terms of Service</span>
+          <div className="max-w-4xl mx-auto">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] mb-6">
+              <Link href="/" className="hover:text-[var(--accent-primary)] transition-colors">Home</Link>
+              <ChevronRight className="w-4 h-4" />
+              <span className="text-[var(--foreground)]">Terms of Service</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[var(--foreground)] mb-4">Terms of Service</h1>
-            <p className="text-[var(--foreground-muted)]">
-              Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            
+            {/* Header */}
+            <div className="flex items-start gap-6 mb-8">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[var(--accent-primary)]/20">
+                <FileText className="w-8 h-8 text-white" strokeWidth={1.5} />
+              </div>
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold text-[var(--foreground)] mb-2">Terms of Service</h1>
+                <p className="text-[var(--foreground-muted)]">Effective: January 9, 2026</p>
+              </div>
+            </div>
+            
+            {/* Intro */}
+            <p className="text-lg text-[var(--foreground-muted)] leading-relaxed p-6 rounded-2xl bg-[var(--background-elevated)] border border-[var(--border)]">
+              These Terms of Service ("Terms") govern your use of FocusFlow - Be Present ("FocusFlow", "the app").
+              By using FocusFlow, you agree to these Terms. Soft Computers ("we", "us") is the developer of FocusFlow.
             </p>
           </div>
         </Container>
       </section>
 
-      {/* Main Content */}
+      {/* ═══════════════════════════════════════════════════════════════
+          MAIN CONTENT WITH SIDEBAR NAV
+          ═══════════════════════════════════════════════════════════════ */}
       <section className="py-12 md:py-16">
         <Container>
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-6xl mx-auto flex gap-12">
             
-            {/* Introduction */}
-            <div className="prose-section mb-12">
-              <p className="text-lg text-[var(--foreground-muted)] leading-relaxed">
-                These Terms of Service ("Terms") govern your use of FocusFlow - Be Present ("FocusFlow", "the app").
-                By using FocusFlow, you agree to these Terms. Soft Computers ("we", "us") is the developer of FocusFlow.
-              </p>
-            </div>
-
-            {/* Table of Contents */}
-            <nav className="mb-12 p-6 bg-[var(--background-subtle)] rounded-lg border border-[var(--border)]">
-              <h2 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-4">Contents</h2>
-              <ol className="grid md:grid-cols-2 gap-2">
-                {sections.map((section, i) => (
-                  <li key={section.id}>
-                    <a 
-                      href={`#${section.id}`}
-                      className="text-sm text-[var(--foreground-muted)] hover:text-[var(--accent-primary)] transition-colors"
-                    >
-                      {i + 1}. {section.title}
-                    </a>
-                  </li>
-                ))}
-              </ol>
+            {/* Sidebar Navigation - Desktop */}
+            <nav className="hidden lg:block w-64 flex-shrink-0">
+              <div className="sticky top-24 p-4 rounded-2xl bg-[var(--background-elevated)] border border-[var(--border)] max-h-[calc(100vh-120px)] overflow-y-auto">
+                <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wider mb-4 px-3">Contents</h3>
+                <ul className="space-y-1">
+                  {sections.map((section, i) => (
+                    <li key={section.id}>
+                      <a 
+                        href={`#${section.id}`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                          activeSection === section.id 
+                            ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-medium' 
+                            : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)]'
+                        }`}
+                      >
+                        <span className="w-5 text-center text-xs opacity-50">{i + 1}</span>
+                        <span className="truncate">{section.title}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </nav>
 
-            {/* Sections */}
-            <div className="space-y-12">
-              
-              {/* 1. Acceptance of Terms */}
-              <section id="acceptance">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  1. Acceptance of Terms
-                </h2>
-                <p className="text-[var(--foreground-muted)]">
-                  By downloading, installing, or using FocusFlow, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the app.
+            {/* Main Content */}
+            <div className="flex-1 max-w-3xl">
+              <div className="space-y-16">
+                
+                {/* 1. Acceptance of Terms */}
+                <AnimatedSection>
+                  <section id="acceptance" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">1</span>
+                      Acceptance of Terms
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      By downloading, installing, or using FocusFlow, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the app.
                     </p>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 2. Description of Service */}
-              <section id="service">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  2. Description of Service
-                </h2>
-                <p className="text-[var(--foreground-muted)] mb-4">FocusFlow is a productivity application that helps you:</p>
-                <ul className="space-y-3 text-[var(--foreground-muted)]">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Track focus sessions with customizable durations, 14 ambient backgrounds, and 11 focus sounds</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Manage tasks with reminders, recurring schedules, duration estimates, and completion tracking</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>View progress statistics, streaks, XP points, 50-level progression system, achievement badges, and Journey view</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Sync data across devices with cloud backup (with an account) or use Guest Mode for local-only storage</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Customize your experience with 10 premium themes, avatars, unlimited focus presets, and interactive widgets</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Use Live Activity and Dynamic Island integration to control sessions from your Lock Screen (Pro feature)</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Integrate with music apps (Spotify, Apple Music, YouTube Music) to play your favorite tracks during focus sessions (Pro feature)</span>
-                  </li>
-                      </ul>
-              </section>
-
-              {/* 3. User Accounts */}
-              <section id="accounts">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  3. User Accounts
-                </h2>
-                <ul className="space-y-3 text-[var(--foreground-muted)]">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Guest Mode:</strong> You may use FocusFlow without creating an account. Data is stored locally on your device.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Signed-in Mode:</strong> You may create an account using Sign in with Apple, Google Sign-In, or email/password authentication. This enables cloud sync, backup, and access to Pro features (if subscribed).</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>You are responsible for maintaining the security of your account credentials.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>You must provide accurate information when creating an account.</span>
-                  </li>
+                {/* 2. Description of Service */}
+                <AnimatedSection>
+                  <section id="service" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">2</span>
+                      Description of Service
+                    </h2>
+                    <p className="text-[var(--foreground-muted)] mb-4">FocusFlow is a productivity application that helps you:</p>
+                    <ul className="space-y-3 text-[var(--foreground-muted)]">
+                      {[
+                        'Track focus sessions with customizable durations, 14 animated ambient backgrounds, and 11 focus sounds',
+                        'Manage tasks with reminders, recurring schedules, duration estimates, and completion tracking',
+                        'View progress statistics, streaks, XP points, 50-level progression system, achievement badges, and Journey view',
+                        'Sync data across devices with cloud backup (Pro feature) or use Guest Mode for local-only storage',
+                        'Customize your experience with 10 premium themes, symbol-based avatars, unlimited focus presets, and interactive widgets',
+                        'Use Live Activity and Dynamic Island integration to control sessions from your Lock Screen (Pro)',
+                        'Integrate with music apps (Spotify, Apple Music, YouTube Music) during focus sessions (Pro)',
+                        'Get AI-powered productivity assistance with Flow, powered by OpenAI GPT-4o (Pro)',
+                      ].map((item, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="text-[var(--accent-primary)] mt-1">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
                     </ul>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 4. FocusFlow Pro Subscription */}
-              <section id="subscription">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  4. FocusFlow Pro Subscription
-                </h2>
-                <p className="text-[var(--foreground-muted)] mb-4">FocusFlow offers optional paid subscriptions ("FocusFlow Pro") that unlock premium features. Subscription terms:</p>
-                <ul className="space-y-3 text-[var(--foreground-muted)]">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Subscription Options:</strong> Monthly and yearly plans are available. Yearly plans offer significant savings compared to monthly billing.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Free Trial:</strong> New subscribers may be eligible for a free trial period. If you do not cancel before the trial ends, your subscription will automatically begin and you will be charged.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Billing:</strong> Payment is processed through Apple's App Store and charged to your Apple ID account at confirmation of purchase. All transactions are handled by Apple.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Auto-Renewal:</strong> Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current billing period. You will be charged the subscription fee for the next period.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Price Changes:</strong> We reserve the right to change subscription prices. You will be notified in advance of any price changes, and you may cancel before the change takes effect.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Cancellation:</strong> You may cancel your subscription at any time through your Apple ID account settings (Settings → [Your Name] → Subscriptions). Cancellation takes effect at the end of the current billing period.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Refunds:</strong> Refund requests are handled by Apple according to their App Store refund policies. We do not process refunds directly.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Pro Features:</strong> FocusFlow Pro includes unlimited presets and tasks, all 14 ambient backgrounds, all 11 focus sounds, all 10 premium themes, full progress history, XP and level system, achievement badges, Journey view, cloud sync, interactive widgets, Live Activity, and music integration.</span>
-                  </li>
-                      </ul>
-              </section>
-
-              {/* 5. Acceptable Use */}
-              <section id="acceptable-use">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  5. Acceptable Use
-                </h2>
-                <p className="text-[var(--foreground-muted)] mb-4">You agree not to:</p>
-                <ul className="space-y-3 text-[var(--foreground-muted)]">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Use the app for any unlawful purpose</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Attempt to gain unauthorized access to the app's systems or other users' data</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Interfere with or disrupt the app's functionality</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Reverse engineer, decompile, or disassemble the app</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Use automated systems to access the app in a manner that exceeds reasonable use</span>
-                  </li>
-                      </ul>
-              </section>
-
-              {/* 6. Intellectual Property */}
-              <section id="intellectual-property">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  6. Intellectual Property
-                </h2>
-                <p className="text-[var(--foreground-muted)]">
-                  FocusFlow and its original content, features, and functionality are owned by Soft Computers and are protected by copyright, trademark, and other intellectual property laws.
-                    </p>
-              </section>
-
-              {/* 7. User Content */}
-              <section id="user-content">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  7. User Content
-                </h2>
-                <ul className="space-y-3 text-[var(--foreground-muted)]">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>You retain ownership of any content you create within the app (session names, task descriptions, etc.).</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>By using the sync feature, you grant us permission to store and transmit your content to provide the service.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>We do not claim ownership of your content and will not use it for purposes other than providing the service.</span>
-                  </li>
+                {/* 3. User Accounts */}
+                <AnimatedSection>
+                  <section id="accounts" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">3</span>
+                      User Accounts
+                    </h2>
+                    <ul className="space-y-3 text-[var(--foreground-muted)]">
+                      {[
+                        { label: 'Guest Mode', text: 'You may use FocusFlow without creating an account. Data is stored locally on your device.' },
+                        { label: 'Signed-in Mode', text: 'Create an account using Sign in with Apple, Google, or email/password. This enables cloud sync and Pro features.' },
+                        { label: '', text: 'You are responsible for maintaining the security of your account credentials.' },
+                        { label: '', text: 'You must provide accurate information when creating an account.' },
+                      ].map((item, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="text-[var(--accent-primary)] mt-1">•</span>
+                          <span>
+                            {item.label && <strong className="text-[var(--foreground)]">{item.label}:</strong>} {item.text}
+                          </span>
+                        </li>
+                      ))}
                     </ul>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 8. Data and Privacy */}
-              <section id="privacy">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  8. Data and Privacy
-                </h2>
-                <p className="text-[var(--foreground-muted)]">
-                  Your use of FocusFlow is also governed by our{' '}
-                  <Link href="/privacy" className="text-[var(--accent-primary)] hover:underline">Privacy Policy</Link>, 
-                      which explains how we collect, use, and protect your information.
-                    </p>
-              </section>
-
-              {/* 9. Account Deletion */}
-              <section id="deletion">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  9. Account Deletion
-                </h2>
-                <ul className="space-y-3 text-[var(--foreground-muted)]">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>You may delete your account at any time through the app's settings.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Account deletion will permanently remove all your data from our servers.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>Active subscriptions should be cancelled before deleting your account to avoid further charges.</span>
-                  </li>
+                {/* 4. FocusFlow Pro Subscription */}
+                <AnimatedSection>
+                  <section id="subscription" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 text-sm font-bold">4</span>
+                      FocusFlow Pro Subscription
+                    </h2>
+                    <p className="text-[var(--foreground-muted)] mb-6">FocusFlow offers optional paid subscriptions ("FocusFlow Pro") that unlock premium features:</p>
+                    <ul className="space-y-3 text-[var(--foreground-muted)]">
+                      {[
+                        { label: 'Subscription Options', text: 'Monthly and yearly plans available. Yearly plans offer significant savings.' },
+                        { label: 'Free Trial', text: 'New subscribers may be eligible for a free trial. Cancel before it ends to avoid charges.' },
+                        { label: 'Billing', text: 'Payment is processed through Apple\'s App Store and charged to your Apple ID.' },
+                        { label: 'Auto-Renewal', text: 'Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period.' },
+                        { label: 'Price Changes', text: 'We may change prices with advance notice. Cancel before changes take effect to avoid new pricing.' },
+                        { label: 'Cancellation', text: 'Cancel through Apple ID settings (Settings → [Your Name] → Subscriptions). Access continues until end of billing period.' },
+                        { label: 'Refunds', text: 'Refund requests are handled by Apple according to their App Store policies.' },
+                        { label: 'Pro Features', text: 'Includes all backgrounds, sounds, themes, unlimited presets/tasks, full history, XP system, badges, Journey view, cloud sync, widgets, Live Activity, music integration, and Flow AI.' },
+                      ].map((item, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="text-amber-500 mt-1">•</span>
+                          <span><strong className="text-[var(--foreground)]">{item.label}:</strong> {item.text}</span>
+                        </li>
+                      ))}
                     </ul>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 10. Disclaimers */}
-              <section id="disclaimers">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  10. Disclaimers
-                </h2>
-                <ul className="space-y-3 text-[var(--foreground-muted)]">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>FocusFlow is provided "as is" without warranties of any kind, either express or implied.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>We do not guarantee that the app will be uninterrupted, error-free, or free of harmful components.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>FocusFlow is a productivity tool and is not intended to provide medical, psychological, or professional advice.</span>
-                  </li>
+                {/* 5. AI Assistant Terms */}
+                <AnimatedSection>
+                  <section id="ai-terms" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 text-sm font-bold">5</span>
+                      AI Assistant Terms
+                    </h2>
+                    <div className="p-6 rounded-2xl bg-purple-500/10 border border-purple-500/20 mb-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Bot className="w-6 h-6 text-purple-400" />
+                        <span className="font-semibold text-[var(--foreground)]">Flow AI — Powered by OpenAI GPT-4o</span>
+                      </div>
+                    </div>
+                    <ul className="space-y-3 text-[var(--foreground-muted)]">
+                      {[
+                        'Flow is powered by OpenAI\'s GPT-4o model. By using Flow, you also agree to OpenAI\'s usage policies.',
+                        'Your messages and app context are sent to OpenAI for processing. OpenAI retains data for up to 30 days for abuse monitoring.',
+                        'Your data is NOT used to train OpenAI models (we use their zero-data-retention API).',
+                        'Flow provides suggestions and information but should not be considered professional advice.',
+                        'We do not guarantee the accuracy, completeness, or reliability of AI-generated responses.',
+                        'Do not share sensitive personal information (financial, medical, legal) with the AI assistant.',
+                        'Flow\'s responses may vary and may occasionally be inaccurate or inappropriate.',
+                        'You may delete your AI conversation history at any time within the app.',
+                      ].map((item, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="text-purple-400 mt-1">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
                     </ul>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 11. Limitation of Liability */}
-              <section id="liability">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  11. Limitation of Liability
-                </h2>
-                <p className="text-[var(--foreground-muted)]">
-                  To the maximum extent permitted by law, Soft Computers shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the app, including but not limited to loss of data, profits, or goodwill.
+                {/* 6. Acceptable Use */}
+                <AnimatedSection>
+                  <section id="acceptable-use" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">6</span>
+                      Acceptable Use
+                    </h2>
+                    <p className="text-[var(--foreground-muted)] mb-4">You agree not to:</p>
+                    <ul className="space-y-3 text-[var(--foreground-muted)]">
+                      {[
+                        'Use the app for any illegal purpose',
+                        'Attempt to reverse engineer, decompile, or disassemble the app',
+                        'Interfere with or disrupt the app\'s operation',
+                        'Use automated tools to access or scrape the app',
+                        'Impersonate others or provide false information',
+                        'Use the AI assistant to generate harmful, illegal, or inappropriate content',
+                        'Share account credentials with others',
+                      ].map((item, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="text-rose-500 mt-1">✕</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </AnimatedSection>
+
+                {/* 7. Intellectual Property */}
+                <AnimatedSection>
+                  <section id="intellectual-property" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">7</span>
+                      Intellectual Property
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      FocusFlow, including its design, code, graphics, animations, sounds, and content, is owned by Soft Computers and protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works without our written permission.
                     </p>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 12. Indemnification */}
-              <section id="indemnification">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  12. Indemnification
-                </h2>
-                <p className="text-[var(--foreground-muted)]">
-                  You agree to indemnify and hold harmless Soft Computers from any claims, damages, or expenses arising from your use of the app or violation of these Terms.
+                {/* 8. User Content */}
+                <AnimatedSection>
+                  <section id="user-content" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">8</span>
+                      User Content
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      You retain ownership of content you create (task names, notes, session intentions, AI conversations). By using cloud sync, you grant us a limited license to store and transmit this content solely to provide the service.
                     </p>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 13. Changes to Terms */}
-              <section id="changes">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  13. Changes to Terms
-                </h2>
-                <p className="text-[var(--foreground-muted)] mb-4">
-                  We reserve the right to update these Terms from time to time to reflect changes in our services, legal requirements, or other factors. When we make changes:
-                </p>
-                <ul className="space-y-3 text-[var(--foreground-muted)] mb-4">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>We will update the "Last updated" date at the top of this page</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>We will post the updated Terms on this page</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span>For material changes, we may notify users through the app or via email</span>
-                  </li>
-                </ul>
-                <p className="text-[var(--foreground-muted)]">
-                  Your continued use of FocusFlow after changes to these Terms constitutes acceptance of the new Terms. If you do not agree to the updated Terms, you must stop using the app and may delete your account.
+                {/* 9. Data and Privacy */}
+                <AnimatedSection>
+                  <section id="privacy" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">9</span>
+                      Data and Privacy
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      Your use of FocusFlow is also governed by our <Link href="/privacy" className="text-[var(--accent-primary)] hover:underline">Privacy Policy</Link>, which explains how we collect, use, and protect your data.
                     </p>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 14. Termination */}
-              <section id="termination">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  14. Termination
-                </h2>
-                <p className="text-[var(--foreground-muted)]">
-                  We reserve the right to suspend or terminate your access to FocusFlow at any time for violation of these Terms or for any other reason at our discretion.
+                {/* 10. Third-Party Services */}
+                <AnimatedSection>
+                  <section id="third-party" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">10</span>
+                      Third-Party Services
+                    </h2>
+                    <p className="text-[var(--foreground-muted)] mb-4">FocusFlow integrates with third-party services:</p>
+                    <ul className="space-y-3 text-[var(--foreground-muted)]">
+                      {[
+                        { label: 'Apple Sign In & StoreKit', text: 'For authentication and subscription management' },
+                        { label: 'Google Sign In', text: 'For authentication' },
+                        { label: 'Supabase', text: 'For cloud data storage and sync' },
+                        { label: 'OpenAI', text: 'For AI assistant functionality (GPT-4o)' },
+                        { label: 'Music Services', text: 'Spotify, Apple Music, YouTube Music integration' },
+                      ].map((item, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="text-[var(--accent-primary)] mt-1">•</span>
+                          <span><strong className="text-[var(--foreground)]">{item.label}:</strong> {item.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-[var(--foreground-muted)] mt-4">
+                      Your use of these services is subject to their respective terms and privacy policies.
                     </p>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 15. Governing Law */}
-              <section id="governing-law">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  15. Governing Law
-                </h2>
-                <p className="text-[var(--foreground-muted)]">
-                  These Terms shall be governed by and construed in accordance with the laws of the Province of Ontario, Canada, without regard to its conflict of law provisions. Any disputes arising from these Terms or your use of FocusFlow shall be subject to the exclusive jurisdiction of the courts of Ontario, Canada.
+                {/* 11. Account Deletion */}
+                <AnimatedSection>
+                  <section id="deletion" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 text-sm font-bold">11</span>
+                      Account Deletion
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      You can delete your account at any time from Profile → Settings → Delete Account. Deletion is permanent and removes all your data from our servers within 30 days.
                     </p>
-              </section>
+                  </section>
+                </AnimatedSection>
 
-              {/* 16. Contact */}
-              <section id="contact">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 pb-2 border-b border-[var(--border)]">
-                  16. Contact Information
-                </h2>
-                <p className="text-[var(--foreground-muted)] mb-4">
-                  If you have questions about these Terms, please contact us:
-                </p>
-                <ul className="space-y-2 text-[var(--foreground-muted)]">
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Email:</strong> <a href={`mailto:${CONTACT_EMAIL}`} className="text-[var(--accent-primary)] hover:underline">{CONTACT_EMAIL}</a></span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Developer:</strong> Soft Computers</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[var(--accent-primary)]">•</span>
-                    <span><strong className="text-[var(--foreground)]">Location:</strong> Toronto, Ontario, Canada</span>
-                  </li>
-                </ul>
-              </section>
+                {/* 12. Disclaimers */}
+                <AnimatedSection>
+                  <section id="disclaimers" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 text-sm font-bold">12</span>
+                      Disclaimers
+                    </h2>
+                    <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                      <p className="text-[var(--foreground-muted)]">
+                        FocusFlow is provided "as is" without warranties of any kind. We do not guarantee the app will be error-free, uninterrupted, or meet your specific requirements. The AI assistant provides informational content only and should not be considered professional advice.
+                      </p>
+                    </div>
+                  </section>
+                </AnimatedSection>
 
+                {/* 13. Limitation of Liability */}
+                <AnimatedSection>
+                  <section id="liability" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">13</span>
+                      Limitation of Liability
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      To the maximum extent permitted by law, Soft Computers shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of FocusFlow. Our total liability shall not exceed the amount you paid for FocusFlow Pro in the past 12 months.
+                    </p>
+                  </section>
+                </AnimatedSection>
+
+                {/* 14. Indemnification */}
+                <AnimatedSection>
+                  <section id="indemnification" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">14</span>
+                      Indemnification
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      You agree to indemnify and hold harmless Soft Computers from any claims, damages, or expenses arising from your violation of these Terms or misuse of the app.
+                    </p>
+                  </section>
+                </AnimatedSection>
+
+                {/* 15. Changes to Terms */}
+                <AnimatedSection>
+                  <section id="changes" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">15</span>
+                      Changes to Terms
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      We may update these Terms from time to time. We will notify you of material changes by updating the "Effective" date. Continued use after changes constitutes acceptance of the updated Terms.
+                    </p>
+                  </section>
+                </AnimatedSection>
+
+                {/* 16. Termination */}
+                <AnimatedSection>
+                  <section id="termination" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">16</span>
+                      Termination
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      We may suspend or terminate your access to FocusFlow if you violate these Terms. Upon termination, your right to use the app ceases immediately. You may also terminate your use at any time by deleting the app and your account.
+                    </p>
+                  </section>
+                </AnimatedSection>
+
+                {/* 17. Governing Law */}
+                <AnimatedSection>
+                  <section id="governing-law" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">17</span>
+                      Governing Law
+                    </h2>
+                    <p className="text-[var(--foreground-muted)]">
+                      These Terms are governed by the laws of Canada, without regard to conflict of law principles. Any disputes shall be resolved in the courts of Canada.
+                    </p>
+                  </section>
+                </AnimatedSection>
+
+                {/* 18. Contact */}
+                <AnimatedSection>
+                  <section id="contact" className="scroll-mt-24">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 pb-4 border-b border-[var(--border)] flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center text-[var(--accent-primary)] text-sm font-bold">18</span>
+                      Contact
+                    </h2>
+                    <div className="p-8 rounded-2xl bg-[var(--background-elevated)] border border-[var(--border)] text-center">
+                      <p className="text-[var(--foreground-muted)] mb-6">
+                        If you have any questions about these Terms, please contact us.
+                      </p>
+                      <a
+                        href={`mailto:${CONTACT_EMAIL}`}
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent-primary)] text-white font-semibold hover:bg-[var(--accent-primary-dark)] transition-colors"
+                      >
+                        <Mail className="w-5 h-5" />
+                        <span>{CONTACT_EMAIL}</span>
+                      </a>
+                    </div>
+                  </section>
+                </AnimatedSection>
+              </div>
             </div>
-
-            {/* Agreement Footer */}
-            <div className="mt-16 pt-8 border-t border-[var(--border)]">
-              <p className="text-[var(--foreground-muted)] text-center text-sm">
-                By using FocusFlow, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
-              </p>
-            </div>
-
           </div>
         </Container>
       </section>

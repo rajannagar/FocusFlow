@@ -66,41 +66,45 @@
 
 [data-theme="light"] {
   /* Base Colors - Warm Cream & White */
-  --background: #F5F0E8;
+  --background: #FAFAF9;
   --background-elevated: #FFFFFF;
-  --background-subtle: #F9F7F4;
-  --background-muted: #F3EFE7;
+  --background-subtle: #F5F5F4;
+  --background-muted: #EFEDEB;
   
   /* Text Colors - Deep Warm Brown */
-  --foreground: #1A1612;
-  --foreground-muted: #5A5248;
-  --foreground-subtle: #8A8276;
+  --foreground: #1C1917;
+  --foreground-muted: #57534E;
+  --foreground-subtle: #78716C;
   
-  /* Accent - Electric Violet (same, works beautifully on light) */
-  --accent-primary: #8B5CF6;
-  --accent-primary-light: #A78BFA;
-  --accent-primary-dark: #7C3AED;
-  --accent-glow: rgba(139, 92, 246, 0.25);
+  /* Accent - Electric Violet (slightly deeper for better contrast on light) */
+  --accent-primary: #7C3AED;
+  --accent-primary-light: #8B5CF6;
+  --accent-primary-dark: #6D28D9;
+  --accent-glow: rgba(124, 58, 237, 0.2);
   
   /* Secondary Accent - Warm Gold (same) */
-  --accent-secondary: #D4A853;
-  --accent-secondary-light: #E5C07B;
+  --accent-secondary: #D97706;
+  --accent-secondary-light: #F59E0B;
   
   /* Semantic Colors */
-  --success: #10B981;
-  --warning: #F59E0B;
-  --error: #EF4444;
+  --success: #059669;
+  --warning: #D97706;
+  --error: #DC2626;
   
   /* Borders & Surfaces */
-  --border: rgba(26, 22, 18, 0.08);
-  --border-hover: rgba(26, 22, 18, 0.15);
-  --surface-glass: rgba(255, 255, 255, 0.9);
+  --border: rgba(28, 25, 23, 0.1);
+  --border-hover: rgba(28, 25, 23, 0.2);
+  --surface-glass: rgba(255, 255, 255, 0.95);
   
   /* Shadows & Effects - softer for light theme */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.16);
-  --shadow-glow: 0 0 60px var(--accent-glow);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 40px var(--accent-glow);
+  
+  /* Light-specific gradient backgrounds */
+  --gradient-primary: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  --gradient-warm: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -150,7 +154,106 @@ body::before {
 }
 
 [data-theme="light"] body::before {
-  opacity: 0.015;
+  opacity: 0.008;
+}
+
+/* Light theme specific overrides for better contrast */
+[data-theme="light"] .card {
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"] .card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"] .card-glass {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"] .badge-primary {
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--accent-primary);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+[data-theme="light"] .btn-primary {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+[data-theme="light"] .btn-primary:hover {
+  box-shadow: 0 10px 40px rgba(28, 25, 23, 0.15);
+}
+
+[data-theme="light"] .btn-secondary {
+  border-color: var(--border);
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background: var(--background-subtle);
+  border-color: var(--border-hover);
+}
+
+/* Light theme gradient backgrounds - less intense */
+[data-theme="light"] .bg-mesh {
+  background: 
+    radial-gradient(at 40% 20%, rgba(124, 58, 237, 0.06) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(217, 119, 6, 0.04) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(124, 58, 237, 0.04) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(217, 119, 6, 0.03) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(124, 58, 237, 0.05) 0px, transparent 50%),
+    var(--background);
+}
+
+[data-theme="light"] .bg-grid {
+  background-image: 
+    linear-gradient(rgba(28, 25, 23, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(28, 25, 23, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+[data-theme="light"] .bg-aurora::before {
+  background: 
+    radial-gradient(ellipse at 20% 30%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(217, 119, 6, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.03) 0%, transparent 70%);
+}
+
+/* Light theme dividers */
+[data-theme="light"] .divider {
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+[data-theme="light"] .divider-glow {
+  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+  opacity: 0.2;
+}
+
+/* Light theme shimmer */
+[data-theme="light"] .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(28, 25, 23, 0.03) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
+}
+
+/* Light mode scrollbar */
+[data-theme="light"]::-webkit-scrollbar-track {
+  background: var(--background-subtle);
+}
+
+[data-theme="light"]::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+}
+
+[data-theme="light"]::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-subtle);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -430,6 +533,67 @@ p {
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
+}
+
+/* Slide Up */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slide-up 0.8s var(--ease-out-expo) forwards;
+}
+
+/* Bounce Slow */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
+/* Pulse Slow */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+/* Scale In */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.5s var(--ease-out-expo) forwards;
 }
 
 /* Shimmer */

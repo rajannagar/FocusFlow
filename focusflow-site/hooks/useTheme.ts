@@ -29,7 +29,7 @@ export function useTheme() {
     if (metaThemeColor) {
       metaThemeColor.setAttribute(
         'content',
-        newTheme === 'dark' ? '#0A0A0B' : '#F5F0E8'
+        newTheme === 'dark' ? '#0A0A0B' : '#FAFAF9'
       );
     }
   };
