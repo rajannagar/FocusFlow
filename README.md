@@ -313,9 +313,9 @@ Detailed documentation is available in the `docs/` directory:
 | Document | Description |
 |----------|-------------|
 | [iOS App Documentation](./docs/IOS_APP.md) | Complete iOS app architecture and features |
-| [Website Documentation](./docs/WEBSITE.md) | Next.js website structure and deployment |
+| [Website Documentation](./docs/Website.md) | Next.js website structure and deployment |
 | [Widgets Documentation](./docs/WIDGETS.md) | WidgetKit and Live Activities guide |
-| [Backend Documentation](./docs/BACKEND.md) | Supabase setup and Edge Functions |
+| [Backend Documentation](./docs/Backend.md) | Supabase setup and Edge Functions |
 | [Architecture](./docs/ARCHITECTURE.md) | System design and data flow diagrams |
 
 ---
