@@ -165,6 +165,8 @@ struct ContentView: View {
             PaywallView(context: flowNav.paywallContext)
                 .environmentObject(appSettings)
         }
+        // MARK: - Notification Permission Alert
+        .notificationPermissionAlert()
     }
     
     @ViewBuilder

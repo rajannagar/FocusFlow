@@ -74,9 +74,19 @@ final class FocusTimerViewModel: ObservableObject {
 
     func toggle(sessionName: String) {
         switch phase {
-        case .idle:
-            self.sessionName = sessionName
-            startInternal(isFresh: true)
+        case .idle, .completed:
+            // Starting a new session - check notification permission first
+            Task {
+                let result = await NotificationPermissionHelper.shared.ensurePermissionAsync(for: .focusSession)
+                // Start regardless of permission result - we just wanted to prompt
+                await MainActor.run {
+                    if self.phase == .completed {
+                        self.remainingSeconds = self.totalSeconds
+                    }
+                    self.sessionName = sessionName
+                    self.startInternal(isFresh: true)
+                }
+            }
 
         case .running:
             pauseInternal()
@@ -84,11 +94,6 @@ final class FocusTimerViewModel: ObservableObject {
         case .paused:
             self.sessionName = sessionName
             startInternal(isFresh: false)
-
-        case .completed:
-            remainingSeconds = totalSeconds
-            self.sessionName = sessionName
-            startInternal(isFresh: true)
         }
     }
 

@@ -11,6 +11,7 @@
 		ED1B0F092EE76EF7003D55B1 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED1B0F082EE76EF7003D55B1 /* SwiftUI.framework */; };
 		ED1B0F1A2EE76EF9003D55B1 /* FocusFlowWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		ED535CEC2F006E9700A46CF5 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = ED535CEB2F006E9700A46CF5 /* Supabase */; };
+		ED988F692F11B68200C0CDCD /* FocusFlowWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = ED988F5F2F11B68000C0CDCD /* FocusFlowWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EDECF4722F011E2A0067039D /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = EDECF4712F011E2A0067039D /* GoogleSignIn */; };
 /* End PBXBuildFile section */
 
@@ -22,9 +23,27 @@
 			remoteGlobalIDString = ED1B0F032EE76EF7003D55B1;
 			remoteInfo = FocusFlowWidgetsExtension;
 		};
+		ED988F672F11B68200C0CDCD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EDC8FE182EDE12DF00F74D0F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ED988F5E2F11B68000C0CDCD;
+			remoteInfo = "FocusFlowWatch Watch App";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		ED988F6A2F11B68200C0CDCD /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				ED988F692F11B68200C0CDCD /* FocusFlowWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDC8FEED2EDF830500F74D0F /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -42,6 +61,7 @@
 		ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FocusFlowWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED1B0F062EE76EF7003D55B1 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		ED1B0F082EE76EF7003D55B1 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		ED988F5F2F11B68000C0CDCD /* FocusFlowWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FocusFlowWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDC8FE202EDE12DF00F74D0F /* FocusFlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FocusFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -82,6 +102,11 @@
 			path = FocusFlowWidgets;
 			sourceTree = "<group>";
 		};
+		ED988F602F11B68000C0CDCD /* FocusFlowWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "FocusFlowWatch Watch App";
+			sourceTree = "<group>";
+		};
 		EDC8FE222EDE12DF00F74D0F /* FocusFlow */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -100,6 +125,13 @@
 			files = (
 				ED1B0F092EE76EF7003D55B1 /* SwiftUI.framework in Frameworks */,
 				ED1B0F072EE76EF7003D55B1 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED988F5C2F11B68000C0CDCD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -129,6 +161,7 @@
 			children = (
 				EDC8FE222EDE12DF00F74D0F /* FocusFlow */,
 				ED1B0F0A2EE76EF7003D55B1 /* FocusFlowWidgets */,
+				ED988F602F11B68000C0CDCD /* FocusFlowWatch Watch App */,
 				ED1B0F052EE76EF7003D55B1 /* Frameworks */,
 				EDC8FE212EDE12DF00F74D0F /* Products */,
 			);
@@ -139,6 +172,7 @@
 			children = (
 				EDC8FE202EDE12DF00F74D0F /* FocusFlow.app */,
 				ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */,
+				ED988F5F2F11B68000C0CDCD /* FocusFlowWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -168,6 +202,28 @@
 			productReference = ED1B0F042EE76EF7003D55B1 /* FocusFlowWidgetsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		ED988F5E2F11B68000C0CDCD /* FocusFlowWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ED988F6D2F11B68200C0CDCD /* Build configuration list for PBXNativeTarget "FocusFlowWatch Watch App" */;
+			buildPhases = (
+				ED988F5B2F11B68000C0CDCD /* Sources */,
+				ED988F5C2F11B68000C0CDCD /* Frameworks */,
+				ED988F5D2F11B68000C0CDCD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				ED988F602F11B68000C0CDCD /* FocusFlowWatch Watch App */,
+			);
+			name = "FocusFlowWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "FocusFlowWatch Watch App";
+			productReference = ED988F5F2F11B68000C0CDCD /* FocusFlowWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 		EDC8FE1F2EDE12DF00F74D0F /* FocusFlow */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EDC8FE2B2EDE12E100F74D0F /* Build configuration list for PBXNativeTarget "FocusFlow" */;
@@ -176,11 +232,13 @@
 				EDC8FE1D2EDE12DF00F74D0F /* Frameworks */,
 				EDC8FE1E2EDE12DF00F74D0F /* Resources */,
 				EDC8FEED2EDF830500F74D0F /* Embed Foundation Extensions */,
+				ED988F6A2F11B68200C0CDCD /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				ED1B0F192EE76EF9003D55B1 /* PBXTargetDependency */,
+				ED988F682F11B68200C0CDCD /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				EDC8FE222EDE12DF00F74D0F /* FocusFlow */,
@@ -201,11 +259,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2610;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					ED1B0F032EE76EF7003D55B1 = {
 						CreatedOnToolsVersion = 26.1.1;
+					};
+					ED988F5E2F11B68000C0CDCD = {
+						CreatedOnToolsVersion = 26.2;
 					};
 					EDC8FE1F2EDE12DF00F74D0F = {
 						CreatedOnToolsVersion = 26.1.1;
@@ -232,12 +293,20 @@
 			targets = (
 				EDC8FE1F2EDE12DF00F74D0F /* FocusFlow */,
 				ED1B0F032EE76EF7003D55B1 /* FocusFlowWidgetsExtension */,
+				ED988F5E2F11B68000C0CDCD /* FocusFlowWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		ED1B0F022EE76EF7003D55B1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED988F5D2F11B68000C0CDCD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -261,6 +330,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ED988F5B2F11B68000C0CDCD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDC8FE1C2EDE12DF00F74D0F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -275,6 +351,11 @@
 			isa = PBXTargetDependency;
 			target = ED1B0F032EE76EF7003D55B1 /* FocusFlowWidgetsExtension */;
 			targetProxy = ED1B0F182EE76EF9003D55B1 /* PBXContainerItemProxy */;
+		};
+		ED988F682F11B68200C0CDCD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ED988F5E2F11B68000C0CDCD /* FocusFlowWatch Watch App */;
+			targetProxy = ED988F672F11B68200C0CDCD /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -340,6 +421,72 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		ED988F6B2F11B68200C0CDCD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 77BJCE9J3U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusFlowWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = ca.softcomputers.FocusFlow;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.softcomputers.FocusFlow.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		ED988F6C2F11B68200C0CDCD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 77BJCE9J3U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusFlowWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = ca.softcomputers.FocusFlow;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.softcomputers.FocusFlow.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
 		};
@@ -558,6 +705,15 @@
 			buildConfigurations = (
 				ED1B0F1C2EE76EF9003D55B1 /* Debug */,
 				ED1B0F1D2EE76EF9003D55B1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ED988F6D2F11B68200C0CDCD /* Build configuration list for PBXNativeTarget "FocusFlowWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED988F6B2F11B68200C0CDCD /* Debug */,
+				ED988F6C2F11B68200C0CDCD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

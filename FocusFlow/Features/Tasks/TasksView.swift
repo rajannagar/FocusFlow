@@ -936,6 +936,21 @@ struct TasksView: View {
     }
     
     private func upsertTask(_ draft: FFTaskItem) {
+        // Check notification permission if task has a reminder
+        if draft.reminderDate != nil {
+            Task {
+                await NotificationPermissionHelper.shared.ensurePermissionAsync(for: .taskReminder)
+                // Save regardless of permission result
+                await MainActor.run {
+                    saveTaskAndCreatePreset(draft)
+                }
+            }
+        } else {
+            saveTaskAndCreatePreset(draft)
+        }
+    }
+    
+    private func saveTaskAndCreatePreset(_ draft: FFTaskItem) {
         vm.upsert(draft)
         
         guard draft.convertToPreset, !draft.presetCreated else { return }
