@@ -613,6 +613,7 @@ struct ProfileView: View {
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)
+            .padding(.top, DS.Spacing.md)
 
             Button {
                 Haptics.impact(.light)
