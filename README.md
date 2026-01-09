@@ -316,6 +316,7 @@ Detailed documentation is available in the `docs/` directory:
 | [Website Documentation](./docs/Website.md) | Next.js website structure and deployment |
 | [Widgets Documentation](./docs/WIDGETS.md) | WidgetKit and Live Activities guide |
 | [Backend Documentation](./docs/Backend.md) | Supabase setup and Edge Functions |
+| [Flow AI Documentation](./docs/FLOW_AI.md) | AI assistant architecture, tools, and integration |
 | [Architecture](./docs/ARCHITECTURE.md) | System design and data flow diagrams |
 
 ---
