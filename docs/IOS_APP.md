@@ -90,7 +90,6 @@ The main app entry point initializes all critical singletons and sets up the app
 struct FocusFlowApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @ObservedObject private var pro = ProEntitlementManager.shared
-    @StateObject private var onboardingManager = OnboardingManager.shared
 
     init() {
         // V2 Cloud Infrastructure
@@ -119,19 +118,15 @@ struct FocusFlowApp: App {
 │                      RootView                                │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│   hasCompletedOnboarding?                                   │
+│   Launch Screen (2.2s)                                      │
 │         │                                                   │
-│         ├── NO ──► OnboardingView (5 pages)                │
-│         │              │                                    │
-│         │              └── After completion ──► ContentView │
-│         │                                                   │
-│         └── YES ──► ContentView                            │
-│                          │                                  │
-│                          └── AuthState Switch:             │
-│                                 │                           │
-│                                 ├── .unknown ──► Loading    │
-│                                 ├── .signedOut ──► AuthLandingView │
-│                                 └── .guest/.signedIn ──► MainTabs  │
+│         └── ContentView                                     │
+│                │                                            │
+│                └── AuthState Switch:                        │
+│                       │                                     │
+│                       ├── .unknown ──► Loading              │
+│                       ├── .signedOut ──► AuthLandingView    │
+│                       └── .guest/.signedIn ──► MainTabs     │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -511,37 +506,7 @@ Journey/
 - **Streaks:** Consecutive day tracking
 - **Milestones:** Celebrate significant accomplishments
 
-### 8. Onboarding Module 🚀
-
-**Location:** `FocusFlow/Features/Onboarding/`
-
-First-time user experience.
-
-```
-Onboarding/
-├── OnboardingView.swift             # Container
-├── OnboardingManager.swift          # State management
-├── OnboardingIntroPage.swift        # Welcome
-├── OnboardingTourPage.swift         # Feature tour
-├── OnboardingQuickPrefsPage.swift   # Quick settings
-├── OnboardingNotificationsPage.swift # Permission request
-└── OnboardingFinishPage.swift       # Completion + auth
-```
-
-**Onboarding Flow:**
-```
-Page 1: Welcome Introduction
-    │
-Page 2: Feature Tour (Focus, Tasks, Progress)
-    │
-Page 3: Quick Preferences (Goal, Theme)
-    │
-Page 4: Notification Permission
-    │
-Page 5: Finish + Sign In/Guest Choice
-```
-
-### 9. NotificationsCenter Module 🔔
+### 8. NotificationsCenter Module 🔔
 
 **Location:** `FocusFlow/Features/NotificationsCenter/`
 
@@ -553,6 +518,65 @@ NotificationsCenter/
 ├── NotificationCenterManager.swift  # Notification logic
 ├── NotificationCenterView.swift     # Notification list UI
 └── LegacyNotificationCleanup.swift  # Migration helpers
+```
+
+### 9. Onboarding Module 🚀
+
+**Location:** `FocusFlow/Features/Onboarding/`
+
+Premium onboarding experience for new users.
+
+```
+Onboarding/
+├── OnboardingManager.swift      # State management
+└── OnboardingView.swift         # Onboarding flow UI
+```
+
+**Onboarding Manager:**
+```swift
+@MainActor
+final class OnboardingManager: ObservableObject {
+    static let shared = OnboardingManager()
+    
+    @Published var hasCompletedOnboarding: Bool
+    @Published var currentPage: Int = 0
+    
+    let totalPages = 5
+    
+    func nextPage()           // Advance with animation
+    func completeOnboarding() // Mark complete & save
+    func skipOnboarding()     // Skip to completion
+    func resetOnboarding()    // For testing
+}
+```
+
+**Onboarding Pages:**
+
+| Page | Content | Purpose |
+|------|---------|---------|
+| 1. Welcome | Logo, app name, tagline | Brand introduction |
+| 2. Features | Timer, Tasks, Progress cards | Core feature overview |
+| 3. Flow AI | Chat demo with typing animation | AI assistant preview |
+| 4. Notifications | Permission request | Enable reminders |
+| 5. Pro | Feature list, trial CTA | Conversion opportunity |
+
+**Design Features:**
+- Premium dark theme with particle background
+- Glass-morphic cards (`.ultraThinMaterial`)
+- Gradient accent buttons
+- Staggered entrance animations
+- Smooth page transitions
+- Skip button (pages 1-4)
+- Page indicator dots
+
+**Integration:**
+```swift
+// In RootView (FocusFlowApp.swift)
+if onboarding.hasCompletedOnboarding {
+    ContentView()
+} else {
+    OnboardingView()
+}
 ```
 
 ---
@@ -863,7 +887,6 @@ WindowGroup {
     RootView()
         .environmentObject(AppSettings.shared)
         .environmentObject(ProEntitlementManager.shared)
-        .environmentObject(OnboardingManager.shared)
 }
 ```
 

@@ -111,12 +111,16 @@ FocusFlow is a multi-platform productivity ecosystem built around a core iOS app
 │  │                                                                        │ │
 │  │  Managers                                                              │ │
 │  │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────────────┐  │ │
-│  │  │ JourneyManager  │ │NotificationCenter│ │ WidgetDataManager      │  │ │
+│  │  │ JourneyManager  │ │NotificationCenter│ │ OnboardingManager      │  │ │
 │  │  │                 │ │Manager           │ │                        │  │ │
-│  │  │• XP/Levels      │ │• Push handling   │ │• App Group writes      │  │ │
-│  │  │• Badges         │ │• Scheduling      │ │• Widget refresh        │  │ │
-│  │  │• Milestones     │ │• Daily reminders │ │                        │  │ │
+│  │  │• XP/Levels      │ │• Push handling   │ │• First-run state       │  │ │
+│  │  │• Badges         │ │• Scheduling      │ │• Page navigation       │  │ │
+│  │  │• Milestones     │ │• Daily reminders │ │• Completion tracking   │  │ │
 │  │  └─────────────────┘ └─────────────────┘ └─────────────────────────┘  │ │
+│  │  ┌─────────────────────────────────────────────────────────────────┐  │ │
+│  │  │ WidgetDataManager                                               │  │ │
+│  │  │ • App Group writes • Widget refresh                             │  │ │
+│  │  └─────────────────────────────────────────────────────────────────┘  │ │
 │  │                                                                        │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 │                                    │                                         │

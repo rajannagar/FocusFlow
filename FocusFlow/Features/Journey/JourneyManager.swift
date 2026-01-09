@@ -246,11 +246,8 @@ final class JourneyManager: ObservableObject {
     private func getTaskStats(for date: Date, tasksStore: TasksStore) -> (completed: Int, total: Int) {
         let dayStart = calendar.startOfDay(for: date)
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let dateString = dateFormatter.string(from: dayStart)
-
-        // ✅ Keys are "<uuid>|yyyy-MM-dd"
+        // ✅ Keys are "<uuid>|year-month-day" (e.g., "uuid|2026-1-9")
+        let dateString = dateKeySuffix(for: dayStart)
         let completed = tasksStore.completedOccurrenceKeys.filter { $0.hasSuffix("|\(dateString)") }.count
 
         // Count total tasks scheduled for this day using occurs(on:calendar:)
@@ -293,14 +290,11 @@ final class JourneyManager: ObservableObject {
         let goalsHit = calculateGoalsHit(upTo: date, progressStore: progressStore)
 
         // Tasks completed up to that date
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let dateString = dateFormatter.string(from: date)
-
+        // ✅ Key format: "<uuid>|year-month-day" (e.g., "uuid|2026-1-9")
         let tasksCompleted = tasksStore.completedOccurrenceKeys.filter { key in
-            // ✅ Key format: "<uuid>|yyyy-MM-dd"
-            if let keyDateStr = key.split(separator: "|").last {
-                return String(keyDateStr) <= dateString
+            if let keyDateStr = key.split(separator: "|").last,
+               let keyDate = parseDate(String(keyDateStr)) {
+                return keyDate <= targetDay
             }
             return false
         }.count
@@ -404,10 +398,26 @@ final class JourneyManager: ObservableObject {
 
     // MARK: - Helpers
 
+    /// Parses date string from TasksStore key format: "year-month-day" (e.g., "2026-1-9")
     private func parseDate(_ string: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: string)
+        let parts = string.split(separator: "-")
+        guard parts.count == 3,
+              let year = Int(parts[0]),
+              let month = Int(parts[1]),
+              let day = Int(parts[2]) else {
+            return nil
+        }
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = month
+        comps.day = day
+        return calendar.date(from: comps)
+    }
+    
+    /// Creates a date suffix string matching TasksStore's key format: "year-month-day"
+    private func dateKeySuffix(for date: Date) -> String {
+        let comps = calendar.dateComponents([.year, .month, .day], from: calendar.startOfDay(for: date))
+        return "\(comps.year ?? 0)-\(comps.month ?? 0)-\(comps.day ?? 0)"
     }
 }
 

@@ -2,7 +2,7 @@
 //  FocusFlowApp.swift
 //  FocusFlow
 //
-//  Updated for Supabase V2 architecture + Onboarding
+//  Updated for Supabase V2 architecture
 //
 
 import SwiftUI
@@ -13,7 +13,6 @@ import Supabase
 struct FocusFlowApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @ObservedObject private var pro = ProEntitlementManager.shared
-    @StateObject private var onboardingManager = OnboardingManager.shared
 
     init() {
         // ═══════════════════════════════════════════════════════════════════
@@ -76,7 +75,6 @@ struct FocusFlowApp: App {
             RootView()
                 .environmentObject(AppSettings.shared)
                 .environmentObject(pro)
-                .environmentObject(onboardingManager)
                 .onOpenURL { url in
                     handleIncomingURL(url)
                 }
@@ -369,24 +367,23 @@ struct FocusFlowApp: App {
 
 // MARK: - Root View
 
-/// Root view that decides whether to show onboarding or main content
+/// Root view that shows the main content
 struct RootView: View {
-    @EnvironmentObject private var onboardingManager: OnboardingManager
     @State private var showLaunch = true
+    @ObservedObject private var onboarding = OnboardingManager.shared
     
     var body: some View {
         ZStack {
-            Group {
-                if onboardingManager.hasCompletedOnboarding {
-                    ContentView()
-                        .transition(.opacity.combined(with: .scale(scale: 1.02)))
-                } else {
-                    OnboardingView()
-                        .transition(.opacity)
-                }
+            // Main content or onboarding
+            if onboarding.hasCompletedOnboarding {
+                ContentView()
+                    .opacity(showLaunch ? 0 : 1)
+            } else {
+                OnboardingView()
+                    .opacity(showLaunch ? 0 : 1)
             }
-            .opacity(showLaunch ? 0 : 1)
             
+            // Launch screen overlay
             if showLaunch {
                 FocusFlowLaunchView()
                     .transition(.opacity)
@@ -394,7 +391,7 @@ struct RootView: View {
         }
         .background(Color.black.ignoresSafeArea())
         .animation(.easeInOut(duration: 0.6), value: showLaunch)
-        .animation(.easeInOut(duration: 0.4), value: onboardingManager.hasCompletedOnboarding)
+        .animation(.easeInOut(duration: 0.4), value: onboarding.hasCompletedOnboarding)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
                 showLaunch = false

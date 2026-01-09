@@ -106,6 +106,7 @@ FocusFlow is a comprehensive productivity ecosystem consisting of:
 
 | Feature | Description | Status |
 |---------|-------------|--------|
+| **🚀 Premium Onboarding** | Beautiful 5-page intro with animations and Pro trial prompt | ✅ |
 | **🎯 Focus Timer** | Beautiful countdown timer with ambient sounds and backgrounds | ✅ |
 | **✅ Task Manager** | Full-featured task system with reminders and recurring tasks | ✅ |
 | **📊 Progress Tracking** | XP system, streaks, badges, and detailed statistics | ✅ |
@@ -207,8 +208,8 @@ FocusFlow/
 │   │   ├── Progress/                # Stats & tracking
 │   │   ├── Presets/                 # Focus presets
 │   │   ├── Journey/                 # Gamification journey
-│   │   ├── Onboarding/              # First-time user flow
-│   │   └── NotificationsCenter/     # In-app notifications
+│   │   ├── NotificationsCenter/     # In-app notifications
+│   │   └── Onboarding/              # Premium onboarding flow
 │   ├── Infrastructure/              # Cloud & networking
 │   ├── Shared/                      # Widget bridge & shared code
 │   ├── StoreKit/                    # In-app purchases
