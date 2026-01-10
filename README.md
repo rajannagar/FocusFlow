@@ -141,6 +141,15 @@ FocusFlow is a comprehensive productivity ecosystem consisting of:
 | **Support** | Contact and FAQ |
 | **Web App** | Progressive web features (future) |
 
+### 💰 Pricing
+
+**FocusFlow Pro** - Premium subscription with full features
+- **Monthly:** $5.99 USD/month
+- **Yearly:** $59.99 USD/year (save 17%)
+- All prices in USD only
+- 7-day free trial for new users
+- Cancel anytime from App Store
+
 ---
 
 ## 🛠 Tech Stack

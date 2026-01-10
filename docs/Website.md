@@ -246,6 +246,13 @@ Subscription comparison:
 | Cloud Sync | ✗ | ✓ |
 | Themes | 3 | 10 |
 
+**Pricing:**
+- **Monthly:** $5.99 USD/month
+- **Yearly:** $59.99 USD/year (17% savings)
+- All pricing displayed in USD only
+- 7-day free trial available
+- Managed through Apple App Store subscriptions
+
 ### 4. About Page (`/about`)
 
 **File:** `app/about/page.tsx`
