@@ -28,9 +28,14 @@ final class FlowChatViewModel: ObservableObject {
     private let context = FlowContext.shared
     private let messageStore = FlowMessageStore.shared
     private let actionHandler = FlowActionHandler.shared
+    private let profileManager = FlowUserProfileManager.shared
     
     private var cancellables = Set<AnyCancellable>()
     private var streamingMessageID: UUID?
+    
+    /// Track last AI response for learning
+    private var lastAIResponse: String?
+    private var lastAIResponseActions: [FlowAction] = []
     
     // MARK: - Initialization
     
@@ -39,6 +44,9 @@ final class FlowChatViewModel: ObservableObject {
         loadMessages()
         updateStatusCard()
         updateQuickActions()
+        
+        // Infer persona from sessions on init
+        inferUserPersona()
     }
     
     // MARK: - Public Methods
@@ -47,6 +55,9 @@ final class FlowChatViewModel: ObservableObject {
     func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isLoading else { return }
+        
+        // Track if user engaged after AI response
+        trackUserEngagement(userMessage: text)
         
         // Clear input and error
         inputText = ""
@@ -153,6 +164,36 @@ final class FlowChatViewModel: ObservableObject {
                 self?.updateQuickActions()
             }
             .store(in: &cancellables)
+        
+        // Listen for proactive nudges (Phase 5)
+        NotificationCenter.default.publisher(for: .proactiveNudgeReceived)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let nudge = notification.userInfo?["nudge"] as? AIGeneratedNudge {
+                    self?.handleProactiveNudge(nudge)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    // MARK: - Proactive Nudge Handling (Phase 5)
+    
+    private func handleProactiveNudge(_ nudge: AIGeneratedNudge) {
+        // Add nudge as a Flow message with special styling
+        var nudgeMessage = FlowMessage.flow(nudge.message)
+        nudgeMessage.isProactiveNudge = true
+        
+        // Add action if present
+        if let action = nudge.suggestedAction {
+            nudgeMessage.actions = [action]
+        }
+        
+        addMessage(nudgeMessage)
+        
+        // Refresh context
+        context.invalidateCache()
+        updateStatusCard()
+        updateQuickActions()
     }
     
     private func loadMessages() {
@@ -242,6 +283,9 @@ final class FlowChatViewModel: ObservableObject {
             print("[FlowChatViewModel] Actions: \(response.actions.count)")
             #endif
             
+            // Store for learning
+            storeAIResponseForLearning(response.content, actions: response.actions)
+            
             // Only add AI message if there's content
             // (Actions like motivate/getStats will add their own follow-up message)
             let hasContent = !response.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -269,6 +313,9 @@ final class FlowChatViewModel: ObservableObject {
         #if DEBUG
         print("[FlowChatViewModel] Executing \(actions.count) action(s)")
         #endif
+        
+        // Learn from actions
+        learnFromActions(actions)
         
         let errors = await actionHandler.executeAll(actions)
         
@@ -409,22 +456,28 @@ final class FlowChatViewModel: ObservableObject {
         let todaySessions = ProgressStore.shared.sessions.filter { calendar.isDateInToday($0.date) }
         let todayMinutes = Int(todaySessions.reduce(0) { $0 + $1.duration } / 60)
         let goalMinutes = ProgressStore.shared.dailyGoalMinutes
+        let percentage = goalMinutes > 0 ? (todayMinutes * 100) / goalMinutes : 0
         
-        // Primary action based on context
+        // === ROW 1: Primary Actions (Focus-related) ===
+        
         if todayMinutes == 0 {
             // No sessions today - encourage starting
             actions.append(QuickAction(id: "start", label: "Start Focus", icon: "play.fill", prompt: "Start a 25 minute focus session"))
-        } else if todayMinutes < goalMinutes {
-            // In progress
+        } else if percentage < 100 {
+            // In progress - suggest continuing
             let remaining = goalMinutes - todayMinutes
             let suggestedTime = min(remaining, 25)
             actions.append(QuickAction(id: "continue", label: "Continue", icon: "play.fill", prompt: "Start a \(suggestedTime) minute focus session"))
         } else {
-            // Goal met
-            actions.append(QuickAction(id: "celebrate", label: "How'd I do?", icon: "star.fill", prompt: "How am I doing today?"))
+            // Goal met - bonus session
+            actions.append(QuickAction(id: "bonus", label: "Bonus Session", icon: "star.fill", prompt: "Start a bonus 25 minute focus session"))
         }
         
-        // Tasks
+        // Progress check - always useful
+        actions.append(QuickAction(id: "progress", label: "My Progress", icon: "chart.bar.fill", prompt: "How am I doing today?"))
+        
+        // === ROW 2: Task & Planning Actions ===
+        
         let todayTasks = TasksStore.shared.tasks.filter { task in
             guard let reminder = task.reminderDate else { return false }
             return calendar.isDateInToday(reminder)
@@ -432,25 +485,178 @@ final class FlowChatViewModel: ObservableObject {
         
         if !todayTasks.isEmpty {
             actions.append(QuickAction(id: "tasks", label: "Today's Tasks", icon: "checklist", prompt: "What are my tasks for today?"))
-        } else {
-            actions.append(QuickAction(id: "add_task", label: "Add Task", icon: "plus.circle", prompt: "Help me add a new task"))
         }
         
-        // Time-based suggestions
-        if hour >= 9 && hour <= 11 {
+        // Add task - always available
+        actions.append(QuickAction(id: "add_task", label: "Add Task", icon: "plus.circle", prompt: "Help me add a new task"))
+        
+        // === ROW 3: Time-based & Contextual ===
+        
+        // Morning (before noon)
+        if hour >= 6 && hour < 12 {
             actions.append(QuickAction(id: "plan", label: "Plan Day", icon: "calendar", prompt: "Help me plan my day"))
-        } else if hour >= 12 && hour <= 14 {
-            actions.append(QuickAction(id: "break", label: "Break Time?", icon: "cup.and.saucer", prompt: "Should I take a break?"))
-        } else if hour >= 17 {
-            actions.append(QuickAction(id: "review", label: "Day Review", icon: "chart.bar", prompt: "How was my day?"))
         }
         
-        // Always include motivation option
-        if !actions.contains(where: { $0.id == "motivate" }) && actions.count < 4 {
-            actions.append(QuickAction(id: "motivate", label: "Motivate Me", icon: "flame", prompt: "Motivate me!"))
+        // Afternoon
+        if hour >= 12 && hour < 17 {
+            if todayMinutes > 60 {
+                actions.append(QuickAction(id: "break", label: "Break Time?", icon: "cup.and.saucer", prompt: "Should I take a break?"))
+            }
         }
         
-        quickActions = Array(actions.prefix(4))
+        // Evening
+        if hour >= 17 {
+            actions.append(QuickAction(id: "review", label: "Day Summary", icon: "sun.horizon", prompt: "Give me a summary of my day"))
+        }
+        
+        // Weekly report (anytime, useful feature)
+        actions.append(QuickAction(id: "weekly", label: "Weekly Report", icon: "calendar.badge.clock", prompt: "Show me my weekly report"))
+        
+        // === ROW 4: Motivation & Support ===
+        
+        actions.append(QuickAction(id: "motivate", label: "Motivate Me", icon: "flame.fill", prompt: "Give me some motivation!"))
+        
+        // Streak at risk? Add nudge
+        let streak = calculateStreak()
+        if streak > 0 && todayMinutes < goalMinutes / 2 && hour >= 14 {
+            actions.insert(QuickAction(id: "streak", label: "Save Streak", icon: "bolt.fill", prompt: "Help me maintain my \(streak) day streak!"), at: 2)
+        }
+        
+        // Quick presets if user has them
+        let presets = FocusPresetStore.shared.presets
+        if !presets.isEmpty && presets.count <= 3 {
+            if let firstPreset = presets.first {
+                actions.append(QuickAction(id: "preset_\(firstPreset.id)", label: firstPreset.name, icon: "sparkles", prompt: "Start \(firstPreset.name) preset"))
+            }
+        }
+        
+        quickActions = Array(actions.prefix(6)) // Show up to 6 actions
+    }
+    
+    /// Calculate current streak for quick action context
+    private func calculateStreak() -> Int {
+        let sessions = ProgressStore.shared.sessions
+        let calendar = Calendar.current
+        let goalMinutes = ProgressStore.shared.dailyGoalMinutes
+        
+        var streak = 0
+        var checkDate = calendar.startOfDay(for: Date())
+        
+        // Check if we've met goal today
+        let todayMinutes = sessions.filter { calendar.isDateInToday($0.date) }
+            .reduce(0) { $0 + $1.duration } / 60
+        
+        if Int(todayMinutes) >= goalMinutes {
+            streak = 1
+            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+        }
+        
+        // Check previous days
+        while true {
+            let dayStart = checkDate
+            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
+            
+            let dayMinutes = sessions.filter { $0.date >= dayStart && $0.date < dayEnd }
+                .reduce(0) { $0 + $1.duration } / 60
+            
+            if Int(dayMinutes) >= goalMinutes {
+                streak += 1
+                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            } else {
+                break
+            }
+            
+            // Safety limit
+            if streak > 365 { break }
+        }
+        
+        return streak
+    }
+    
+    // MARK: - Phase 7: Learning & Profile
+    
+    /// Infer user persona from session history
+    private func inferUserPersona() {
+        let sessions = ProgressStore.shared.sessions
+        profileManager.inferPersona(from: sessions)
+    }
+    
+    /// Track when user engages after AI response
+    private func trackUserEngagement(userMessage: String) {
+        guard let lastResponse = lastAIResponse else { return }
+        
+        let lowercasedMessage = userMessage.lowercased()
+        
+        // Check if user started a session after motivation
+        let sessionStarters = ["start", "begin", "focus", "let's go", "go", "yes"]
+        if sessionStarters.contains(where: { lowercasedMessage.contains($0) }) {
+            // User likely engaged positively with the last AI message
+            profileManager.recordEffectiveMotivation(
+                String(lastResponse.prefix(100)),
+                context: "User started session after",
+                engagementType: .startedSession
+            )
+            
+            profileManager.recordSuccessPattern(
+                action: "motivation",
+                outcome: "started_session"
+            )
+        }
+        
+        // Track feature usage based on what user asks for
+        if lowercasedMessage.contains("motivat") {
+            profileManager.trackFeatureUsage("motivation")
+        } else if lowercasedMessage.contains("task") {
+            profileManager.trackFeatureUsage("tasks")
+        } else if lowercasedMessage.contains("focus") || lowercasedMessage.contains("start") {
+            profileManager.trackFeatureUsage("focus_sessions")
+        } else if lowercasedMessage.contains("report") || lowercasedMessage.contains("stats") || lowercasedMessage.contains("progress") {
+            profileManager.trackFeatureUsage("reports")
+        } else if lowercasedMessage.contains("plan") {
+            profileManager.trackFeatureUsage("planning")
+        }
+    }
+    
+    /// Store AI response for learning
+    private func storeAIResponseForLearning(_ response: String, actions: [FlowAction]) {
+        lastAIResponse = response
+        lastAIResponseActions = actions
+    }
+    
+    /// Learn from completed actions
+    private func learnFromActions(_ actions: [FlowAction]) {
+        for action in actions {
+            switch action {
+            case .startFocus(let minutes, _, _):
+                profileManager.recordSuccessPattern(
+                    action: "start_focus",
+                    outcome: "session_\(minutes)min"
+                )
+                profileManager.trackFeatureUsage("focus_sessions")
+                
+            case .createTask:
+                profileManager.trackFeatureUsage("task_creation")
+                
+            case .motivate:
+                profileManager.trackFeatureUsage("motivation_requested")
+                
+            case .navigateToTab(let tab):
+                profileManager.trackFeatureUsage("navigate_\(tab)")
+                
+            case .getStats:
+                profileManager.trackFeatureUsage("stats_view")
+                
+            case .generateWeeklyReport:
+                profileManager.trackFeatureUsage("weekly_report")
+                
+            case .generateDailyPlan:
+                profileManager.trackFeatureUsage("daily_planning")
+                
+            default:
+                // Track generic feature usage
+                profileManager.trackFeatureUsage("other_action")
+            }
+        }
     }
 }
 

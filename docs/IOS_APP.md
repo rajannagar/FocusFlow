@@ -333,13 +333,15 @@ enum FFTaskRepeatRule: String, CaseIterable {
 
 **Location:** `FocusFlow/Features/AI/`
 
-ChatGPT-powered AI assistant for productivity coaching.
+Advanced AI productivity coach with intelligence framework, user profiling, and proactive nudges.
 
 ```
 AI/
 ├── Core/
 │   ├── FlowConfig.swift         # API configuration
-│   ├── FlowContext.swift        # Context builder
+│   ├── FlowContext.swift        # Context builder with intelligence
+│   ├── FlowIntelligence.swift   # Pattern analysis & insights
+│   ├── FlowUserProfile.swift    # User profiling & personas
 │   ├── FlowMemory.swift         # Conversation memory
 │   ├── FlowMessage.swift        # Message models
 │   ├── FlowNavigationCoordinator.swift  # Navigation actions
@@ -347,8 +349,8 @@ AI/
 ├── Service/
 │   └── FlowService.swift        # API communication
 ├── UI/
-│   ├── FlowChatView.swift       # Chat interface
-│   ├── FlowChatViewModel.swift  # Chat logic
+│   ├── FlowChatView.swift       # Chat interface with smart quick actions
+│   ├── FlowChatViewModel.swift  # Chat logic with profile learning
 │   ├── FlowResponseCards.swift  # Rich response UI
 │   ├── FlowAnimations.swift     # Chat animations
 │   └── FlowSpotlight.swift      # Feature discovery
@@ -356,37 +358,49 @@ AI/
 │   ├── FlowAction.swift         # Action definitions
 │   └── FlowActionHandler.swift  # Action execution
 ├── Proactive/
-│   ├── FlowProactiveEngine.swift    # Proactive suggestions
+│   ├── FlowProactiveEngine.swift    # Advanced proactive engine (18 triggers)
 │   └── FlowHintSystem.swift         # Contextual hints
 └── Voice/
     └── FlowVoiceInput.swift     # Voice transcription
 ```
 
-**Flow AI Capabilities:**
+**Intelligence Framework:**
+- Performance analysis (trends, momentum)
+- Behavioral pattern detection (peak hours, preferences)
+- User state inference (energy, emotion, tone suggestion)
+- Opportunity detection (quick wins, goal proximity)
+- Risk detection (overdue tasks, streak risk)
+
+**User Profile System:**
 ```swift
-// Available Tool Functions
-create_task(title, reminderDate?, repeatRule?)
-complete_task(taskId, date?)
-delete_task(taskId)
-list_tasks(timeRange?)
-start_focus(minutes, sessionName?, presetId?)
-pause_focus()
-resume_focus()
-end_focus()
-get_progress()
-create_preset(name, duration, sound?, theme?)
-set_daily_goal(minutes)
+// Productivity Personas
+enum ProductivityPersona {
+    case morningWarrior  // 🌅 Early bird
+    case nightOwl        // 🦉 Evening person
+    case sprintWorker    // ⚡ Short bursts
+    case marathonRunner  // 🏃 Long sessions
+    case flexibleAdapter // 🔄 Variable patterns
+}
 ```
+
+**Proactive Engine (18 Trigger Types):**
+- Performance: `optimalTime`, `habitReminder`, `goalProgress`, `celebration`
+- Streaks: `streakAtRisk`, `streakMilestone`, `newPersonalBest`
+- Behavioral: `unusualInactivity`, `potentialBurnout`, `consistentProgress`
+- Contextual: `morningWelcome`, `endOfDaySummary`, `weeklyReview`
 
 **Context Building:**
 The AI receives rich context including:
 - User profile (name, theme, settings)
+- Intelligence insights (patterns, opportunities, risks)
+- User profile (persona, preferences, learning)
 - Today's progress (focus time, goal %)
 - Active tasks (today, upcoming, overdue)
 - Focus presets available
 - Recent sessions
 - Conversation memory
 - Time of day awareness
+- Suggested response tone
 
 ### 4. Progress Module 📊
 

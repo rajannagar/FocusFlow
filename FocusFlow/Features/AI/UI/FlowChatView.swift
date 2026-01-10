@@ -449,6 +449,21 @@ struct FlowChatView: View {
             }
             .disabled(viewModel.messages.isEmpty)
             
+            #if DEBUG
+            // Debug nudge button - test proactive AI nudges
+            Button {
+                Haptics.impact(.medium)
+                FlowProactiveEngine.shared.forceAnalyze()
+            } label: {
+                Image(systemName: "bell.badge.waveform.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.orange.opacity(0.9))
+                    .frame(width: 36, height: 36)
+                    .background(Color.orange.opacity(0.15))
+                    .clipShape(Circle())
+            }
+            #endif
+            
             // Info button
             Button {
                 Haptics.impact(.light)

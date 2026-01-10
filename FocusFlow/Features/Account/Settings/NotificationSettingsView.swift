@@ -47,6 +47,9 @@ struct NotificationSettingsView: View {
                         // Daily nudges
                         dailyNudgesSection
                         
+                        // Smart AI Nudges (Phase 5)
+                        smartNudgesSection
+                        
                         // Daily recap (Journey)
                         dailyRecapSection
                         
@@ -330,6 +333,109 @@ struct NotificationSettingsView: View {
             Text(time)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white.opacity(0.5))
+        }
+        .padding(.vertical, 4)
+    }
+    
+    // MARK: - Smart AI Nudges (Phase 5)
+    
+    private var smartNudgesSection: some View {
+        settingsCard {
+            VStack(spacing: 16) {
+                sectionHeader(title: "SMART AI NUDGES", icon: "brain.head.profile")
+                
+                Toggle(isOn: Binding(
+                    get: { prefs.smartNudgesEnabled },
+                    set: { prefsStore.setSmartNudgesEnabled($0); Haptics.impact(.light) }
+                )) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Intelligent Notifications")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                        
+                        Text("AI-powered nudges based on your patterns")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                }
+                .tint(theme.accentPrimary)
+                
+                if prefs.smartNudgesEnabled {
+                    Divider()
+                        .background(Color.white.opacity(DS.Glass.regular))
+                    
+                    VStack(spacing: DS.Spacing.md) {
+                        smartNudgeToggle(
+                            title: "Streak Protection",
+                            subtitle: "Alert when your streak is at risk",
+                            icon: "flame.fill",
+                            iconColor: .orange,
+                            isOn: Binding(
+                                get: { prefs.streakRiskNudgesEnabled },
+                                set: { prefsStore.setStreakRiskNudgesEnabled($0); Haptics.impact(.light) }
+                            )
+                        )
+                        
+                        smartNudgeToggle(
+                            title: "Goal Progress",
+                            subtitle: "Encourage when you're close to your daily goal",
+                            icon: "target",
+                            iconColor: theme.accentPrimary,
+                            isOn: Binding(
+                                get: { prefs.goalProgressNudgesEnabled },
+                                set: { prefsStore.setGoalProgressNudgesEnabled($0); Haptics.impact(.light) }
+                            )
+                        )
+                        
+                        smartNudgeToggle(
+                            title: "Achievements",
+                            subtitle: "Celebrate milestones and personal bests",
+                            icon: "trophy.fill",
+                            iconColor: .yellow,
+                            isOn: Binding(
+                                get: { prefs.achievementNudgesEnabled },
+                                set: { prefsStore.setAchievementNudgesEnabled($0); Haptics.impact(.light) }
+                            )
+                        )
+                        
+                        smartNudgeToggle(
+                            title: "Check-ins",
+                            subtitle: "Gentle nudge if you've been away for a while",
+                            icon: "hand.wave.fill",
+                            iconColor: .cyan,
+                            isOn: Binding(
+                                get: { prefs.inactivityNudgesEnabled },
+                                set: { prefsStore.setInactivityNudgesEnabled($0); Haptics.impact(.light) }
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    private func smartNudgeToggle(title: String, subtitle: String, icon: String, iconColor: Color, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(iconColor)
+                .frame(width: 24, height: 24)
+            
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+                
+                Text(subtitle)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+            
+            Spacer()
+            
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(theme.accentPrimary)
         }
         .padding(.vertical, 4)
     }

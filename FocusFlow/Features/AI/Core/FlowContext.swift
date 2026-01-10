@@ -121,7 +121,9 @@ final class FlowContext: ObservableObject {
         
         // Add sections
         context += buildProfileSection()
+        context += buildUserProfileSection() // Phase 7: Advanced profile
         context += buildProgressSection(now: now, calendar: calendar)
+        context += FlowIntelligence.shared.buildIntelligenceContext()
         context += buildTasksSection(now: now, calendar: calendar)
         context += buildPresetsSection()
         context += buildRecentSessionsSection()
@@ -132,6 +134,11 @@ final class FlowContext: ObservableObject {
     }
     
     // MARK: - Context Sections
+    
+    /// Phase 7: Enhanced user profile with persona and preferences
+    private func buildUserProfileSection() -> String {
+        return FlowUserProfileManager.shared.buildProfileContext()
+    }
     
     private func buildProfileSection() -> String {
         let settings = AppSettings.shared

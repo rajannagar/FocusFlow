@@ -149,9 +149,11 @@ Flow AI is a **Pro-only feature**. Non-Pro users see a paywall prompt when acces
 
 | File | Lines | Purpose |
 |------|-------|---------|
+| `FlowIntelligence.swift` | ~350 | Pattern analysis, user state inference, opportunity/risk detection |
+| `FlowUserProfile.swift` | ~514 | User profile model, productivity personas, preference learning |
 | `FlowConfig.swift` | ~158 | Central configuration - API URLs, rate limits, timeouts, feature flags |
-| `FlowContextBuilder.swift` | ~440 | Builds rich context including user data, tasks, presets, progress |
-| `FlowMessage.swift` | ~341 | Message model with sender, state, actions, attachments |
+| `FlowContextBuilder.swift` | ~540 | Builds rich context including user data, tasks, presets, progress, intelligence insights |
+| `FlowMessage.swift` | ~350 | Message model with sender, state, actions, attachments, proactive nudge flag |
 | `FlowMemoryManager.swift` | ~501 | AI memory system - learns user preferences and patterns |
 | `FlowNavigationBridge.swift` | ~295 | Bridges AI navigation requests to app navigation system |
 | `FlowAnalytics.swift` | - | Performance monitoring and analytics |
@@ -179,14 +181,14 @@ Flow AI is a **Pro-only feature**. Non-Pro users see a paywall prompt when acces
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `FlowProactiveEngine.swift` | ~639 | Intelligent nudge system that learns from user behavior |
+| `FlowProactiveEngine.swift` | ~900 | Advanced proactive engine with 18 trigger types, AI-generated nudges, push notifications |
 | `FlowHints.swift` | - | Contextual hints and suggestions |
 
 ### Backend (`supabase/functions/ai-chat/`)
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `index.ts` | ~915 | Edge Function - OpenAI API calls, system prompt, tool definitions |
+| `index.ts` | ~1400 | Edge Function - Expert system prompt, tool definitions, multi-action support, response quality framework, markdown stripping |
 
 ---
 
@@ -234,7 +236,8 @@ Flow AI is a **Pro-only feature**. Non-Pro users see a paywall prompt when acces
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                  Quick Actions                           │   │
-│  │  [Start Focus] [My Tasks] [How am I doing?] [Plan Day]  │   │
+│  │  [Start Focus] [My Progress] [Motivate Me] [Plan Day]   │   │
+│  │  [Weekly Report] [Today's Tasks]                         │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
@@ -246,6 +249,21 @@ Flow AI is a **Pro-only feature**. Non-Pro users see a paywall prompt when acces
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### Smart Quick Actions
+
+Quick actions are context-aware and dynamically update based on user state (up to 6 shown):
+
+| Context | Actions Shown |
+|---------|---------------|
+| **No session active** | Start Focus, My Progress, Today's Tasks |
+| **Session active** | Pause Session, Extend Time, My Progress |
+| **Morning (before noon)** | Plan Day |
+| **Afternoon (noon-5pm)** | Break Time? |
+| **Evening (after 5pm)** | Day Summary |
+| **Streak at risk** | Save Streak (urgent) |
+| **Always available** | My Progress, Weekly Report, Motivate Me |
+| **User presets** | User's custom presets appear as quick actions |
 
 ### Rich Inline Cards
 
@@ -436,6 +454,53 @@ into the FocusFlow app. You're professional but friendly - never robotic.
 - Over-explaining simple actions
 - Multiple emojis in a row
 - Markdown headers (use clean separators instead)
+
+---
+
+## Response Quality Framework
+
+### Response Length Rules
+
+| Type | Max Words | Format |
+|------|-----------|--------|
+| Confirmations | 15 | Action done + brief encouragement |
+| Information | 50 | Direct answer + context + optional suggestion |
+| Planning | N/A | Structured time blocks with visual formatting |
+| Motivation | 30 | Specific progress + genuine encouragement |
+| Error Recovery | N/A | What went wrong + how to fix + offer help |
+
+### Emotional Tone Calibration
+
+| User State | AI Response Strategy |
+|------------|---------------------|
+| Energetic/Motivated | Match energy, use exclamation marks, action words |
+| Tired/Low Energy | Gentle, shorter, acknowledge difficulty |
+| Frustrated/Stressed | Validate feelings first, then offer concrete help |
+| Celebrating | Enthusiastic celebration with specific achievement reference |
+| Neutral/Business | Efficient and direct with slight encouragement |
+
+### Quality Checklist
+
+Before responding, AI verifies:
+- ✓ SHORT? Under word limit for response type
+- ✓ SPECIFIC? References actual data, not generic
+- ✓ USEFUL? Provides actionable value
+- ✓ TONE? Matches user's detected emotional state
+- ✓ ACTION? Ends with clear next step when appropriate
+- ✓ FORMAT? Uses visual elements for complex info
+- ✓ NO FILLER? Zero "I'd be happy to" or "Great question"
+- ✓ NO REPETITION? Doesn't restate what user said
+
+### Markdown Stripping
+
+All AI responses are processed through `stripMarkdown()` server-side to remove:
+- `**bold**` markers
+- `###` headers
+- `*italic*` markers
+- Backticks
+- Other markdown syntax
+
+This ensures clean text rendering in the iOS app.
 
 ---
 
@@ -680,33 +745,185 @@ USER PREFERENCES (learned):
 
 ---
 
+## Intelligence Framework
+
+### FlowIntelligence
+
+The intelligence layer analyzes user patterns and generates actionable insights.
+
+```swift
+@MainActor
+final class FlowIntelligence {
+    static let shared = FlowIntelligence()
+    
+    // Performance Analysis
+    func analyzePerformance() -> PerformanceInsight
+    
+    // Pattern Detection  
+    func detectPatterns() -> BehavioralPatterns
+    
+    // User State Inference
+    func inferUserState() -> UserStateInference
+    
+    // Opportunity Detection
+    func detectOpportunities() -> [Opportunity]
+    
+    // Risk Detection
+    func detectRisks() -> [RiskAlert]
+}
+```
+
+### Intelligence Outputs
+
+| Analysis | Description |
+|----------|-------------|
+| **Performance** | Today vs average, trends, momentum assessment |
+| **Patterns** | Peak hours, preferred session lengths, best days |
+| **User State** | Energy level, emotional state, streak risk, suggested tone |
+| **Opportunities** | Quick wins, goal proximity, streak building chances |
+| **Risks** | Overdue tasks, streak at risk, unusual inactivity |
+
+### Suggested Tone System
+
+The intelligence layer infers the appropriate AI response tone:
+
+| Tone | When Used |
+|------|-----------|
+| `.energetic` | User is motivated, high activity |
+| `.supportive` | User struggling, needs encouragement |
+| `.encouraging` | User making progress, celebrate wins |
+| `.gentle` | User tired or stressed |
+| `.urgent` | Streak at risk, deadlines approaching |
+
+---
+
+## User Profile System
+
+### FlowUserProfile
+
+Advanced user profiling for personalized AI responses.
+
+```swift
+struct FlowUserProfile: Codable {
+    // Productivity Persona
+    var productivityPersona: ProductivityPersona
+    
+    // Preferences
+    var motivationStyle: MotivationStyle
+    var celebrationPreference: CelebrationLevel
+    var responseStylePreference: ResponseStyle
+    var proactiveNudgeFrequency: NudgeFrequency
+    var preferredActionBias: ActionBias
+    
+    // Behavioral DNA
+    var peakHours: [Int]
+    var preferredSessionLength: Int
+    var averageSessionsPerDay: Double
+    var completionRate: Double
+    
+    // Learning History
+    var effectiveMotivations: [String]
+    var ineffectiveApproaches: [String]
+    var preferredFeatures: [String: Int]
+}
+```
+
+### Productivity Personas
+
+| Persona | Emoji | Description |
+|---------|-------|-------------|
+| Morning Warrior | 🌅 | Most productive in early hours |
+| Night Owl | 🦉 | Peak performance in evening/night |
+| Sprint Worker | ⚡ | Prefers short, intense focus bursts |
+| Marathon Runner | 🏃 | Thrives in longer sessions |
+| Flexible Adapter | 🔄 | Productive across various times |
+| Unknown | 🔍 | Still learning patterns |
+
+### Preference Enums
+
+| Preference | Options |
+|------------|---------|
+| **MotivationStyle** | Encouraging, Direct, Gentle, Balanced, Data-Focused |
+| **CelebrationLevel** | Minimal, Moderate, Enthusiastic |
+| **ResponseStyle** | Concise, Detailed |
+| **NudgeFrequency** | Minimal, Moderate, Frequent |
+| **ActionBias** | Auto, Suggest, Ask |
+
+### Profile Learning
+
+The profile manager continuously learns from user interactions:
+
+```swift
+// Automatically inferred
+profileManager.inferPersona(from: sessions)
+
+// Tracked on engagement
+profileManager.recordEffectiveMotivation(phrase)
+profileManager.trackFeatureUsage(feature)
+profileManager.recordSuccessPattern(time, action)
+```
+
+---
+
 ## Proactive Engine
 
 ### FlowProactiveEngine
 
-The proactive engine provides intelligent nudges at optimal times without being intrusive.
+Advanced proactive intelligence with 18 trigger types and AI-generated nudges.
 
 ```swift
 @MainActor
 final class FlowProactiveEngine: ObservableObject {
+    static let shared = FlowProactiveEngine()
+    
     @Published var currentInsight: FlowInsight?
     @Published var nudgeCount: Int = 0
     
     private let maxNudgesPerDay = 10
     private let analysisInterval: TimeInterval = 300  // 5 minutes
+    
+    // Force analysis for testing
+    func forceAnalyze()
+    
+    // Generate AI-powered nudge
+    func generateAINudge(for insight: FlowInsight) async -> AIGeneratedNudge?
 }
 ```
 
-### Insight Types
+### Insight Types (18 Total)
 
-| Type | Trigger | Example Message |
-|------|---------|-----------------|
-| `optimalTime` | User's productive hour detected | "It's 9 AM - your most productive hour! Perfect time to focus." |
-| `habitReminder` | User usually focuses at this time | "You typically start a focus session around now. Ready?" |
-| `goalProgress` | Close to daily goal | "Just 15 more minutes to hit your daily goal! 💪" |
-| `taskReminder` | Important task due soon | "Don't forget: 'Project review' is due in 2 hours." |
-| `streakAlert` | Streak at risk | "Quick 15-minute session will keep your 7-day streak alive!" |
-| `breakSuggestion` | Extended focus detected | "You've been focused for 90 minutes. Time for a break?" |
+| Category | Types |
+|----------|-------|
+| **Performance** | `optimalTime`, `habitReminder`, `goalProgress`, `celebration`, `behindSchedule` |
+| **Tasks** | `overdueTasks`, `busyDay`, `taskDueSoon` |
+| **Streaks** | `streakAtRisk`, `streakMilestone`, `newPersonalBest` |
+| **Behavioral** | `unusualInactivity`, `potentialBurnout`, `consistentProgress` |
+| **Achievement** | `focusHoursMilestone`, `sessionsCountMilestone`, `weeklyGoalStreak` |
+| **Contextual** | `morningWelcome`, `endOfDaySummary`, `weeklyReview` |
+
+### AI-Generated Nudges
+
+High-priority insights (score ≥ 0.8) trigger personalized AI-generated nudges:
+
+```swift
+struct AIGeneratedNudge {
+    let message: String      // AI-crafted personalized message
+    let insightType: InsightType
+    let suggestedAction: FlowAction?
+}
+```
+
+### Push Notifications
+
+Nudges can be delivered as push notifications when the app is in background:
+
+| Preference | Default | Controls |
+|------------|---------|----------|
+| `smartNudgesEnabled` | `true` | Master toggle for all AI nudges |
+| `streakRiskNudgesEnabled` | `true` | Streak at risk, milestones |
+| `goalProgressNudgesEnabled` | `true` | Goal progress, optimal time |
+| `inactivityNudgesEnabled` | `false` | Unusual inactivity, burnout detection |
+| `achievementNudgesEnabled` | `true` | Personal bests, milestones |
 
 ### Proactive Flow
 
@@ -744,11 +961,12 @@ final class FlowProactiveEngine: ObservableObject {
 │              ┌───────────────┴───────────────┐                  │
 │              │                               │                  │
 │              ▼                               ▼                  │
-│        Eligible                        Not Eligible             │
+│     Score ≥ 0.8                        Score < 0.8              │
 │              │                               │                  │
 │              ▼                               ▼                  │
-│     Show insight card                   Skip cycle              │
-│     in Flow tab                                                 │
+│     Generate AI nudge               Show standard hint          │
+│     + Push notification                                         │
+│     (if background)                                             │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```

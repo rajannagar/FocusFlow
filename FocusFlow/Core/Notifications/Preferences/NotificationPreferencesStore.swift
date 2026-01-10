@@ -166,6 +166,13 @@ final class NotificationPreferencesStore: ObservableObject {
     func setTaskRemindersEnabled(_ enabled: Bool) { update { $0.taskRemindersEnabled = enabled } }
     func setDailyRecapEnabled(_ enabled: Bool) { update { $0.dailyRecapEnabled = enabled } }
     func setDailyRecapTime(_ time: Date) { update { $0.dailyRecapTime = time } }
+    
+    // Smart AI Nudges (Phase 5)
+    func setSmartNudgesEnabled(_ enabled: Bool) { update { $0.smartNudgesEnabled = enabled } }
+    func setStreakRiskNudgesEnabled(_ enabled: Bool) { update { $0.streakRiskNudgesEnabled = enabled } }
+    func setGoalProgressNudgesEnabled(_ enabled: Bool) { update { $0.goalProgressNudgesEnabled = enabled } }
+    func setInactivityNudgesEnabled(_ enabled: Bool) { update { $0.inactivityNudgesEnabled = enabled } }
+    func setAchievementNudgesEnabled(_ enabled: Bool) { update { $0.achievementNudgesEnabled = enabled } }
 
     func reset() {
         preferences = .default

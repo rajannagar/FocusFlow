@@ -556,7 +556,12 @@ guard ProGatingHelper.shared.canUseCloudSync else {
 
 **Location:** `supabase/functions/ai-chat/`
 
-The `ai-chat` Edge Function proxies requests to OpenAI, keeping the API key secure on the server.
+The `ai-chat` Edge Function is the core AI backend, featuring:
+- Expert system prompt with productivity science knowledge
+- 26 tool definitions for app control
+- Multi-action support for complex requests
+- Response quality framework with markdown stripping
+- User profile adaptation for personalized responses
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -579,13 +584,17 @@ The `ai-chat` Edge Function proxies requests to OpenAI, keeping the API key secu
 │      │                                                                  │
 │      ├── Get OPENAI_API_KEY from secrets                                │
 │      │                                                                  │
-│      ├── Build messages array with system prompt + context              │
+│      ├── Build messages with expert system prompt + rich context        │
 │      │                                                                  │
-│      ├── Call OpenAI API (gpt-4o)                                       │
+│      ├── Call OpenAI API (gpt-4o-mini)                                  │
 │      │      │                                                           │
 │      │      ├── Function calling for actions                            │
 │      │      │                                                           │
+│      │      ├── Multi-action expansion (execute_multi_action)           │
+│      │      │                                                           │
 │      │      └── Response text                                           │
+│      │                                                                  │
+│      ├── Apply stripMarkdown() to clean response                        │
 │      │                                                                  │
 │      ├── Parse response + actions                                       │
 │      │                                                                  │
@@ -596,6 +605,16 @@ The `ai-chat` Edge Function proxies requests to OpenAI, keeping the API key secu
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+### System Prompt Features
+
+| Feature | Description |
+|---------|-------------|
+| **Productivity Expertise** | Deep knowledge of focus science, habit formation, time management |
+| **Decision Framework** | Rules for when to act, suggest, or ask |
+| **Response Quality** | Length rules, tone calibration, quality checklist |
+| **User Profile Adaptation** | Adapts to productivity personas and preferences |
+| **Tool Calling Rules** | Critical enforcement to prevent AI just describing actions |
 
 ### Function Code Structure
 

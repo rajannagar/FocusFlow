@@ -46,6 +46,16 @@ struct NotificationPreferences: Codable, Equatable {
     var dailyRecapHour: Int = 9
     var dailyRecapMinute: Int = 0
     
+    // MARK: - Smart AI Nudges (Phase 5)
+    /// Proactive AI-powered notifications based on behavior patterns
+    var smartNudgesEnabled: Bool = true
+    
+    /// Individual smart nudge types
+    var streakRiskNudgesEnabled: Bool = true       // "Your streak is at risk!"
+    var goalProgressNudgesEnabled: Bool = true     // "Just 15 min to hit your goal!"
+    var inactivityNudgesEnabled: Bool = false      // "Haven't seen you in a while" (opt-in)
+    var achievementNudgesEnabled: Bool = true      // "New personal best!"
+    
     // MARK: - Quiet Hours (Phase 5 - future)
     // var quietHoursEnabled: Bool = false
     // var quietHoursStart: Int = 22  // 10 PM

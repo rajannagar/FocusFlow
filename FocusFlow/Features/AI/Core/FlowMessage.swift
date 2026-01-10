@@ -13,6 +13,7 @@ struct FlowMessage: Identifiable, Codable, Equatable {
     var actions: [FlowAction]?
     var attachments: [MessageAttachment]?
     var metadata: MessageMetadata?
+    var isProactiveNudge: Bool  // Phase 5: Mark proactive nudges for special styling
     
     // MARK: - Sender
     
@@ -42,7 +43,8 @@ struct FlowMessage: Identifiable, Codable, Equatable {
         state: MessageState = .complete,
         actions: [FlowAction]? = nil,
         attachments: [MessageAttachment]? = nil,
-        metadata: MessageMetadata? = nil
+        metadata: MessageMetadata? = nil,
+        isProactiveNudge: Bool = false
     ) {
         self.id = id
         self.content = content
@@ -52,6 +54,7 @@ struct FlowMessage: Identifiable, Codable, Equatable {
         self.actions = actions
         self.attachments = attachments
         self.metadata = metadata
+        self.isProactiveNudge = isProactiveNudge
     }
     
     /// Create a user message
@@ -81,7 +84,8 @@ struct FlowMessage: Identifiable, Codable, Equatable {
             state: .streaming,
             actions: actions,
             attachments: attachments,
-            metadata: metadata
+            metadata: metadata,
+            isProactiveNudge: isProactiveNudge
         )
     }
     
@@ -95,7 +99,8 @@ struct FlowMessage: Identifiable, Codable, Equatable {
             state: .complete,
             actions: actions ?? self.actions,
             attachments: attachments,
-            metadata: metadata
+            metadata: metadata,
+            isProactiveNudge: isProactiveNudge
         )
     }
     
@@ -109,7 +114,8 @@ struct FlowMessage: Identifiable, Codable, Equatable {
             state: .failed,
             actions: actions,
             attachments: attachments,
-            metadata: metadata
+            metadata: metadata,
+            isProactiveNudge: isProactiveNudge
         )
     }
 }

@@ -578,12 +578,17 @@ extension FlowActionHandler {
 extension FlowActionHandler {
     
     private func startFocus(minutes: Int, presetID: UUID?, sessionName: String?) {
-        // If preset specified, activate it first
+        // Handle preset activation
         if let presetID = presetID {
+            // User wants to start with a specific preset
             FocusPresetStore.shared.activePresetID = presetID
+        } else {
+            // User wants a plain timer without preset - clear any active preset
+            // This prevents previously selected presets from being applied
+            FocusPresetStore.shared.activePresetID = nil
         }
         
-        // Post notification that FocusView listens for
+        // Build notification userInfo
         var userInfo: [String: Any] = ["minutes": minutes]
         if let presetID = presetID {
             userInfo["presetID"] = presetID
@@ -592,20 +597,24 @@ extension FlowActionHandler {
             userInfo["sessionName"] = sessionName
         }
         
-        NotificationCenter.default.post(
-            name: Notification.Name("FocusFlow.startFocusFromAI"),
-            object: nil,
-            userInfo: userInfo
-        )
-        
-        // Navigate to focus tab
+        // Navigate to focus tab FIRST
         navigate(to: .tab(.focus))
         
         Haptics.impact(.medium)
         
-        #if DEBUG
-        print("[FlowActionHandler] ✅ Posted startFocusFromAI: \(minutes)m, preset: \(presetID?.uuidString ?? "none"), name: \(sessionName ?? "none")")
-        #endif
+        // Post notification AFTER a small delay to ensure FocusView is visible and ready
+        // This fixes a race condition where the notification was sent before the view was loaded
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            NotificationCenter.default.post(
+                name: Notification.Name("FocusFlow.startFocusFromAI"),
+                object: nil,
+                userInfo: userInfo
+            )
+            
+            #if DEBUG
+            print("[FlowActionHandler] ✅ Posted startFocusFromAI: \(minutes)m, preset: \(presetID?.uuidString ?? "none"), name: \(sessionName ?? "none")")
+            #endif
+        }
     }
     
     private func pauseFocus() {

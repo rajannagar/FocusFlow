@@ -1279,14 +1279,9 @@ struct FocusView: View {
             lastUserStartDate = Date()
             didFireCompletionSideEffectsForThisSession = false
         }
-
-        if prior == .idle || prior == .completed {
-            if viewModel.phase == .running,
-               viewModel.remainingSeconds == viewModel.totalSeconds,
-               let app = appSettings.selectedExternalMusicApp {
-                ExternalMusicLauncher.openSelectedApp(app)
-            }
-        }
+        
+        // Note: External music app launch moved to handlePhaseTransition()
+        // to handle async toggle() properly
     }
 
     // MARK: - Bottom row
@@ -1543,6 +1538,13 @@ struct FocusView: View {
 
             if old == .idle || old == .paused || old == .completed {
                 FocusSoundEngine.shared.playEvent(.start)
+            }
+            
+            // ✅ Launch external music app when starting a fresh session (not resuming)
+            if old == .idle || old == .completed {
+                if let app = appSettings.selectedExternalMusicApp {
+                    ExternalMusicLauncher.openSelectedApp(app)
+                }
             }
 
         case .paused:
