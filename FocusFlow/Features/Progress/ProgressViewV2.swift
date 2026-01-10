@@ -1903,172 +1903,163 @@ private struct InfoSheet: View {
     let details: [(String, String)]
     
     @Environment(\.dismiss) private var dismiss
-    @State private var appearAnimation = false
     
     var body: some View {
-        ZStack {
-            // Premium background
-            PremiumAppBackground(theme: theme, particleCount: 20)
-            
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    // Header with close button
-                    HStack {
-                        Spacer()
-                        Button { dismiss() } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.6))
-                                .frame(width: 32, height: 32)
-                                .background(Color.white.opacity(0.1))
-                                .clipShape(Circle())
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
-                    // Hero Section
-                    VStack(spacing: 20) {
-                        // Animated icon
-                        ZStack {
-                            // Outer glow
-                            Circle()
-                                .fill(iconColor.opacity(0.2))
-                                .frame(width: 120, height: 120)
-                                .blur(radius: 30)
-                                .scaleEffect(appearAnimation ? 1.2 : 0.8)
-                            
-                            // Icon background
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [iconColor.opacity(0.3), iconColor.opacity(0.1)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
+        NavigationStack {
+            ZStack {
+                // Themed gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        iconColor.opacity(0.1),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        iconColor.opacity(0.15),
+                        iconColor.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [iconColor.opacity(0.3), iconColor.opacity(0.15)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
                                     )
-                                )
-                                .frame(width: 90, height: 90)
+                                    .frame(width: 88, height: 88)
+                                
+                                Image(systemName: icon)
+                                    .font(.system(size: 40, weight: .semibold))
+                                    .foregroundColor(iconColor)
+                            }
                             
-                            // Icon
-                            Image(systemName: icon)
-                                .font(.system(size: 40, weight: .semibold))
-                                .foregroundColor(iconColor)
-                                .scaleEffect(appearAnimation ? 1 : 0.5)
+                            Text(title)
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text(description)
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
                         }
                         .padding(.top, 20)
                         
-                        // Title
-                        Text(title)
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
-                            .opacity(appearAnimation ? 1 : 0)
-                            .offset(y: appearAnimation ? 0 : 20)
-                        
-                        // Description
-                        Text(description)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 30)
-                            .opacity(appearAnimation ? 1 : 0)
-                            .offset(y: appearAnimation ? 0 : 20)
-                    }
-                    .padding(.bottom, 32)
-                    
-                    // Detail Cards
-                    VStack(spacing: 12) {
-                        ForEach(Array(details.enumerated()), id: \.offset) { index, detail in
-                            DetailCard(
-                                title: detail.0,
-                                text: detail.1,
-                                iconColor: iconColor,
-                                index: index
-                            )
-                            .opacity(appearAnimation ? 1 : 0)
-                            .offset(y: appearAnimation ? 0 : 30)
-                            .animation(
-                                .spring(response: 0.6, dampingFraction: 0.8)
-                                .delay(Double(index) * 0.1 + 0.3),
-                                value: appearAnimation
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Done button
-                    Button {
-                        Haptics.impact(.light)
-                        dismiss()
-                    } label: {
-                        Text("Got it")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                            .background(
-                                LinearGradient(
-                                    colors: [theme.accentPrimary, theme.accentSecondary],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
+                        // Detail Sections
+                        VStack(spacing: 16) {
+                            ForEach(Array(details.enumerated()), id: \.offset) { index, detail in
+                                ProgressInfoSection(
+                                    title: detail.0,
+                                    text: detail.1,
+                                    iconColor: iconColor,
+                                    index: index
                                 )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .shadow(color: theme.accentPrimary.opacity(0.4), radius: 16, y: 8)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Pro tip at bottom
+                        VStack(spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "lightbulb.fill")
+                                    .foregroundColor(.yellow)
+                                Text("Pro Tip")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Text("Track your progress daily to build momentum. Small consistent improvements lead to big results over time.")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.yellow.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.yellow.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 32)
-                    .padding(.bottom, 40)
-                    .opacity(appearAnimation ? 1 : 0)
                 }
             }
-        }
-        .onAppear {
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.7)) {
-                appearAnimation = true
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
+                }
             }
         }
     }
 }
 
-private struct DetailCard: View {
+// MARK: - Progress Info Section
+
+private struct ProgressInfoSection: View {
     let title: String
     let text: String
     let iconColor: Color
     let index: Int
     
-    private var cardIcon: String {
+    private var sectionIcon: String {
         let icons = ["1.circle.fill", "2.circle.fill", "3.circle.fill", "4.circle.fill", "5.circle.fill", "6.circle.fill"]
         return icons[index % icons.count]
     }
     
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Number indicator
-            Image(systemName: cardIcon)
-                .font(.system(size: 24))
-                .foregroundColor(iconColor.opacity(0.8))
-                .frame(width: 32)
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: sectionIcon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(iconColor)
                 
-                Text(text)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineSpacing(2)
+                Text(title)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
             }
             
-            Spacer(minLength: 0)
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.7))
+                .fixedSize(horizontal: false, vertical: true)
+                .lineSpacing(2)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color.white.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
         )
     }
 }

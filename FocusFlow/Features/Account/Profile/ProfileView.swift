@@ -1413,88 +1413,176 @@ private struct LevelInfoSheet: View {
     ]
 
     var body: some View {
-        ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+        NavigationStack {
+            ZStack {
+                // Themed gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.1),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.15),
+                        theme.accentSecondary.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 24) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header
+                        VStack(spacing: 16) {
+                            LevelBadge(level: currentLevel, color: theme.accentPrimary, size: 70)
+                            
                             Text("Levels & XP")
-                                .font(.system(size: 22, weight: .bold))
+                                .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.white)
-                            Text("How to level up")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.5))
+                            
+                            Text("Level \(currentLevel) • \(totalXP) XP total")
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.7))
                         }
-                        Spacer()
-                        Button { dismiss() } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 26))
-                                .foregroundColor(.white.opacity(0.3))
-                        }
-                    }
-
-                    VStack(spacing: 8) {
-                        LevelBadge(level: currentLevel, color: theme.accentPrimary, size: 60)
-                        Text("Level \(currentLevel)")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                        Text("\(totalXP) XP total")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-                    .padding(.vertical, 16)
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("EARN XP BY")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.4))
-                            .tracking(1.5)
-                        xpRow(icon: "clock.fill", text: "Focusing", value: "1 XP / minute", color: theme.accentPrimary)
-                        xpRow(icon: "play.circle.fill", text: "Completing sessions", value: "5 XP each", color: .blue)
-                        xpRow(icon: "flame.fill", text: "Building streaks", value: "10 XP / day", color: .orange)
-                        xpRow(icon: "target", text: "Hitting daily goals", value: "20 XP each", color: .red)
-                        xpRow(icon: "checkmark.circle.fill", text: "Completing tasks", value: "3 XP each", color: .green)
-                    }
-                    .padding(16)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("LEVEL TITLES")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.4))
-                            .tracking(1.5)
-
-                        ForEach(levelTiers, id: \.title) { tier in
-                            HStack {
-                                Text("Lv \(tier.range)")
-                                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.5))
-                                    .frame(width: 60, alignment: .leading)
-                                Text(tier.title)
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(tier.color)
+                        .padding(.top, 20)
+                        
+                        // Earn XP Section
+                        VStack(spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "sparkles")
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text("Earn XP By")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
                                 Spacer()
-                                if isCurrentTier(tier.range) {
-                                    Text("CURRENT")
-                                        .font(.system(size: 9, weight: .bold))
-                                        .foregroundColor(theme.accentPrimary)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(theme.accentPrimary.opacity(0.2))
-                                        .clipShape(Capsule())
+                            }
+                            
+                            VStack(spacing: 12) {
+                                xpRow(icon: "clock.fill", text: "Focusing", value: "1 XP / minute", color: theme.accentPrimary)
+                                xpRow(icon: "play.circle.fill", text: "Completing sessions", value: "5 XP each", color: .blue)
+                                xpRow(icon: "flame.fill", text: "Building streaks", value: "10 XP / day", color: .orange)
+                                xpRow(icon: "target", text: "Hitting daily goals", value: "20 XP each", color: .red)
+                                xpRow(icon: "checkmark.circle.fill", text: "Completing tasks", value: "3 XP each", color: .green)
+                            }
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.06))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+
+                        // Level Titles Section
+                        VStack(spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "trophy.fill")
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text("Level Titles")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+
+                            VStack(spacing: 8) {
+                                ForEach(levelTiers, id: \.title) { tier in
+                                    HStack {
+                                        Text("Lv \(tier.range)")
+                                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                            .foregroundColor(.white.opacity(0.5))
+                                            .frame(width: 60, alignment: .leading)
+                                        Text(tier.title)
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(tier.color)
+                                        Spacer()
+                                        if isCurrentTier(tier.range) {
+                                            Text("CURRENT")
+                                                .font(.system(size: 9, weight: .bold))
+                                                .foregroundColor(theme.accentPrimary)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(theme.accentPrimary.opacity(0.2))
+                                                .clipShape(Capsule())
+                                        }
+                                    }
+                                    .padding(.vertical, 6)
                                 }
                             }
-                            .padding(.vertical, 6)
                         }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.06))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                        
+                        // Pro tip
+                        VStack(spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "lightbulb.fill")
+                                    .foregroundColor(.yellow)
+                                Text("Pro Tip")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Text("Focus consistently every day — daily streaks and goals give you the most XP!")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.yellow.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.yellow.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     }
-                    .padding(16)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
-                .padding(20)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
+                }
             }
         }
     }
@@ -1531,63 +1619,129 @@ private struct AllBadgesSheet: View {
     private var lockedBadges: [Badge] { badges.filter { !$0.isUnlocked }.sorted { $0.progress > $1.progress } }
 
     var body: some View {
-        ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+        NavigationStack {
+            ZStack {
+                // Themed gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.1),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.15),
+                        theme.accentSecondary.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("All Badges").font(.system(size: 22, weight: .bold)).foregroundColor(.white)
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.2)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 88, height: 88)
+                                
+                                Image(systemName: "medal.fill")
+                                    .font(.system(size: 40, weight: .semibold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                            
+                            Text("All Badges")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                            
                             Text("\(unlockedBadges.count) of \(badges.count) unlocked")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.5))
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.7))
                         }
-                        Spacer()
-                        Button { dismiss() } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 26))
-                                .foregroundColor(.white.opacity(0.3))
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                        .padding(.top, 20)
 
-                    if !unlockedBadges.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("UNLOCKED")
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.4))
-                                .tracking(1.5)
+                        if !unlockedBadges.isEmpty {
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.seal.fill")
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [theme.accentPrimary, theme.accentSecondary],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                    Text("Unlocked")
+                                        .font(.system(size: 17, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
                                 .padding(.horizontal, 20)
 
-                            LazyVGrid(columns: columns, spacing: 20) {
-                                ForEach(unlockedBadges) { badge in
-                                    BadgeCard(badge: badge, size: 56) { selectedBadge = badge }
+                                LazyVGrid(columns: columns, spacing: 20) {
+                                    ForEach(unlockedBadges) { badge in
+                                        BadgeCard(badge: badge, size: 56) { selectedBadge = badge }
+                                    }
                                 }
+                                .padding(.horizontal, 16)
                             }
-                            .padding(.horizontal, 16)
                         }
-                    }
 
-                    if !lockedBadges.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("IN PROGRESS")
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.4))
-                                .tracking(1.5)
+                        if !lockedBadges.isEmpty {
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "hourglass")
+                                        .foregroundColor(.white.opacity(0.6))
+                                    Text("In Progress")
+                                        .font(.system(size: 17, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
                                 .padding(.horizontal, 20)
 
-                            LazyVGrid(columns: columns, spacing: 20) {
-                                ForEach(lockedBadges) { badge in
-                                    BadgeCard(badge: badge, size: 56) { selectedBadge = badge }
+                                LazyVGrid(columns: columns, spacing: 20) {
+                                    ForEach(lockedBadges) { badge in
+                                        BadgeCard(badge: badge, size: 56) { selectedBadge = badge }
+                                    }
                                 }
+                                .padding(.horizontal, 16)
                             }
-                            .padding(.horizontal, 16)
                         }
                     }
+                    .padding(.bottom, 40)
                 }
-                .padding(.bottom, 40)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
+                }
             }
         }
         .sheet(item: $selectedBadge) { badge in
@@ -1605,120 +1759,220 @@ private struct BadgeDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+        NavigationStack {
+            ZStack {
+                // Themed gradient background using badge color
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        badge.color.opacity(0.1),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        badge.color.opacity(0.15),
+                        badge.color.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Close button fixed at top (outside scroll view for always visible)
-                HStack {
-                    Spacer()
-                    Button {
-                        Haptics.impact(.light)
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.10))
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
-                    }
-                    .buttonStyle(FFPressButtonStyle())
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8) // Reduced padding, safe area will add more
-                .padding(.bottom, 8)
-
-                // Scrollable content
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
-
-                    // Badge icon
-                ZStack {
-                    if badge.isUnlocked {
-                        Circle()
-                            .fill(badge.color.opacity(0.2))
-                            .frame(width: 140, height: 140)
-                            .blur(radius: 30)
-                    }
-
-                    Circle()
-                        .fill(badge.isUnlocked ? badge.color.opacity(0.2) : Color.white.opacity(0.05))
-                        .frame(width: 100, height: 100)
-
-                    if !badge.isUnlocked {
-                        Circle()
-                            .trim(from: 0, to: badge.progress)
-                            .stroke(badge.color.opacity(0.5), style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                            .frame(width: 96, height: 96)
-                            .rotationEffect(.degrees(-90))
-                    }
-
-                    Image(systemName: badge.icon)
-                        .font(.system(size: 44, weight: .semibold))
-                        .foregroundColor(badge.isUnlocked ? badge.color : .white.opacity(0.25))
-                }
-                    .padding(.top, 8)
-
-                    // Badge info
-                VStack(spacing: 8) {
-                    Text(badge.name)
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.white)
-
-                    Text(badge.description)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 20)
-
-                    if badge.isUnlocked {
-                        Text("UNLOCKED")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundColor(badge.color)
-                            .padding(.top, 8)
-                    } else {
-                        Text("\(badge.currentValue)/\(badge.targetValue)")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.7))
-                            .padding(.top, 8)
-
-                            // Progress bar with fixed width instead of GeometryReader
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.white.opacity(0.1))
-                                    .frame(width: 200, height: 6)
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header with badge icon
+                        VStack(spacing: 16) {
+                            ZStack {
+                                if badge.isUnlocked {
+                                    Circle()
+                                        .fill(badge.color.opacity(0.2))
+                                        .frame(width: 120, height: 120)
+                                        .blur(radius: 30)
+                                }
                                 
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(badge.color)
-                                    .frame(width: 200 * badge.progress, height: 6)
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [badge.color.opacity(0.3), badge.color.opacity(0.15)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 88, height: 88)
+                                
+                                if !badge.isUnlocked {
+                                    Circle()
+                                        .trim(from: 0, to: badge.progress)
+                                        .stroke(badge.color.opacity(0.6), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                                        .frame(width: 84, height: 84)
+                                        .rotationEffect(.degrees(-90))
+                                }
+                                
+                                Image(systemName: badge.icon)
+                                    .font(.system(size: 40, weight: .semibold))
+                                    .foregroundColor(badge.isUnlocked ? badge.color : .white.opacity(0.4))
                             }
-                        .padding(.top, 4)
+                            
+                            Text(badge.name)
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text(badge.description)
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .padding(.top, 20)
+                        
+                        // Status Section
+                        VStack(spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: badge.isUnlocked ? "checkmark.seal.fill" : "hourglass")
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [badge.color, badge.color.opacity(0.7)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text(badge.isUnlocked ? "Status" : "Progress")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            
+                            if badge.isUnlocked {
+                                HStack {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                    Text("UNLOCKED")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.green)
+                                    Spacer()
+                                }
+                            } else {
+                                VStack(spacing: 12) {
+                                    HStack {
+                                        Text("\(badge.currentValue) / \(badge.targetValue)")
+                                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        Text("\(Int(badge.progress * 100))%")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                    
+                                    // Progress bar
+                                    GeometryReader { geo in
+                                        ZStack(alignment: .leading) {
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(Color.white.opacity(0.1))
+                                                .frame(height: 8)
+                                            
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(badge.color)
+                                                .frame(width: geo.size.width * badge.progress, height: 8)
+                                        }
+                                    }
+                                    .frame(height: 8)
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.06))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                        
+                        // How to Achieve Section
+                        VStack(spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "target")
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text("How to Achieve")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            
+                            Text(badge.howToAchieve)
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.7))
+                                .fixedSize(horizontal: false, vertical: true)
+                                .lineSpacing(2)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.06))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                        
+                        // Pro tip
+                        VStack(spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "lightbulb.fill")
+                                    .foregroundColor(.yellow)
+                                Text("Pro Tip")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Text("Keep building your focus habit daily — badges celebrate your dedication and unlock over time.")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.yellow.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.yellow.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     }
                 }
-
-                    // How to achieve section
-                VStack(spacing: 8) {
-                    Text("HOW TO ACHIEVE")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.4))
-                        .tracking(1.5)
-
-                    Text(badge.howToAchieve)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
                 }
-                .padding(.top, 16)
-                    .padding(.bottom, 32) // Bottom padding instead of Spacers
             }
         }
-            }
-        }
-        .presentationDetents([.medium, .large]) // Allow resizing for flexibility
-        .presentationDragIndicator(.visible)
     }
 }
 

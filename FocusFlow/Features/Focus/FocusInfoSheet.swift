@@ -8,188 +8,192 @@ struct FocusInfoSheet: View {
     let theme: AppTheme
 
     @Environment(\.dismiss) private var dismiss
-    @State private var appearAnimation = false
 
-    private var details: [(String, String)] {
+    private var details: [(icon: String, title: String, text: String)] {
         [
-            ("Start • Pause • Resume",
+            ("play.circle.fill", "Start • Pause • Resume",
              "Tap Start to begin. Tap again to pause. Tap Resume to continue anytime."),
 
-            ("When sessions get recorded",
-             "Completed sessions are always recorded.\n\nIf you end early, we record it only if you focused for at least 1 minute AND you hit either 5 minutes OR 40% of the planned session — whichever happens first."),
+            ("checkmark.seal.fill", "When sessions get recorded",
+             "Completed sessions are always recorded. If you end early, we record it only if you focused for at least 1 minute AND you hit either 5 minutes OR 40% of the planned session — whichever happens first."),
 
-            ("Lock screen & background",
+            ("lock.fill", "Lock screen & background",
              "The timer keeps running while your screen is locked. If it finishes while you're away, it will still record the session."),
 
-            ("Music & sounds",
+            ("headphones", "Music & sounds",
              "Tap the headphones icon next to your intention to pick a focus sound or connect your preferred music app."),
 
-            ("Vibe / ambience",
+            ("sparkles", "Vibe / ambience",
              "Tap Vibe to change the background atmosphere and intensity. This is purely visual and helps you get into the zone."),
 
-            ("Presets",
+            ("slider.horizontal.3", "Presets",
              "Presets help you jump into modes fast. Switching presets resets the current timer setup.")
         ]
     }
 
     var body: some View {
-        ZStack {
-            PremiumAppBackground(theme: theme, particleCount: 16)
-
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    HStack {
-                        Spacer()
-                        Button { dismiss() } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.6))
-                                .frame(width: 32, height: 32)
-                                .background(Color.white.opacity(0.10))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(FFPressButtonStyle())
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-
-                    VStack(spacing: 18) {
-                        ZStack {
-                            Circle()
-                                .fill(theme.accentPrimary.opacity(0.20))
-                                .frame(width: 120, height: 120)
-                                .blur(radius: 30)
-                                .scaleEffect(appearAnimation ? 1.18 : 0.82)
-
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            theme.accentPrimary.opacity(0.30),
-                                            theme.accentSecondary.opacity(0.12)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
+        NavigationStack {
+            ZStack {
+                // Themed gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.1),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.15),
+                        theme.accentSecondary.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.2)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
                                     )
+                                    .frame(width: 88, height: 88)
+                                
+                                Image(systemName: "timer")
+                                    .font(.system(size: 40, weight: .semibold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                            
+                            Text("How Focus Works")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text("A quick guide to the timer, controls, and recording rules.")
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .padding(.top, 20)
+                        
+                        // Detail Sections
+                        VStack(spacing: 16) {
+                            ForEach(Array(details.enumerated()), id: \.offset) { index, item in
+                                FocusInfoSection(
+                                    icon: item.icon,
+                                    title: item.title,
+                                    text: item.text,
+                                    theme: theme
                                 )
-                                .frame(width: 90, height: 90)
-
-                            Image(systemName: "info.circle.fill")
-                                .font(.system(size: 40, weight: .semibold))
-                                .foregroundColor(theme.accentPrimary)
-                                .scaleEffect(appearAnimation ? 1.0 : 0.6)
+                            }
                         }
-                        .padding(.top, 18)
-
-                        Text("How Focus Works")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
-                            .opacity(appearAnimation ? 1 : 0)
-                            .offset(y: appearAnimation ? 0 : 18)
-
-                        Text("A quick guide to the timer, controls, and recording rules.")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white.opacity(0.62))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 28)
-                            .opacity(appearAnimation ? 1 : 0)
-                            .offset(y: appearAnimation ? 0 : 18)
-                    }
-                    .padding(.bottom, 26)
-
-                    VStack(spacing: 12) {
-                        ForEach(Array(details.enumerated()), id: \.offset) { index, item in
-                            FocusInfoDetailCard(
-                                title: item.0,
-                                text: item.1,
-                                iconColor: theme.accentPrimary,
-                                index: index
-                            )
-                            .opacity(appearAnimation ? 1 : 0)
-                            .offset(y: appearAnimation ? 0 : 24)
-                            .animation(
-                                .spring(response: 0.6, dampingFraction: 0.82)
-                                    .delay(Double(index) * 0.06 + 0.22),
-                                value: appearAnimation
-                            )
+                        .padding(.horizontal, 20)
+                        
+                        // Pro tip
+                        VStack(spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "lightbulb.fill")
+                                    .foregroundColor(.yellow)
+                                Text("Pro Tip")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Text("Set an intention before starting — it helps you stay accountable and creates better focus history.")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
                         }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.yellow.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.yellow.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     }
-                    .padding(.horizontal, 20)
-
-                    Button {
-                        Haptics.impact(.light)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
                         dismiss()
-                    } label: {
-                        Text("Got it")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                            .background(
-                                LinearGradient(
-                                    colors: [theme.accentPrimary, theme.accentSecondary],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .shadow(color: theme.accentPrimary.opacity(0.35), radius: 16, y: 8)
                     }
-                    .buttonStyle(FFPressButtonStyle())
-                    .padding(.horizontal, 20)
-                    .padding(.top, 26)
-                    .padding(.bottom, 40)
-                    .opacity(appearAnimation ? 1 : 0)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
                 }
             }
         }
-        .onAppear {
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.72)) {
-                appearAnimation = true
-            }
-        }
-        .colorScheme(.dark)
     }
 }
 
-private struct FocusInfoDetailCard: View {
+// MARK: - Focus Info Section
+
+private struct FocusInfoSection: View {
+    let icon: String
     let title: String
     let text: String
-    let iconColor: Color
-    let index: Int
-
-    private var cardIcon: String {
-        let icons = ["1.circle.fill", "2.circle.fill", "3.circle.fill", "4.circle.fill", "5.circle.fill", "6.circle.fill"]
-        return icons[index % icons.count]
-    }
-
+    let theme: AppTheme
+    
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: cardIcon)
-                .font(.system(size: 24))
-                .foregroundColor(iconColor.opacity(0.85))
-                .frame(width: 32)
-
-            VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [theme.accentPrimary, theme.accentSecondary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                
                 Text(title)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
-
-                Text(text)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.62))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineSpacing(2)
             }
-
-            Spacer(minLength: 0)
+            
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.7))
+                .fixedSize(horizontal: false, vertical: true)
+                .lineSpacing(2)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color.white.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
         )
     }
 }
