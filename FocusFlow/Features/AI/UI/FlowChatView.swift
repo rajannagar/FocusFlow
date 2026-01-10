@@ -75,14 +75,14 @@ struct FlowChatView: View {
             )
             .offset(y: 20)
             
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 // Drag indicator
                 Capsule()
                     .fill(Color.white.opacity(0.3))
                     .frame(width: 36, height: 5)
                     .padding(.top, 12)
                 
-                // Header
+                // Header with voice response toggle
                 HStack {
                     HStack(spacing: 10) {
                         // Animated listening indicator
@@ -102,12 +102,33 @@ struct FlowChatView: View {
                             }
                         }
                         
-                        Text(voiceManager.isListening ? "Listening..." : "Voice Input")
+                        Text(voiceManager.isListening ? "Listening..." : "Voice Mode")
                             .font(.system(size: 20, weight: .bold))
                             .foregroundColor(.white)
                     }
                     
                     Spacer()
+                    
+                    // Voice Response Toggle
+                    Button {
+                        voiceManager.toggleVoiceResponse()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: voiceManager.isVoiceResponseEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                                .font(.system(size: 14, weight: .medium))
+                            Text(voiceManager.isVoiceResponseEnabled ? "On" : "Off")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(voiceManager.isVoiceResponseEnabled ? .white : .white.opacity(0.5))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(voiceManager.isVoiceResponseEnabled 
+                                    ? theme.accentPrimary.opacity(0.3) 
+                                    : Color.white.opacity(0.1))
+                        )
+                    }
                     
                     Button {
                         Haptics.impact(.light)
@@ -132,26 +153,29 @@ struct FlowChatView: View {
                 
                 Spacer()
                 
-                // Voice visualization
+                // Voice visualization - ChatGPT style orb
                 ZStack {
-                    // Outer animated pulse rings
-                    ForEach(0..<3, id: \.self) { index in
+                    // Animated audio visualization rings
+                    ForEach(0..<4, id: \.self) { index in
                         Circle()
                             .stroke(
                                 LinearGradient(
                                     colors: [
-                                        theme.accentPrimary.opacity(0.4 - Double(index) * 0.12),
-                                        theme.accentSecondary.opacity(0.2 - Double(index) * 0.06)
+                                        theme.accentPrimary.opacity(0.5 - Double(index) * 0.1),
+                                        theme.accentSecondary.opacity(0.3 - Double(index) * 0.06)
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: voiceManager.isListening ? 2 : 1
+                                lineWidth: voiceManager.isListening ? 2.5 - CGFloat(index) * 0.3 : 1
                             )
-                            .frame(width: 100 + CGFloat(index * 35), height: 100 + CGFloat(index * 35))
-                            .scaleEffect(voiceManager.isListening ? 1 + CGFloat(voiceManager.audioLevel) * 0.4 : 1)
-                            .opacity(voiceManager.isListening ? 1 : 0.5)
-                            .animation(.easeInOut(duration: 0.15), value: voiceManager.audioLevel)
+                            .frame(width: 90 + CGFloat(index * 28), height: 90 + CGFloat(index * 28))
+                            .scaleEffect(voiceManager.isListening ? 1 + CGFloat(voiceManager.audioLevel) * 0.5 : 1)
+                            .opacity(voiceManager.isListening ? 1 : 0.4)
+                            .animation(
+                                .easeInOut(duration: 0.12 + Double(index) * 0.02),
+                                value: voiceManager.audioLevel
+                            )
                     }
                     
                     // Glow effect when listening
@@ -160,56 +184,66 @@ struct FlowChatView: View {
                             .fill(
                                 RadialGradient(
                                     colors: [
-                                        theme.accentPrimary.opacity(0.4),
-                                        theme.accentSecondary.opacity(0.1),
+                                        theme.accentPrimary.opacity(0.5),
+                                        theme.accentSecondary.opacity(0.2),
                                         Color.clear
                                     ],
                                     center: .center,
-                                    startRadius: 30,
-                                    endRadius: 80
+                                    startRadius: 20,
+                                    endRadius: 90
                                 )
                             )
-                            .frame(width: 160, height: 160)
-                            .blur(radius: 20)
+                            .frame(width: 180, height: 180)
+                            .blur(radius: 25)
                     }
                     
-                    // Center microphone button
+                    // Center orb with microphone
                     ZStack {
+                        // Outer glass effect
                         Circle()
                             .fill(
                                 LinearGradient(
                                     colors: voiceManager.isListening 
-                                        ? [theme.accentPrimary, theme.accentSecondary]
-                                        : [Color.white.opacity(0.15), Color.white.opacity(0.1)],
+                                        ? [theme.accentPrimary.opacity(0.9), theme.accentSecondary.opacity(0.9)]
+                                        : [Color.white.opacity(0.12), Color.white.opacity(0.08)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 88, height: 88)
-                            .shadow(color: voiceManager.isListening ? theme.accentPrimary.opacity(0.5) : .clear, radius: 20)
+                            .frame(width: 90, height: 90)
+                            .shadow(color: voiceManager.isListening ? theme.accentPrimary.opacity(0.6) : .clear, radius: 25)
                         
-                        // Inner glow
+                        // Inner highlight
                         Circle()
                             .stroke(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(voiceManager.isListening ? 0.4 : 0.2),
-                                        Color.white.opacity(0.05)
+                                        Color.white.opacity(voiceManager.isListening ? 0.5 : 0.2),
+                                        Color.white.opacity(0.02)
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 1.5
+                                lineWidth: 2
                             )
-                            .frame(width: 88, height: 88)
+                            .frame(width: 90, height: 90)
                         
+                        // Microphone icon with animation
                         Image(systemName: voiceManager.isListening ? "waveform" : "mic.fill")
-                            .font(.system(size: 34, weight: .medium))
-                            .foregroundColor(.white)
-                            .symbolEffect(.variableColor.iterative, isActive: voiceManager.isListening)
+                            .font(.system(size: 36, weight: .medium))
+                            .foregroundStyle(
+                                voiceManager.isListening 
+                                    ? AnyShapeStyle(Color.white)
+                                    : AnyShapeStyle(LinearGradient(
+                                        colors: [theme.accentPrimary, theme.accentSecondary],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                            )
+                            .symbolEffect(.variableColor.iterative.reversing, isActive: voiceManager.isListening)
                     }
-                    .scaleEffect(voiceManager.isListening ? 1.0 : 0.95)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: voiceManager.isListening)
+                    .scaleEffect(voiceManager.isListening ? 1.0 : 0.92)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.65), value: voiceManager.isListening)
                     .onTapGesture {
                         Haptics.impact(.medium)
                         Task {
@@ -225,33 +259,51 @@ struct FlowChatView: View {
                 
                 Spacer()
                 
-                // Transcribed text area
+                // Transcribed text area with improved styling
                 VStack(spacing: 12) {
                     if !voiceManager.transcribedText.isEmpty {
-                        Text(voiceManager.transcribedText)
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.white.opacity(0.08))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(theme.accentPrimary.opacity(0.3), lineWidth: 1)
-                                    )
-                            )
-                            .animation(.easeInOut(duration: 0.2), value: voiceManager.transcribedText)
+                        ScrollView {
+                            Text(voiceManager.transcribedText)
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 16)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: 100)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [theme.accentPrimary.opacity(0.4), theme.accentSecondary.opacity(0.2)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                )
+                        )
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     } else {
-                        Text(voiceManager.isListening ? "Speak now..." : "Tap the mic to start")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.4))
-                            .padding(.vertical, 20)
+                        VStack(spacing: 6) {
+                            Text(voiceManager.isListening ? "Speak now..." : "Tap to start")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundColor(.white.opacity(0.5))
+                            
+                            if voiceManager.isVoiceResponseEnabled {
+                                Text("Flow will respond with voice")
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(theme.accentPrimary.opacity(0.7))
+                            }
+                        }
+                        .padding(.vertical, 20)
                     }
                 }
                 .frame(minHeight: 80)
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: voiceManager.transcribedText.isEmpty)
                 
                 // Error message
                 if let error = voiceManager.error {
@@ -268,7 +320,7 @@ struct FlowChatView: View {
                     .cornerRadius(20)
                 }
                 
-                // Action buttons
+                // Action buttons with improved styling
                 HStack(spacing: 16) {
                     // Cancel button
                     Button {
@@ -282,7 +334,7 @@ struct FlowChatView: View {
                         Text("Cancel")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white.opacity(0.8))
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, 28)
                             .padding(.vertical, 14)
                             .background(
                                 RoundedRectangle(cornerRadius: 25)
@@ -294,28 +346,34 @@ struct FlowChatView: View {
                             )
                     }
                     
-                    // Send button
+                    // Send button - appears when there's text
                     if !voiceManager.transcribedText.isEmpty {
                         Button {
                             Haptics.impact(.medium)
-                            let text = voiceManager.transcribedText
+                            // Capture text immediately before any async operations
+                            let textToSend = voiceManager.transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            
+                            // Dismiss sheet first for better UX
+                            showVoiceInput = false
+                            
+                            // Clear voice state
                             Task {
                                 await voiceManager.stopListening()
                                 voiceManager.clearTranscription()
                             }
-                            showVoiceInput = false
-                            // Send to AI
-                            viewModel.inputText = text
-                            viewModel.sendMessage()
+                            
+                            // Send message directly
+                            guard !textToSend.isEmpty else { return }
+                            viewModel.sendVoiceMessage(textToSend)
                         } label: {
                             HStack(spacing: 8) {
-                                Image(systemName: "paperplane.fill")
-                                    .font(.system(size: 14, weight: .semibold))
+                                Image(systemName: "arrow.up.circle.fill")
+                                    .font(.system(size: 18, weight: .semibold))
                                 Text("Send")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(size: 15, weight: .bold))
                             }
                             .foregroundColor(.white)
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, 28)
                             .padding(.vertical, 14)
                             .background(
                                 LinearGradient(
@@ -325,12 +383,15 @@ struct FlowChatView: View {
                                 )
                             )
                             .cornerRadius(25)
-                            .shadow(color: theme.accentPrimary.opacity(0.4), radius: 10, y: 4)
+                            .shadow(color: theme.accentPrimary.opacity(0.5), radius: 12, y: 4)
                         }
-                        .transition(.scale.combined(with: .opacity))
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity),
+                            removal: .scale(scale: 0.9).combined(with: .opacity)
+                        ))
                     }
                 }
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: voiceManager.transcribedText.isEmpty)
+                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: voiceManager.transcribedText.isEmpty)
                 .padding(.bottom, 16)
             }
             .padding(.horizontal, DS.Spacing.xl)
@@ -727,13 +788,15 @@ struct FlowChatView: View {
     
     private var inputSection: some View {
         HStack(spacing: 12) {
-            // Voice button (left side, only shows when input is empty)
+            // Voice button (left side, only shows when input is empty and not loading)
             if viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !viewModel.isLoading {
                 Button {
                     Haptics.impact(.medium)
-                    showVoiceInput = true
-                    Task {
-                        await voiceManager.startListening()
+                    // Dismiss keyboard first
+                    isInputFocused = false
+                    // Small delay to allow keyboard to dismiss
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        showVoiceInput = true
                     }
                 } label: {
                     ZStack {
@@ -755,7 +818,7 @@ struct FlowChatView: View {
                 .transition(.scale.combined(with: .opacity))
             }
             
-            // Text input
+            // Text input container
             HStack(spacing: 10) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 14, weight: .medium))
@@ -765,24 +828,39 @@ struct FlowChatView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.white)
+                    .tint(theme.accentPrimary)
                     .focused($isInputFocused)
                     .lineLimit(1...5)
                     .submitLabel(.send)
+                    .autocorrectionDisabled(false)
+                    .textInputAutocapitalization(.sentences)
                     .onSubmit {
-                        if !viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        let trimmedText = viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmedText.isEmpty && !viewModel.isLoading {
+                            // Dismiss keyboard
+                            isInputFocused = false
+                            // Send message
                             viewModel.sendMessage()
                         }
                     }
                 
                 Spacer(minLength: 0)
                 
-                // Send button
+                // Send/Stop button
                 Button(action: {
                     Haptics.impact(.light)
                     if viewModel.isStreaming {
                         viewModel.cancelStreaming()
                     } else {
-                        viewModel.sendMessage()
+                        let trimmedText = viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmedText.isEmpty {
+                            // Dismiss keyboard for better UX
+                            isInputFocused = false
+                            // Small delay to allow keyboard animation
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                viewModel.sendMessage()
+                            }
+                        }
                     }
                 }) {
                     ZStack {
@@ -977,11 +1055,11 @@ struct FlowInfoSheet: View {
                                     .frame(width: 50, height: 50)
                             }
                             
-                            Text("What can Flow do?")
+                            Text("Meet Flow")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.white)
                             
-                            Text("Flow is your AI productivity assistant that can control your entire app with simple commands.")
+                            Text("Your AI productivity coach that learns your patterns, takes actions, and helps you stay focused.")
                                 .font(.system(size: 15))
                                 .foregroundColor(.white.opacity(0.7))
                                 .multilineTextAlignment(.center)
@@ -992,65 +1070,88 @@ struct FlowInfoSheet: View {
                         // Capabilities
                         VStack(spacing: 20) {
                             FlowCapabilitySection(
-                                title: "Focus Sessions",
-                                icon: "timer",
+                                title: "Control Your App",
+                                icon: "hand.tap.fill",
                                 theme: theme,
                                 examples: [
                                     "\"Start a 25 minute focus session\"",
-                                    "\"Pause my session\"",
-                                    "\"Add 10 more minutes\"",
+                                    "\"Add task: call mom at 5pm\"",
+                                    "\"Mark gym as done\"",
                                     "\"Start my Deep Work preset\""
                                 ]
                             )
                             
                             FlowCapabilitySection(
-                                title: "Task Management",
-                                icon: "checklist",
-                                theme: theme,
-                                examples: [
-                                    "\"Add a task: call mom at 5pm\"",
-                                    "\"Create a daily task for gym at 9am\"",
-                                    "\"Mark 'Morning Focus' as done\"",
-                                    "\"What are my tasks for today?\""
-                                ]
-                            )
-                            
-                            FlowCapabilitySection(
-                                title: "Presets & Settings",
-                                icon: "slider.horizontal.3",
-                                theme: theme,
-                                examples: [
-                                    "\"Create a 45 min preset called Deep Work\"",
-                                    "\"Change my theme to forest\"",
-                                    "\"Set my daily goal to 2 hours\"",
-                                    "\"Open settings\""
-                                ]
-                            )
-                            
-                            FlowCapabilitySection(
-                                title: "Progress & Analytics",
+                                title: "Track Progress",
                                 icon: "chart.bar.fill",
                                 theme: theme,
                                 examples: [
                                     "\"How am I doing today?\"",
                                     "\"Show my weekly report\"",
-                                    "\"What's my current streak?\"",
+                                    "\"What's my streak?\"",
                                     "\"Analyze my productivity\""
                                 ]
                             )
                             
                             FlowCapabilitySection(
-                                title: "Planning & Motivation",
-                                icon: "lightbulb.fill",
+                                title: "Plan & Organize",
+                                icon: "calendar.badge.clock",
                                 theme: theme,
                                 examples: [
                                     "\"Plan my day\"",
-                                    "\"When should I take a break?\"",
+                                    "\"What should I focus on?\"",
+                                    "\"Show my tasks for today\"",
+                                    "\"When should I take a break?\""
+                                ]
+                            )
+                            
+                            FlowCapabilitySection(
+                                title: "Stay Motivated",
+                                icon: "flame.fill",
+                                theme: theme,
+                                examples: [
                                     "\"Motivate me!\"",
-                                    "\"What should I focus on next?\""
+                                    "\"I'm feeling tired\"",
+                                    "\"Help me stay focused\"",
+                                    "\"Celebrate my progress\""
                                 ]
                             )
                         }
+                        .padding(.horizontal, 20)
+                        
+                        // Smart Features Section
+                        VStack(spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "brain.head.profile")
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text("Smart Features")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                smartFeatureRow(icon: "person.fill.viewfinder", text: "Learns your productivity patterns")
+                                smartFeatureRow(icon: "clock.badge.checkmark", text: "Knows your peak focus hours")
+                                smartFeatureRow(icon: "bell.badge.fill", text: "Sends smart nudges to protect streaks")
+                                smartFeatureRow(icon: "sparkles", text: "Personalizes responses to your style")
+                            }
+                        }
+                        .padding(DS.Spacing.lg)
+                        .background(
+                            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                .fill(theme.accentPrimary.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                        .stroke(theme.accentPrimary.opacity(0.15), lineWidth: 1)
+                                )
+                        )
                         .padding(.horizontal, 20)
                         
                         // Pro tip
@@ -1058,12 +1159,12 @@ struct FlowInfoSheet: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "lightbulb.fill")
                                     .foregroundColor(.yellow)
-                                Text("Pro Tip")
+                                Text("Just Talk Naturally")
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundColor(.white)
                             }
                             
-                            Text("Flow understands natural language. Just describe what you want and Flow will figure out the best way to help you!")
+                            Text("Flow understands natural language. Say what you want and Flow takes action — no buttons needed!")
                                 .font(.system(size: 14))
                                 .foregroundColor(.white.opacity(0.7))
                                 .multilineTextAlignment(.center)
@@ -1092,6 +1193,21 @@ struct FlowInfoSheet: View {
                     .foregroundColor(theme.accentPrimary)
                 }
             }
+        }
+    }
+    
+    private func smartFeatureRow(icon: String, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(theme.accentPrimary)
+                .frame(width: 20)
+            
+            Text(text)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+            
+            Spacer()
         }
     }
 }
@@ -1337,13 +1453,14 @@ struct FlowStatusCard: View {
 struct FlowMessageBubble: View {
     let message: FlowMessage
     let theme: AppTheme
+    @ObservedObject private var voiceManager = FlowVoiceInputManager.shared
     
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             if message.sender == .user {
                 Spacer(minLength: 50)
             } else {
-                // Flow avatar
+                // Flow avatar with speaking indicator
                 flowAvatar
             }
             
@@ -1377,15 +1494,35 @@ struct FlowMessageBubble: View {
                 )
                 .frame(width: 32, height: 32)
             
-            Image(systemName: "sparkles")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [theme.accentPrimary, theme.accentSecondary],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            // Show speaker icon when speaking this message's content
+            if voiceManager.isSpeaking && message.sender == .flow && message.state == .complete {
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [theme.accentPrimary, theme.accentSecondary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
+                    .symbolEffect(.variableColor.iterative.reversing, isActive: true)
+            } else {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [theme.accentPrimary, theme.accentSecondary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+        }
+        .onTapGesture {
+            // Tap to stop speaking
+            if voiceManager.isSpeaking {
+                voiceManager.stopSpeaking()
+            }
         }
     }
     
@@ -1398,6 +1535,12 @@ struct FlowMessageBubble: View {
             .padding(.vertical, 10)
             .background(bubbleBackground)
             .overlay(streamingOverlay)
+            .onTapGesture {
+                // Tap message to stop speaking
+                if voiceManager.isSpeaking {
+                    voiceManager.stopSpeaking()
+                }
+            }
     }
     
     private var bubbleBackground: some View {

@@ -5,14 +5,14 @@ import Combine
 
 // MARK: - Flow Voice Input
 
-/// Voice input component for hands-free AI interaction
-/// Uses iOS Speech framework for speech-to-text
+/// Enhanced Voice Manager for ChatGPT-like voice experience
+/// Includes both speech-to-text and text-to-speech capabilities
 
 @MainActor
 final class FlowVoiceInputManager: ObservableObject {
     static let shared = FlowVoiceInputManager()
     
-    // MARK: - Published State
+    // MARK: - Published State (Speech-to-Text)
     
     @Published private(set) var isListening = false
     @Published private(set) var isAuthorized = false
@@ -20,23 +20,56 @@ final class FlowVoiceInputManager: ObservableObject {
     @Published private(set) var error: VoiceInputError?
     @Published private(set) var audioLevel: Float = 0
     
-    // MARK: - Private Properties
+    // MARK: - Published State (Text-to-Speech)
+    
+    @Published private(set) var isSpeaking = false
+    @Published private(set) var speakingProgress: Float = 0
+    @Published var isVoiceResponseEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isVoiceResponseEnabled, forKey: "flow_voice_response_enabled")
+        }
+    }
+    
+    // MARK: - Private Properties (Speech-to-Text)
     
     private var speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var audioEngine: AVAudioEngine?
+    private var silenceTimer: Timer?
+    private var lastTranscription: String = ""
+    private var silenceDuration: TimeInterval = 0
+    
+    // MARK: - Private Properties (Text-to-Speech)
+    
+    private let speechSynthesizer = AVSpeechSynthesizer()
+    private var speechDelegate: FlowSpeechDelegate?
+    private var currentUtterance: AVSpeechUtterance?
+    
+    // Voice settings
+    private let preferredVoiceIdentifier = "com.apple.voice.premium.en-US.Samantha" // Premium Siri voice
+    private let fallbackVoiceIdentifier = "com.apple.ttsbundle.Samantha-compact"
     
     // MARK: - Initialization
     
     private init() {
+        // Initialize stored property first before calling any methods
+        self.isVoiceResponseEnabled = UserDefaults.standard.bool(forKey: "flow_voice_response_enabled")
+        
+        // Now we can call setup methods
         setupSpeechRecognizer()
+        setupSpeechSynthesizer()
     }
     
     // MARK: - Setup
     
     private func setupSpeechRecognizer() {
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    }
+    
+    private func setupSpeechSynthesizer() {
+        speechDelegate = FlowSpeechDelegate(manager: self)
+        speechSynthesizer.delegate = speechDelegate
     }
     
     // MARK: - Authorization
@@ -66,7 +99,7 @@ final class FlowVoiceInputManager: ObservableObject {
         return true
     }
     
-    // MARK: - Recording Control
+    // MARK: - Speech-to-Text (Recording Control)
     
     func startListening() async {
         if !isAuthorized {
@@ -79,10 +112,13 @@ final class FlowVoiceInputManager: ObservableObject {
             return
         }
         
+        // Stop any TTS if playing
+        stopSpeaking()
+        
         // Stop any existing task
         await stopListening()
         
-        // Configure audio session
+        // Configure audio session for recording
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
@@ -103,12 +139,21 @@ final class FlowVoiceInputManager: ObservableObject {
         recognitionRequest.shouldReportPartialResults = true
         recognitionRequest.requiresOnDeviceRecognition = false
         
+        // Enable automatic punctuation if available
+        if #available(iOS 16.0, *) {
+            recognitionRequest.addsPunctuation = true
+        }
+        
         // Setup audio engine
         audioEngine = AVAudioEngine()
         guard let audioEngine = audioEngine else { return }
         
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
+        
+        // Reset silence detection
+        lastTranscription = ""
+        silenceDuration = 0
         
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             self?.recognitionRequest?.append(buffer)
@@ -125,14 +170,29 @@ final class FlowVoiceInputManager: ObservableObject {
             guard let self = self else { return }
             
             if let result = result {
+                let newTranscription = result.bestTranscription.formattedString
                 DispatchQueue.main.async {
-                    self.transcribedText = result.bestTranscription.formattedString
+                    self.transcribedText = newTranscription
+                    
+                    // Reset silence timer when we get new transcription
+                    if newTranscription != self.lastTranscription {
+                        self.lastTranscription = newTranscription
+                        self.resetSilenceTimer()
+                    }
+                }
+                
+                // Check if recognition is final
+                if result.isFinal {
+                    Task { @MainActor in
+                        self.invalidateSilenceTimer()
+                    }
                 }
             }
             
-            if error != nil || (result?.isFinal ?? false) {
+            if error != nil {
                 Task { @MainActor in
-                    await self.stopListening()
+                    self.invalidateSilenceTimer()
+                    // Don't auto-stop on error, let user decide
                 }
             }
         }
@@ -142,12 +202,17 @@ final class FlowVoiceInputManager: ObservableObject {
             try audioEngine.start()
             isListening = true
             error = nil
+            
+            // Start silence detection
+            startSilenceTimer()
         } catch {
             self.error = .audioEngineError
         }
     }
     
     func stopListening() async {
+        invalidateSilenceTimer()
+        
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)
         recognitionRequest?.endAudio()
@@ -166,6 +231,109 @@ final class FlowVoiceInputManager: ObservableObject {
     
     func clearTranscription() {
         transcribedText = ""
+        lastTranscription = ""
+    }
+    
+    // MARK: - Silence Detection
+    
+    private func startSilenceTimer() {
+        invalidateSilenceTimer()
+        silenceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                // Check if audio level is low (silence)
+                if self.audioLevel < 0.05 {
+                    self.silenceDuration += 0.5
+                } else {
+                    self.silenceDuration = 0
+                }
+            }
+        }
+    }
+    
+    private func resetSilenceTimer() {
+        silenceDuration = 0
+    }
+    
+    private func invalidateSilenceTimer() {
+        silenceTimer?.invalidate()
+        silenceTimer = nil
+        silenceDuration = 0
+    }
+    
+    // MARK: - Text-to-Speech
+    
+    /// Speak text using natural voice (like ChatGPT voice mode)
+    func speak(_ text: String, completion: (() -> Void)? = nil) {
+        guard isVoiceResponseEnabled else {
+            completion?()
+            return
+        }
+        
+        // Stop any current speech
+        stopSpeaking()
+        
+        // Configure audio session for playback
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to configure audio session for speech: \(error)")
+            completion?()
+            return
+        }
+        
+        // Clean text for speech (remove markdown, emojis, etc.)
+        let cleanedText = cleanTextForSpeech(text)
+        
+        guard !cleanedText.isEmpty else {
+            completion?()
+            return
+        }
+        
+        // Create utterance
+        let utterance = AVSpeechUtterance(string: cleanedText)
+        
+        // Use premium voice if available
+        if let premiumVoice = AVSpeechSynthesisVoice(identifier: preferredVoiceIdentifier) {
+            utterance.voice = premiumVoice
+        } else if let fallbackVoice = AVSpeechSynthesisVoice(identifier: fallbackVoiceIdentifier) {
+            utterance.voice = fallbackVoice
+        } else {
+            // Use best available English voice
+            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        }
+        
+        // Configure speech parameters for natural sound
+        utterance.rate = 0.52  // Slightly faster than default (0.5), natural pace
+        utterance.pitchMultiplier = 1.05  // Slightly higher pitch for friendlier tone
+        utterance.volume = 1.0
+        utterance.preUtteranceDelay = 0.1
+        utterance.postUtteranceDelay = 0.1
+        
+        currentUtterance = utterance
+        speechDelegate?.completion = completion
+        isSpeaking = true
+        speakingProgress = 0
+        
+        speechSynthesizer.speak(utterance)
+    }
+    
+    /// Stop current speech
+    func stopSpeaking() {
+        if speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
+        isSpeaking = false
+        speakingProgress = 0
+        currentUtterance = nil
+        speechDelegate?.completion = nil
+    }
+    
+    /// Toggle voice response setting
+    func toggleVoiceResponse() {
+        isVoiceResponseEnabled.toggle()
+        Haptics.impact(.light)
     }
     
     // MARK: - Helpers
@@ -181,6 +349,91 @@ final class FlowVoiceInputManager: ObservableObject {
         
         let average = sum / Float(frameCount)
         return min(1, average * 10) // Normalize to 0-1 range
+    }
+    
+    /// Clean text for natural speech output
+    private func cleanTextForSpeech(_ text: String) -> String {
+        var cleaned = text
+        
+        // Remove markdown formatting
+        cleaned = cleaned.replacingOccurrences(of: "**", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "__", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "*", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "_", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "`", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "#", with: "")
+        
+        // Remove bullet points
+        cleaned = cleaned.replacingOccurrences(of: "• ", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "- ", with: "")
+        
+        // Remove emojis (they cause odd pauses in speech)
+        cleaned = cleaned.unicodeScalars.filter { scalar in
+            // Keep if not an emoji, or if it's a basic ASCII character
+            !scalar.properties.isEmoji || scalar.value < 128
+        }.map { String($0) }.joined()
+        
+        // Clean up multiple spaces/newlines
+        cleaned = cleaned.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        
+        // Trim
+        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        return cleaned
+    }
+    
+    // MARK: - Internal Updates (called by delegate)
+    
+    fileprivate func updateSpeakingProgress(_ progress: Float) {
+        speakingProgress = progress
+    }
+    
+    fileprivate func didFinishSpeaking() {
+        isSpeaking = false
+        speakingProgress = 1.0
+        currentUtterance = nil
+        
+        // Reset audio session
+        try? AVAudioSession.sharedInstance().setActive(false)
+    }
+}
+
+// MARK: - Speech Delegate
+
+private class FlowSpeechDelegate: NSObject, AVSpeechSynthesizerDelegate {
+    weak var manager: FlowVoiceInputManager?
+    var completion: (() -> Void)?
+    
+    init(manager: FlowVoiceInputManager) {
+        self.manager = manager
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        Task { @MainActor in
+            manager?.updateSpeakingProgress(0)
+        }
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+        let progress = Float(characterRange.location + characterRange.length) / Float(utterance.speechString.count)
+        Task { @MainActor in
+            manager?.updateSpeakingProgress(progress)
+        }
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        Task { @MainActor in
+            manager?.didFinishSpeaking()
+            completion?()
+            completion = nil
+        }
+    }
+    
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        Task { @MainActor in
+            manager?.didFinishSpeaking()
+            completion = nil
+        }
     }
 }
 
@@ -404,7 +657,7 @@ struct FlowVoiceButton: View {
                 isPulsing = true
             }
         }
-        .onChange(of: voiceManager.isListening) { listening in
+        .onChange(of: voiceManager.isListening) { _, listening in
             isPulsing = listening
         }
     }

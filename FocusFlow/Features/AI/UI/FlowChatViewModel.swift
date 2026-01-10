@@ -49,12 +49,21 @@ final class FlowChatViewModel: ObservableObject {
         inferUserPersona()
     }
     
+    // MARK: - Published State for Voice
+    
+    /// Whether the current/next message should trigger voice response
+    @Published var pendingVoiceResponse = false
+    
     // MARK: - Public Methods
     
     /// Send a message to Flow AI
     func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isLoading else { return }
+        
+        // Capture voice response flag and reset it
+        let shouldEnableVoiceResponse = pendingVoiceResponse
+        pendingVoiceResponse = false
         
         // Track if user engaged after AI response
         trackUserEngagement(userMessage: text)
@@ -73,10 +82,28 @@ final class FlowChatViewModel: ObservableObject {
         // Show loading
         isLoading = true
         
+        #if DEBUG
+        print("[FlowChatViewModel] 📤 Sending message: '\(text.prefix(50))...' | VoiceResponse: \(shouldEnableVoiceResponse)")
+        #endif
+        
         // Send to AI
         Task {
-            await processMessage(text)
+            await processMessage(text, enableVoiceResponse: shouldEnableVoiceResponse)
         }
+    }
+    
+    /// Send a voice message - uses same path as text but enables voice response
+    func sendVoiceMessage(_ text: String) {
+        #if DEBUG
+        print("[FlowChatViewModel] 🎤 Voice message received: '\(text.prefix(50))...'")
+        #endif
+        
+        // Set the input text and enable voice response
+        inputText = text
+        pendingVoiceResponse = true
+        
+        // Use the same sendMessage path
+        sendMessage()
     }
     
     /// Send a quick action message
@@ -207,15 +234,15 @@ final class FlowChatViewModel: ObservableObject {
         }
     }
     
-    private func processMessage(_ text: String) async {
+    private func processMessage(_ text: String, enableVoiceResponse: Bool = false) async {
         do {
             let contextString = context.buildContext()
             let conversationHistory = messageStore.getRecentMessages(limit: FlowConfig.maxConversationHistory)
             
             if FlowConfig.streamingEnabled {
-                await processStreamingMessage(text, context: contextString, history: conversationHistory)
+                await processStreamingMessage(text, context: contextString, history: conversationHistory, enableVoiceResponse: enableVoiceResponse)
             } else {
-                await processNonStreamingMessage(text, context: contextString, history: conversationHistory)
+                await processNonStreamingMessage(text, context: contextString, history: conversationHistory, enableVoiceResponse: enableVoiceResponse)
             }
             
         } catch {
@@ -227,7 +254,11 @@ final class FlowChatViewModel: ObservableObject {
         streamingMessageID = nil
     }
     
-    private func processStreamingMessage(_ text: String, context: String, history: [FlowMessage]) async {
+    private func processStreamingMessage(_ text: String, context: String, history: [FlowMessage], enableVoiceResponse: Bool = false) async {
+        #if DEBUG
+        print("[FlowChatViewModel] 🌊 Starting streaming message")
+        #endif
+        
         // Create placeholder message for streaming
         let placeholderMessage = FlowMessage.flow("", streaming: true)
         addMessage(placeholderMessage)
@@ -246,12 +277,35 @@ final class FlowChatViewModel: ObservableObject {
                 onComplete: { [weak self] response in
                     guard let self = self, let messageID = self.streamingMessageID else { return }
                     
+                    #if DEBUG
+                    print("[FlowChatViewModel] 🌊 Stream complete - Actions: \(response.actions.count)")
+                    for (index, action) in response.actions.enumerated() {
+                        print("[FlowChatViewModel]   Action \(index): \(action)")
+                    }
+                    #endif
+                    
                     // Mark complete with actions
                     self.completeMessage(id: messageID, actions: response.actions)
                     
-                    // Execute actions
-                    Task {
+                    // Store for learning
+                    self.storeAIResponseForLearning(response.content, actions: response.actions)
+                    
+                    // Execute actions FIRST, then speak (so user sees action happen while hearing response)
+                    Task { @MainActor in
+                        #if DEBUG
+                        print("[FlowChatViewModel] 🎬 Executing \(response.actions.count) actions from stream...")
+                        #endif
+                        
                         await self.executeActions(response.actions)
+                        
+                        #if DEBUG
+                        print("[FlowChatViewModel] ✅ Actions executed from stream")
+                        #endif
+                        
+                        // Speak response if voice mode enabled (after actions)
+                        if enableVoiceResponse {
+                            FlowVoiceInputManager.shared.speak(response.content)
+                        }
                     }
                 }
             )
@@ -264,9 +318,9 @@ final class FlowChatViewModel: ObservableObject {
         }
     }
     
-    private func processNonStreamingMessage(_ text: String, context: String, history: [FlowMessage]) async {
+    private func processNonStreamingMessage(_ text: String, context: String, history: [FlowMessage], enableVoiceResponse: Bool = false) async {
         #if DEBUG
-        print("[FlowChatViewModel] Sending non-streaming message: '\(text.prefix(50))...'")
+        print("[FlowChatViewModel] 📨 Sending non-streaming message: '\(text.prefix(50))...'")
         print("[FlowChatViewModel] Context length: \(context.count) chars")
         print("[FlowChatViewModel] History count: \(history.count) messages")
         #endif
@@ -280,7 +334,10 @@ final class FlowChatViewModel: ObservableObject {
             
             #if DEBUG
             print("[FlowChatViewModel] ✅ Got response: '\(response.content.prefix(100))...'")
-            print("[FlowChatViewModel] Actions: \(response.actions.count)")
+            print("[FlowChatViewModel] 🎬 Actions count: \(response.actions.count)")
+            for (index, action) in response.actions.enumerated() {
+                print("[FlowChatViewModel]   Action \(index): \(action)")
+            }
             #endif
             
             // Store for learning
@@ -296,8 +353,21 @@ final class FlowChatViewModel: ObservableObject {
                 addMessage(aiMessage)
             }
             
-            // Execute actions (they will add follow-up messages via statsFollowUp callback)
+            // Execute actions FIRST (so user sees action happen)
+            #if DEBUG
+            print("[FlowChatViewModel] 🎬 Executing \(response.actions.count) actions...")
+            #endif
+            
             await executeActions(response.actions)
+            
+            #if DEBUG
+            print("[FlowChatViewModel] ✅ Actions executed")
+            #endif
+            
+            // Speak response AFTER actions (so user hears confirmation while seeing the result)
+            if enableVoiceResponse && hasContent {
+                FlowVoiceInputManager.shared.speak(response.content)
+            }
             
         } catch {
             #if DEBUG
@@ -308,16 +378,32 @@ final class FlowChatViewModel: ObservableObject {
     }
     
     private func executeActions(_ actions: [FlowAction]) async {
-        guard !actions.isEmpty else { return }
+        guard !actions.isEmpty else {
+            #if DEBUG
+            print("[FlowChatViewModel] ⚠️ No actions to execute")
+            #endif
+            return
+        }
         
         #if DEBUG
-        print("[FlowChatViewModel] Executing \(actions.count) action(s)")
+        print("[FlowChatViewModel] 🚀 Executing \(actions.count) action(s):")
+        for action in actions {
+            print("[FlowChatViewModel]   → \(action)")
+        }
         #endif
         
         // Learn from actions
         learnFromActions(actions)
         
         let errors = await actionHandler.executeAll(actions)
+        
+        #if DEBUG
+        if errors.isEmpty {
+            print("[FlowChatViewModel] ✅ All actions completed successfully")
+        } else {
+            print("[FlowChatViewModel] ⚠️ Action errors: \(errors)")
+        }
+        #endif
         
         if !errors.isEmpty {
             let errorMessage = "Some actions couldn't be completed:\n" + errors.joined(separator: "\n")
