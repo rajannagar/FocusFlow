@@ -6,10 +6,10 @@ import { Container } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { 
-  Mail, MessageSquare, HelpCircle, ChevronDown, ChevronUp,
-  Cloud, User, CreditCard, Trash2, Wifi, RotateCcw, Download,
-  Lightbulb, Shield, FileText, Sparkles, ArrowRight, Clock
-} from 'lucide-react';
+  EnvelopeIcon, ChatBubbleLeftIcon, QuestionMarkCircleIcon, ChevronDownIcon, ChevronUpIcon,
+  CloudIcon, UserIcon, CreditCardIcon, TrashIcon, WifiIcon, ArrowPathIcon, ArrowDownTrayIcon,
+  LightBulbIcon, ShieldCheckIcon, DocumentTextIcon, SparklesIcon, ArrowRightIcon, ClockIcon
+} from '@heroicons/react/24/solid';
 
 // Animated section wrapper
 const AnimatedSection = ({ 
@@ -75,7 +75,7 @@ const FAQItem = ({
           {question}
         </span>
         <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isOpen ? 'bg-[var(--accent-primary)] text-white rotate-180' : 'bg-[var(--background)] text-[var(--foreground-muted)]'}`}>
-          <ChevronDown className="w-5 h-5" />
+          <ChevronDownIcon className="w-5 h-5" />
         </div>
       </button>
       <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
@@ -93,42 +93,42 @@ export default function SupportClient() {
 
   const faqs = [
     {
-      icon: Cloud,
+      icon: CloudIcon,
       q: 'How do I sync my data across devices?',
       a: 'Sign in with your Apple, Google, or email account to enable cloud sync. Your sessions, tasks, presets, and settings will automatically sync across all your devices. Changes appear instantly.',
     },
     {
-      icon: User,
+      icon: UserIcon,
       q: 'Can I use FocusFlow without an account?',
       a: 'Yes! Guest Mode allows you to use FocusFlow with all features except cloud sync. All your data stays securely on your device. You can create an account later if you want to enable sync.',
     },
     {
-      icon: CreditCard,
+      icon: CreditCardIcon,
       q: 'How do I cancel my FocusFlow Pro subscription?',
       a: 'Cancel anytime through your Apple ID settings. Go to Settings → [Your Name] → Subscriptions, find FocusFlow Pro, and tap Cancel Subscription. You\'ll keep Pro features until the end of your billing period.',
     },
     {
-      icon: Trash2,
+      icon: TrashIcon,
       q: 'How do I delete my account?',
       a: 'Go to Profile → Settings → Delete Account. Confirm by typing "DELETE". All your data will be permanently removed from our servers within 30 days. This action cannot be undone.',
     },
     {
-      icon: Wifi,
+      icon: WifiIcon,
       q: 'Does FocusFlow work offline?',
       a: 'Yes! Focus sessions and tasks work perfectly without an internet connection. Your data syncs automatically when you\'re back online. The app is designed to work seamlessly offline.',
     },
     {
-      icon: RotateCcw,
+      icon: ArrowPathIcon,
       q: 'How do I restore my Pro subscription?',
       a: 'If you previously had FocusFlow Pro, you can restore it by going to Profile → Settings → Restore Purchases. This will reactivate your subscription if it\'s still valid under your Apple ID.',
     },
     {
-      icon: Download,
+      icon: ArrowDownTrayIcon,
       q: 'Can I export my data?',
       a: 'Yes! Go to Profile → Settings → Backup & Export to download a JSON file with all your data. This is useful for backup or if you want to review your focus history.',
     },
     {
-      icon: Lightbulb,
+      icon: LightBulbIcon,
       q: 'What if I have a feature request?',
       a: `We love hearing from you! Email us at ${CONTACT_EMAIL} with your ideas. We review all feedback and consider it for future updates. Many features came directly from user suggestions.`,
     },
@@ -187,7 +187,7 @@ export default function SupportClient() {
               <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                 <div className="flex-shrink-0">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center shadow-xl shadow-[var(--accent-primary)]/30">
-                    <Mail className="w-10 h-10 text-white" strokeWidth={1.5} />
+                    <EnvelopeIcon className="w-10 h-10 text-white" strokeWidth={1.5} />
                   </div>
                 </div>
                 
@@ -210,14 +210,14 @@ export default function SupportClient() {
                     className="group flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--foreground)] text-[var(--background)] font-semibold hover:scale-105 transition-transform"
                   >
                     <span>Send Email</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </a>
                 </div>
               </div>
               
               <div className="relative z-10 mt-8 pt-8 border-t border-[var(--border)]">
                 <div className="flex items-center gap-3 text-sm text-[var(--foreground-muted)]">
-                  <Clock className="w-4 h-4 text-emerald-500" />
+                  <ClockIcon className="w-4 h-4 text-emerald-500" />
                   <span>Typical response time: <strong className="text-[var(--foreground)]">Within 24 hours</strong></span>
                 </div>
               </div>
@@ -236,7 +236,7 @@ export default function SupportClient() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] text-sm mb-6">
-                <HelpCircle className="w-4 h-4" />
+                <QuestionMarkCircleIcon className="w-4 h-4" />
                 <span>FAQ</span>
               </div>
               <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -272,7 +272,7 @@ export default function SupportClient() {
             <div className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/20">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-6 h-6 text-amber-500" />
+                  <SparklesIcon className="w-6 h-6 text-amber-500" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--foreground)] mb-2">Pro Tip</h3>
@@ -304,9 +304,9 @@ export default function SupportClient() {
             
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                { icon: Shield, title: 'Privacy Policy', desc: 'How we protect your data', href: '/privacy' },
-                { icon: FileText, title: 'Terms of Service', desc: 'Our service agreement', href: '/terms' },
-                { icon: Sparkles, title: 'Features', desc: 'Explore all features', href: '/features' },
+                { icon: ShieldCheckIcon, title: 'Privacy Policy', desc: 'How we protect your data', href: '/privacy' },
+                { icon: DocumentTextIcon, title: 'Terms of Service', desc: 'Our service agreement', href: '/terms' },
+                { icon: SparklesIcon, title: 'Features', desc: 'Explore all features', href: '/features' },
               ].map((item, i) => (
                 <Link
                   key={i}

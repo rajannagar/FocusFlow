@@ -26,17 +26,11 @@ export const FOCUSFLOW = {
   },
 } as const;
 
-// Pricing (in respective currencies)
+// Pricing (USD only)
 export const PRICING = {
   pro: {
-    monthly: {
-      USD: 3.99,
-      CAD: 5.99,
-    },
-    yearly: {
-      USD: 44.99,
-      CAD: 59.99,
-    },
+    monthly: 5.99,
+    yearly: 59.99,
   },
 } as const;
 

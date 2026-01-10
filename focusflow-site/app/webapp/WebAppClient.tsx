@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Container } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { APP_STORE_URL } from '@/lib/constants';
-import { Clock, Sparkles, Download, ArrowLeft } from 'lucide-react';
+import { ClockIcon, SparklesIcon, ArrowDownTrayIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
 
 export default function WebAppClient() {
   const mousePosition = useThrottledMouse();
@@ -66,7 +66,7 @@ export default function WebAppClient() {
             <div className="relative inline-flex mb-6 md:mb-8">
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 rounded-2xl blur-xl" />
               <div className="relative bg-[var(--background-elevated)] border border-[var(--border)] rounded-2xl p-6">
-                <Clock className="w-12 h-12 text-[var(--accent-primary)]" strokeWidth={1.5} />
+                <ClockIcon className="w-12 h-12 text-[var(--accent-primary)]" strokeWidth={1.5} />
               </div>
             </div>
 
@@ -87,7 +87,7 @@ export default function WebAppClient() {
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-8 md:mt-12 mb-8 md:mb-12">
               <div className="bg-[var(--background-elevated)] border border-[var(--border)] rounded-xl p-5 md:p-6 text-left">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center mb-4">
-                  <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" strokeWidth={2} />
+                  <SparklesIcon className="w-5 h-5 text-[var(--accent-primary)]" strokeWidth={2} />
                 </div>
                 <h3 className="font-semibold text-[var(--foreground)] mb-2 text-base">Full Feature Set</h3>
                 <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
@@ -97,7 +97,7 @@ export default function WebAppClient() {
 
               <div className="bg-[var(--background-elevated)] border border-[var(--border)] rounded-xl p-5 md:p-6 text-left">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center mb-4">
-                  <Clock className="w-5 h-5 text-[var(--accent-primary)]" strokeWidth={2} />
+                  <ClockIcon className="w-5 h-5 text-[var(--accent-primary)]" strokeWidth={2} />
                 </div>
                 <h3 className="font-semibold text-[var(--foreground)] mb-2 text-base">Cloud Sync</h3>
                 <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
@@ -107,7 +107,7 @@ export default function WebAppClient() {
 
               <div className="bg-[var(--background-elevated)] border border-[var(--border)] rounded-xl p-5 md:p-6 text-left sm:col-span-2 md:col-span-1">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/20 flex items-center justify-center mb-4">
-                  <Download className="w-5 h-5 text-[var(--accent-primary)]" strokeWidth={2} />
+                  <ArrowDownTrayIcon className="w-5 h-5 text-[var(--accent-primary)]" strokeWidth={2} />
                 </div>
                 <h3 className="font-semibold text-[var(--foreground)] mb-2 text-base">Cross-Platform</h3>
                 <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
@@ -127,7 +127,7 @@ export default function WebAppClient() {
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative z-10 flex items-center justify-center gap-2">
-                  <Download className="w-5 h-5" strokeWidth={2.5} />
+                  <ArrowDownTrayIcon className="w-5 h-5" strokeWidth={2.5} />
                   <span>Download iOS App</span>
                 </div>
               </a>
@@ -145,7 +145,7 @@ export default function WebAppClient() {
                 href="/"
                 className="inline-flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors group"
               >
-                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                <ArrowLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                 <span className="text-sm font-medium">Back to Home</span>
               </Link>
             </div>

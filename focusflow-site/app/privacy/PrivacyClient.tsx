@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Container } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { CONTACT_EMAIL } from '@/lib/constants';
-import { Shield, Lock, Eye, Server, Trash2, Bot, ChevronRight } from 'lucide-react';
+import { ShieldCheckIcon, LockClosedIcon, EyeIcon, ServerIcon, TrashIcon, LightBulbIcon, ChevronRightIcon, SparklesIcon } from '@heroicons/react/24/solid';
 
 // Animated section wrapper
 const AnimatedSection = ({ 
@@ -45,19 +45,19 @@ export default function PrivacyClient() {
   const [activeSection, setActiveSection] = useState('');
 
   const sections = [
-    { id: 'summary', title: 'Summary', icon: Eye },
-    { id: 'data-stored', title: 'Data the App Stores', icon: Server },
-    { id: 'data-location', title: 'Where Your Data is Stored', icon: Server },
-    { id: 'not-collected', title: 'What We Do Not Collect', icon: Lock },
-    { id: 'data-use', title: 'How We Use Data', icon: Eye },
-    { id: 'sharing', title: 'Sharing', icon: Eye },
-    { id: 'ai-assistant', title: 'AI Assistant (Flow)', icon: Bot },
-    { id: 'diagnostics', title: 'Diagnostics', icon: Eye },
-    { id: 'retention', title: 'Retention', icon: Server },
-    { id: 'your-rights', title: 'Your Rights', icon: Shield },
-    { id: 'account-deletion', title: 'Account Deletion', icon: Trash2 },
-    { id: 'children', title: "Children's Privacy", icon: Shield },
-    { id: 'changes', title: 'Changes', icon: Eye },
+    { id: 'summary', title: 'Summary', icon: EyeIcon },
+    { id: 'data-stored', title: 'Data the App Stores', icon: ServerIcon },
+    { id: 'data-location', title: 'Where Your Data is Stored', icon: ServerIcon },
+    { id: 'not-collected', title: 'What We Do Not Collect', icon: LockClosedIcon },
+    { id: 'data-use', title: 'How We Use Data', icon: EyeIcon },
+    { id: 'sharing', title: 'Sharing', icon: EyeIcon },
+    { id: 'ai-assistant', title: 'AI Assistant (Flow)', icon: SparklesIcon },
+    { id: 'diagnostics', title: 'Diagnostics', icon: EyeIcon },
+    { id: 'retention', title: 'Retention', icon: ServerIcon },
+    { id: 'your-rights', title: 'Your Rights', icon: ShieldCheckIcon },
+    { id: 'account-deletion', title: 'Account Deletion', icon: TrashIcon },
+    { id: 'children', title: "Children's Privacy", icon: ShieldCheckIcon },
+    { id: 'changes', title: 'Changes', icon: EyeIcon },
   ];
 
   useEffect(() => {
@@ -102,14 +102,14 @@ export default function PrivacyClient() {
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] mb-6">
               <Link href="/" className="hover:text-[var(--accent-primary)] transition-colors">Home</Link>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRightIcon className="w-4 h-4" />
               <span className="text-[var(--foreground)]">Privacy Policy</span>
             </div>
             
             {/* Header */}
             <div className="flex items-start gap-6 mb-8">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
-                <Shield className="w-8 h-8 text-white" strokeWidth={1.5} />
+                <ShieldCheckIcon className="w-8 h-8 text-white" strokeWidth={1.5} />
               </div>
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold text-[var(--foreground)] mb-2">Privacy Policy</h1>
@@ -251,7 +251,7 @@ export default function PrivacyClient() {
                         'Personal information for sale',
                       ].map((item, i) => (
                         <div key={i} className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                          <Lock className="w-5 h-5 flex-shrink-0" />
+                          <LockClosedIcon className="w-5 h-5 flex-shrink-0" />
                           <span className="text-[var(--foreground-muted)]">No {item.toLowerCase()}</span>
                         </div>
                       ))}
@@ -316,7 +316,7 @@ export default function PrivacyClient() {
                     </h2>
                     <div className="p-6 rounded-2xl bg-purple-500/10 border border-purple-500/20 mb-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <Bot className="w-6 h-6 text-purple-400" />
+                        <SparklesIcon className="w-6 h-6 text-purple-400" />
                         <span className="font-semibold text-[var(--foreground)]">Pro Feature — Powered by OpenAI GPT-4o</span>
                       </div>
                       <p className="text-[var(--foreground-muted)]">

@@ -3,23 +3,23 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Container, PhoneSimulator, CurrencySelector } from '@/components';
+import { Container, PhoneSimulator } from '@/components';
 import { useThrottledMouse } from '@/hooks';
-import { APP_STORE_URL, PRICING } from '@/lib/constants';
+import { APP_STORE_URL } from '@/lib/constants';
 import { generateSoftwareAppSchema } from '@/lib/seo';
 import { 
-  Timer, CheckSquare, TrendingUp, User, Star, 
-  ArrowRight, Sparkles, Shield, Music, Cloud, 
-  Smartphone, Award, ChevronDown, Zap, Check,
-  Play, Download, Clock, Target, Heart, Brain
-} from 'lucide-react';
+  ClockIcon, CheckCircleIcon, ChartBarIcon, UserIcon, StarIcon, 
+  ArrowRightIcon, SparklesIcon, ShieldCheckIcon, MusicalNoteIcon, CloudIcon, 
+  DevicePhoneMobileIcon, AcademicCapIcon, ChevronDownIcon, BoltIcon, CheckIcon,
+  PlayIcon, ArrowDownTrayIcon, ClockIcon as ClockIconAlt, TagIcon, HeartIcon, LightBulbIcon
+} from '@heroicons/react/24/solid';
 
 // Feature data for the tabbed section
 const features = [
   {
     id: 'timer',
     label: 'Focus Timer',
-    icon: Timer,
+    icon: ClockIcon,
     color: 'violet',
     headline: 'Deep focus, beautiful ambiance',
     description: 'Start timed sessions with customizable durations. Choose from ambient backgrounds or connect your music app (Pro).',
@@ -43,7 +43,7 @@ const features = [
   {
     id: 'tasks',
     label: 'Tasks',
-    icon: CheckSquare,
+    icon: CheckCircleIcon,
     color: 'emerald',
     headline: 'Smart task management',
     description: 'Organize your to-do list with reminders, recurring schedules, and focus session integration.',
@@ -66,7 +66,7 @@ const features = [
   {
     id: 'progress',
     label: 'Progress',
-    icon: TrendingUp,
+    icon: ChartBarIcon,
     color: 'amber',
     headline: 'Track your growth',
     description: 'Earn XP, level up through 50 ranks, maintain streaks, and unlock achievement badges (Pro).',
@@ -90,7 +90,7 @@ const features = [
   {
     id: 'profile',
     label: 'Profile',
-    icon: User,
+    icon: UserIcon,
     color: 'rose',
     headline: 'Make it yours',
     description: 'Personalize every aspect of your experience. Choose your avatar, pick your theme, and sync across all your devices (Pro).',
@@ -115,17 +115,16 @@ const features = [
 
 // Values section data
 const valueProps = [
-  { icon: Shield, label: 'Privacy First', desc: 'No tracking, no ads' },
-  { icon: Smartphone, label: 'Widgets', desc: 'Home screen control' },
-  { icon: Zap, label: 'Live Activity', desc: 'Dynamic Island support' },
-  { icon: Cloud, label: 'Offline', desc: 'Works everywhere' },
-  { icon: Music, label: 'Music', desc: 'Your favorite tunes' },
-  { icon: Award, label: 'Gamified', desc: 'XP & achievements' },
+  { icon: ShieldCheckIcon, label: 'Privacy First', desc: 'No tracking, no ads' },
+  { icon: DevicePhoneMobileIcon, label: 'Widgets', desc: 'Home screen control' },
+  { icon: BoltIcon, label: 'Live Activity', desc: 'Dynamic Island support' },
+  { icon: CloudIcon, label: 'Offline', desc: 'Works everywhere' },
+  { icon: MusicalNoteIcon, label: 'Music', desc: 'Your favorite tunes' },
+  { icon: AcademicCapIcon, label: 'Gamified', desc: 'XP & achievements' },
 ];
 
 export default function FocusFlowPage() {
   const mousePosition = useThrottledMouse();
-  const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'CAD'>('CAD');
   const [activeFeature, setActiveFeature] = useState(0);
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
   const appSchema = generateSoftwareAppSchema();
@@ -244,7 +243,7 @@ export default function FocusFlowPage() {
                     href="#features" 
                     className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-semibold text-[var(--foreground)] bg-[var(--background-elevated)] border border-[var(--border)] hover:border-[var(--accent-primary)]/50 transition-all duration-300"
                   >
-                    <Play className="w-5 h-5" />
+                    <PlayIcon className="w-5 h-5" />
                     Explore Features
                   </Link>
                 </div>
@@ -254,7 +253,7 @@ export default function FocusFlowPage() {
                   <div className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[var(--background-elevated)] border border-[var(--border)]">
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
+                        <StarIcon key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
                       ))}
                     </div>
                     <span className="text-base font-semibold text-[var(--foreground)]">5.0</span>
@@ -292,7 +291,7 @@ export default function FocusFlowPage() {
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 animate-bounce-slow">
           <span className="text-xs text-[var(--foreground-subtle)] uppercase tracking-wider">Scroll</span>
-          <ChevronDown className="w-5 h-5 text-[var(--foreground-subtle)]" />
+          <ChevronDownIcon className="w-5 h-5 text-[var(--foreground-subtle)]" />
         </div>
       </section>
 
@@ -319,7 +318,7 @@ export default function FocusFlowPage() {
             {/* Section Header */}
             <div className={`text-center mb-12 md:mb-16 px-4 ${visibleSections.has('features') ? 'animate-slide-up' : 'opacity-0'}`}>
               <div className="inline-flex items-center gap-2 badge badge-primary mb-6">
-                <Sparkles className="w-4 h-4" />
+                <SparklesIcon className="w-4 h-4" />
                 <span>Core Features</span>
               </div>
               <h2 className="mb-4">Everything in <span className="text-gradient">one app.</span></h2>
@@ -417,7 +416,7 @@ export default function FocusFlowPage() {
                                     border: `1px solid ${feature.accentColor}30`,
                                   }}
                                 >
-                                  <Check className="w-5 h-5" style={{ color: feature.accentColor }} />
+                                   <CheckIcon className="w-5 h-5" style={{ color: feature.accentColor }} />
                                 </div>
                                 <div>
                                   <h4 className="font-semibold text-[var(--foreground)] mb-0.5">
@@ -455,7 +454,7 @@ export default function FocusFlowPage() {
                 {/* Stars */}
                 <div className="flex justify-center gap-1 mb-6">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-6 h-6 md:w-7 md:h-7 text-amber-400 fill-amber-400" />
+                    <StarIcon key={i} className="w-6 h-6 md:w-7 md:h-7 text-amber-400 fill-amber-400" />
                   ))}
                 </div>
                 
@@ -514,7 +513,7 @@ export default function FocusFlowPage() {
             {/* Header */}
             <div className={`text-center mb-12 md:mb-16 px-4 ${visibleSections.has('pricing') ? 'animate-slide-up' : 'opacity-0'}`}>
               <div className="inline-flex items-center gap-2 badge badge-primary mb-6">
-                <Zap className="w-4 h-4" />
+                <BoltIcon className="w-4 h-4" />
                 <span>Premium Experience</span>
               </div>
               <h2 className="mb-4">FocusFlow <span className="text-gradient">Pro</span></h2>
@@ -522,10 +521,6 @@ export default function FocusFlowPage() {
                 Unlock the full potential. Advanced features for power users.
               </p>
               
-              {/* Currency Selector */}
-              <div className="flex justify-center">
-                <CurrencySelector onCurrencyChange={setSelectedCurrency} defaultCurrency="CAD" />
-              </div>
             </div>
 
             {/* Pricing Cards */}
@@ -541,7 +536,7 @@ export default function FocusFlowPage() {
                 <ul className="space-y-3 mb-8 flex-1">
                   {['Focus timer', '3 backgrounds', '3 focus sounds', '2 themes', '3 tasks', 'Basic history'].map((feature, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-[var(--foreground-muted)]">
-                      <Check className="w-4 h-4 text-[var(--foreground-subtle)] flex-shrink-0 mt-0.5" />
+                      <CheckIcon className="w-4 h-4 text-[var(--foreground-subtle)] flex-shrink-0 mt-0.5" />
                       {feature}
                     </li>
                   ))}
@@ -564,11 +559,11 @@ export default function FocusFlowPage() {
                   <div className="text-center mb-8">
                     <h3 className="text-2xl font-semibold text-gradient mb-3">Pro Yearly</h3>
                     <div className="text-5xl font-bold text-[var(--foreground)] mb-2">
-                      ${selectedCurrency === 'USD' ? '44.99' : '59.99'}
+                      $59.99
                     </div>
                     <p className="text-sm text-[var(--foreground-subtle)]">per year</p>
                     <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--success)]/15 text-[var(--success)] text-sm font-medium border border-[var(--success)]/20">
-                      Save ${selectedCurrency === 'USD' ? '2.89' : '11.88'}/year
+                      Save $11.89/year (≈17%)
                     </div>
                   </div>
                   <ul className="space-y-3 mb-10 flex-1">
@@ -587,7 +582,7 @@ export default function FocusFlowPage() {
                       'Music integration',
                     ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-3 text-sm text-[var(--foreground-muted)]">
-                        <Check className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" />
+                        <CheckIcon className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" />
                         {feature}
                       </li>
                     ))}
@@ -608,14 +603,14 @@ export default function FocusFlowPage() {
                 <div className="text-center mb-6">
                   <h3 className="text-xl font-semibold text-gradient mb-2">Pro Monthly</h3>
                   <div className="text-4xl font-bold text-[var(--foreground)] mb-1">
-                    ${selectedCurrency === 'USD' ? '3.99' : '5.99'}
+                    $5.99
                   </div>
                   <p className="text-sm text-[var(--foreground-subtle)]">per month</p>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
                   {['All Pro features', 'Cancel anytime', 'Instant access', 'Full support'].map((feature, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-[var(--foreground-muted)]">
-                      <Check className="w-4 h-4 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" />
+                      <CheckIcon className="w-4 h-4 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" />
                       {feature}
                     </li>
                   ))}
@@ -671,7 +666,7 @@ export default function FocusFlowPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <Download className="w-5 h-5 relative z-10" />
+                <ArrowDownTrayIcon className="w-5 h-5 relative z-10" />
                 <span className="relative z-10">Download on App Store</span>
               </a>
               <Link 

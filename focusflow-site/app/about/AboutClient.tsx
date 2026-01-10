@@ -7,9 +7,9 @@ import { Container } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { APP_STORE_URL, CONTACT_EMAIL } from '@/lib/constants';
 import { 
-  Palette, Code, Sparkles, Mail, Download, Heart, Shield, 
-  Timer, Target, Users, ArrowRight, Star, Zap, Lock, Eye
-} from 'lucide-react';
+  SwatchIcon, CodeBracketIcon, SparklesIcon, EnvelopeIcon, ArrowDownTrayIcon, HeartIcon, ShieldCheckIcon, 
+  ClockIcon, TagIcon, UsersIcon, ArrowRightIcon, StarIcon, BoltIcon, LockClosedIcon, EyeIcon
+} from '@heroicons/react/24/solid';
 
 // Animated section wrapper
 const AnimatedSection = ({ 
@@ -112,7 +112,7 @@ export default function AboutClient() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 text-[var(--accent-primary)] text-sm mb-6">
-                <Heart className="w-4 h-4" />
+                <HeartIcon className="w-4 h-4" />
                 <span>Our Story</span>
               </div>
               <h2 className="text-4xl md:text-6xl font-bold">
@@ -177,37 +177,37 @@ export default function AboutClient() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
                 {
-                  icon: Eye,
+                  icon: EyeIcon,
                   title: 'Presence Over Productivity',
                   desc: 'True productivity comes from being fully present. We design for focus, not just output.',
                   color: 'from-violet-500 to-purple-600'
                 },
                 {
-                  icon: Lock,
+                  icon: LockClosedIcon,
                   title: 'Privacy First',
                   desc: 'No ads, no tracking, no selling your data. Your focus journey is yours alone.',
                   color: 'from-emerald-500 to-teal-600'
                 },
                 {
-                  icon: Sparkles,
+                  icon: SparklesIcon,
                   title: 'Beauty Matters',
                   desc: 'When your tools are beautiful, you want to use them. Design is functional.',
                   color: 'from-amber-500 to-orange-600'
                 },
                 {
-                  icon: Heart,
+                  icon: HeartIcon,
                   title: 'Respect Attention',
                   desc: 'Every notification, every interaction is carefully considered. Your attention is sacred.',
                   color: 'from-rose-500 to-pink-600'
                 },
                 {
-                  icon: Zap,
+                  icon: BoltIcon,
                   title: 'Simplicity Wins',
                   desc: 'Complex problems deserve elegant solutions. We obsess over making things simple.',
                   color: 'from-cyan-500 to-blue-600'
                 },
                 {
-                  icon: Users,
+                  icon: UsersIcon,
                   title: 'Community Driven',
                   desc: 'Built with constant user feedback. Your voice shapes our roadmap.',
                   color: 'from-indigo-500 to-violet-600'
@@ -250,9 +250,9 @@ export default function AboutClient() {
 
             <div className="grid md:grid-cols-3 gap-8 mb-16">
               {[
-                { icon: Palette, title: 'Design', desc: 'Crafting beautiful, intuitive experiences that feel natural' },
-                { icon: Code, title: 'Engineering', desc: 'Building robust, performant software with attention to detail' },
-                { icon: Sparkles, title: 'Product', desc: 'Shaping the future of focus tools through user research' },
+                { icon: SwatchIcon, title: 'Design', desc: 'Crafting beautiful, intuitive experiences that feel natural' },
+                { icon: CodeBracketIcon, title: 'Engineering', desc: 'Building robust, performant software with attention to detail' },
+                { icon: SparklesIcon, title: 'Product', desc: 'Shaping the future of focus tools through user research' },
               ].map((role, i) => (
                 <div key={i} className="text-center group">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 mx-auto mb-6 flex items-center justify-center group-hover:scale-110 transition-transform border border-[var(--accent-primary)]/30">
@@ -289,7 +289,7 @@ export default function AboutClient() {
               
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 text-[var(--accent-primary)] text-sm mb-6">
-                  <Star className="w-4 h-4" />
+                  <StarIcon className="w-4 h-4" />
                   <span>Our Company</span>
                 </div>
                 
@@ -327,7 +327,7 @@ export default function AboutClient() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative z-10 flex items-center justify-center gap-3 group-hover:text-white transition-colors">
-                  <Mail className="w-6 h-6" />
+                  <EnvelopeIcon className="w-6 h-6" />
                   <span>Contact Us</span>
                 </div>
               </a>
@@ -338,7 +338,7 @@ export default function AboutClient() {
                 rel="noopener noreferrer"
                 className="px-10 py-5 rounded-2xl border-2 border-[var(--border)] text-[var(--foreground)] font-semibold text-xl hover:border-[var(--accent-primary)]/50 hover:bg-[var(--background-elevated)] transition-all duration-300 flex items-center justify-center gap-3"
               >
-                <Download className="w-6 h-6" />
+                <ArrowDownTrayIcon className="w-6 h-6" />
                 <span>Download App</span>
               </a>
             </div>

@@ -6,13 +6,13 @@ import { Container, PhoneSimulator } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { APP_STORE_URL } from '@/lib/constants';
 import { 
-  Timer, CheckSquare, TrendingUp, Palette, 
-  Music, Calendar, Clock, Bell, Target, Settings, CloudUpload, 
-  Smartphone, Award, BookOpen, BarChart3, Flame,
-  Headphones, Plane, Shield, Bot, Brain, MessageSquare, 
-  Lightbulb, Sparkles, ArrowRight, Star, Zap, Moon, Waves,
-  Image as ImageIcon, Volume2, Play, Repeat, Users
-} from 'lucide-react';
+  ClockIcon, CheckCircleIcon, ChartBarIcon, SwatchIcon, 
+  MusicalNoteIcon, CalendarIcon, ClockIcon as ClockIconAlt, BellIcon, TagIcon, Cog6ToothIcon, CloudArrowUpIcon, 
+  DevicePhoneMobileIcon, AcademicCapIcon, BookOpenIcon, ChartBarIcon as ChartBarIconAlt, FireIcon,
+  HandRaisedIcon, ArrowTopRightOnSquareIcon, ShieldCheckIcon, LightBulbIcon, ChatBubbleLeftIcon, 
+  LightBulbIcon as LightBulbIconAlt, SparklesIcon, ArrowRightIcon, StarIcon, BoltIcon, MoonIcon,
+  PhotoIcon, SpeakerXMarkIcon, PlayIcon, ArrowPathIcon, UsersIcon
+} from '@heroicons/react/24/solid';
 
 // Animated section wrapper
 const AnimatedSection = ({ 
@@ -111,7 +111,7 @@ export default function FeaturesClient() {
         <Container>
           <div className="relative z-10 max-w-5xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 text-[var(--accent-primary)] text-sm mb-8">
-              <Sparkles className="w-4 h-4" />
+              <SparklesIcon className="w-4 h-4" />
               <span>Explore Features</span>
             </div>
             
@@ -129,11 +129,11 @@ export default function FeaturesClient() {
             {/* Quick nav pills */}
             <div className="flex flex-wrap justify-center gap-3">
               {[
-                { label: 'Focus Timer', href: '#focus', icon: Timer },
-                { label: 'Tasks', href: '#tasks', icon: CheckSquare },
-                { label: 'Progress', href: '#progress', icon: TrendingUp },
-                { label: 'AI Assistant', href: '#ai', icon: Bot },
-                { label: 'Personalization', href: '#personalization', icon: Palette },
+                { label: 'Focus Timer', href: '#focus', icon: ClockIcon },
+                { label: 'Tasks', href: '#tasks', icon: CheckCircleIcon },
+                { label: 'Progress', href: '#progress', icon: ChartBarIcon },
+                { label: 'AI Assistant', href: '#ai', icon: SparklesIcon },
+                { label: 'Personalization', href: '#personalization', icon: SwatchIcon },
               ].map((item) => (
                 <a
                   key={item.label}
@@ -160,7 +160,7 @@ export default function FeaturesClient() {
             {/* Section header */}
             <div className="flex items-center gap-4 mb-12">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                <Timer className="w-7 h-7 text-white" strokeWidth={1.5} />
+                <ClockIcon className="w-7 h-7 text-white" strokeWidth={1.5} />
               </div>
               <div>
                 <span className="text-violet-400 text-sm font-medium">01</span>
@@ -183,25 +183,25 @@ export default function FeaturesClient() {
 
                 <div className="grid gap-4">
                   <FeatureListItem 
-                    icon={ImageIcon}
+                    icon={PhotoIcon}
                     title="14 Ambient Backgrounds"
                     description="From serene forests to cosmic starfields — immersive visuals that help you focus."
                     color="violet"
                   />
                   <FeatureListItem 
-                    icon={Volume2}
+                    icon={SpeakerXMarkIcon}
                     title="11 Focus Sounds"
                     description="Light rain, fireplace, ocean waves, and more — scientifically-designed soundscapes."
                     color="violet"
                   />
                   <FeatureListItem 
-                    icon={Headphones}
+                    icon={MusicalNoteIcon}
                     title="Music Integration"
                     description="Connect Spotify, Apple Music, or YouTube Music to play your focus playlist (Pro)."
                     color="violet"
                   />
                   <FeatureListItem 
-                    icon={Target}
+                    icon={TagIcon}
                     title="Session Intentions"
                     description="Set your goal before each session. Stay anchored to what matters most."
                     color="violet"
@@ -270,7 +270,7 @@ export default function FeaturesClient() {
             {/* Section header */}
             <div className="flex items-center gap-4 mb-12">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-                <CheckSquare className="w-7 h-7 text-white" strokeWidth={1.5} />
+                <CheckCircleIcon className="w-7 h-7 text-white" strokeWidth={1.5} />
               </div>
               <div>
                 <span className="text-emerald-400 text-sm font-medium">02</span>
@@ -306,25 +306,25 @@ export default function FeaturesClient() {
 
                 <div className="grid gap-4">
                   <FeatureListItem 
-                    icon={Calendar}
+                    icon={CalendarIcon}
                     title="Recurring Tasks"
                     description="Daily, weekly, monthly, or custom schedules. Build habits that stick."
                     color="emerald"
                   />
                   <FeatureListItem 
-                    icon={Bell}
+                    icon={BellIcon}
                     title="Smart Reminders"
                     description="Get notified at the right time. Never forget an important task again."
                     color="emerald"
                   />
                   <FeatureListItem 
-                    icon={Target}
+                    icon={TagIcon}
                     title="Priority Levels"
                     description="High, medium, low — organize your tasks by what needs attention first."
                     color="emerald"
                   />
                   <FeatureListItem 
-                    icon={Repeat}
+                    icon={ArrowPathIcon}
                     title="Quick Completion"
                     description="Swipe to complete. Satisfying interactions that make productivity fun."
                     color="emerald"
@@ -347,7 +347,7 @@ export default function FeaturesClient() {
             {/* Section header */}
             <div className="flex items-center gap-4 mb-12">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
-                <TrendingUp className="w-7 h-7 text-white" strokeWidth={1.5} />
+                <ChartBarIcon className="w-7 h-7 text-white" strokeWidth={1.5} />
               </div>
               <div>
                 <span className="text-amber-400 text-sm font-medium">03</span>
@@ -371,10 +371,10 @@ export default function FeaturesClient() {
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { value: '50', label: 'Levels', icon: TrendingUp },
-                    { value: '20+', label: 'Achievements', icon: Award },
-                    { value: '∞', label: 'XP Potential', icon: Sparkles },
-                    { value: '365', label: 'Day Streaks', icon: Flame },
+                    { value: '50', label: 'Levels', icon: ChartBarIcon },
+                    { value: '20+', label: 'Achievements', icon: AcademicCapIcon },
+                    { value: '∞', label: 'XP Potential', icon: SparklesIcon },
+                    { value: '365', label: 'Day Streaks', icon: FireIcon },
                   ].map((stat, i) => (
                     <div key={i} className="p-6 rounded-2xl bg-[var(--background-elevated)] border border-[var(--border)] text-center group hover:border-amber-500/30 transition-all">
                       <stat.icon className="w-6 h-6 text-amber-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
@@ -386,19 +386,19 @@ export default function FeaturesClient() {
 
                 <div className="grid gap-4">
                   <FeatureListItem 
-                    icon={Award}
+                    icon={AcademicCapIcon}
                     title="Achievement Badges"
                     description="Unlock beautiful badges for milestones. Celebrate every win (Pro)."
                     color="amber"
                   />
                   <FeatureListItem 
-                    icon={BookOpen}
+                    icon={BookOpenIcon}
                     title="Journey View"
                     description="See daily summaries and weekly reviews. Reflect on your growth (Pro)."
                     color="amber"
                   />
                   <FeatureListItem 
-                    icon={BarChart3}
+                    icon={ChartBarIconAlt}
                     title="Detailed Analytics"
                     description="Track focus time, completion rates, and patterns over time."
                     color="amber"
@@ -434,7 +434,7 @@ export default function FeaturesClient() {
             {/* Section header */}
             <div className="flex items-center gap-4 mb-12">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
-                <Bot className="w-7 h-7 text-white" strokeWidth={1.5} />
+                <SparklesIcon className="w-7 h-7 text-white" strokeWidth={1.5} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -473,25 +473,25 @@ export default function FeaturesClient() {
 
                 <div className="grid gap-4">
                   <FeatureListItem 
-                    icon={Brain}
+                    icon={LightBulbIcon}
                     title="Powered by GPT-4o"
                     description="Advanced AI that understands context and provides intelligent, personalized responses."
                     color="purple"
                   />
                   <FeatureListItem 
-                    icon={MessageSquare}
+                    icon={ChatBubbleLeftIcon}
                     title="Natural Conversations"
                     description="Chat naturally like you would with a productivity coach. Ask anything."
                     color="purple"
                   />
                   <FeatureListItem 
-                    icon={Lightbulb}
+                    icon={LightBulbIcon}
                     title="Smart Suggestions"
                     description="Get task recommendations and productivity tips based on your patterns."
                     color="purple"
                   />
                   <FeatureListItem 
-                    icon={Shield}
+                    icon={ShieldCheckIcon}
                     title="Privacy Protected"
                     description="Your conversations aren't used to train AI. OpenAI deletes data after 30 days."
                     color="purple"
@@ -514,7 +514,7 @@ export default function FeaturesClient() {
             {/* Section header */}
             <div className="flex items-center gap-4 mb-12">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-lg shadow-rose-500/25">
-                <Palette className="w-7 h-7 text-white" strokeWidth={1.5} />
+                <SwatchIcon className="w-7 h-7 text-white" strokeWidth={1.5} />
               </div>
               <div>
                 <span className="text-rose-400 text-sm font-medium">05</span>
@@ -537,25 +537,25 @@ export default function FeaturesClient() {
 
                 <div className="grid gap-4">
                   <FeatureListItem 
-                    icon={Palette}
+                    icon={SwatchIcon}
                     title="10 Beautiful Themes"
                     description="Forest, Neon (Free), plus 8 Pro themes to match your style."
                     color="rose"
                   />
                   <FeatureListItem 
-                    icon={Settings}
+                    icon={Cog6ToothIcon}
                     title="Custom Presets"
                     description="Save your favorite combinations of timer, sounds, and settings."
                     color="rose"
                   />
                   <FeatureListItem 
-                    icon={CloudUpload}
+                    icon={CloudArrowUpIcon}
                     title="Cloud Sync"
                     description="Access your data from any device. Encrypted and secure (Pro)."
                     color="rose"
                   />
                   <FeatureListItem 
-                    icon={Smartphone}
+                    icon={DevicePhoneMobileIcon}
                     title="Interactive Widgets"
                     description="Control your timer right from your home screen (Pro)."
                     color="rose"
@@ -622,12 +622,12 @@ export default function FeaturesClient() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { icon: Smartphone, title: 'Home Screen Widgets', desc: 'View and control your timer from your home screen (Pro)', pro: true },
-                { icon: Bell, title: 'Live Activity', desc: 'See your timer in Dynamic Island and Lock Screen (Pro)', pro: true },
-                { icon: Plane, title: 'Offline Mode', desc: 'Works perfectly without internet. Syncs when online', pro: false },
-                { icon: Shield, title: 'Privacy First', desc: 'No ads, no tracking. Your data stays encrypted', pro: false },
-                { icon: Zap, title: 'Lightning Fast', desc: 'Smooth animations and instant sync', pro: false },
-                { icon: Users, title: 'Cross-Platform', desc: 'iOS app now, Web app coming soon', pro: false },
+                { icon: DevicePhoneMobileIcon, title: 'Home Screen Widgets', desc: 'View and control your timer from your home screen (Pro)', pro: true },
+                { icon: BellIcon, title: 'Live Activity', desc: 'See your timer in Dynamic Island and Lock Screen (Pro)', pro: true },
+                { icon: HandRaisedIcon, title: 'Offline Mode', desc: 'Works perfectly without internet. Syncs when online', pro: false },
+                { icon: ShieldCheckIcon, title: 'Privacy First', desc: 'No ads, no tracking. Your data stays encrypted', pro: false },
+                { icon: BoltIcon, title: 'Lightning Fast', desc: 'Smooth animations and instant sync', pro: false },
+                { icon: UsersIcon, title: 'Cross-Platform', desc: 'iOS app now, Web app coming soon', pro: false },
               ].map((feature, i) => (
                 <div 
                   key={i}
@@ -685,7 +685,7 @@ export default function FeaturesClient() {
                 className="px-10 py-5 rounded-2xl border-2 border-[var(--border)] text-[var(--foreground)] font-semibold text-xl hover:border-[var(--accent-primary)]/50 hover:bg-[var(--background-elevated)] transition-all duration-300 flex items-center justify-center gap-3"
               >
                 View Pricing
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRightIcon className="w-5 h-5" />
               </Link>
             </div>
           </div>

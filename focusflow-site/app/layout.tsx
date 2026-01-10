@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import { Sora, Inter } from "next/font/google";
+import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { Header, Footer, ScrollToTop } from "@/components";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, CONTACT_EMAIL } from "@/lib/constants";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-// Premium Display Font - Geometric, Modern
-const sora = Sora({
+// Display font (headings)
+const interTight = Inter_Tight({
   variable: "--font-clash",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-// Body Font - Clean, Readable
+// Body font (paragraphs/UI)
 const inter = Inter({
   variable: "--font-cabinet",
   subsets: ["latin"],
@@ -230,7 +230,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${sora.variable} ${inter.variable} antialiased min-h-screen flex flex-col bg-[var(--background)]`}
+        className={`${interTight.variable} ${inter.variable} antialiased min-h-screen flex flex-col bg-[var(--background)]`}
       >
         <AuthProvider>
           <Header />

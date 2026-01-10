@@ -8,7 +8,7 @@ import { useThrottledMouse } from '@/hooks';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { APP_STORE_URL } from '@/lib/constants';
-import { Mail, Lock, LogIn, UserPlus, Loader2, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { EnvelopeIcon, LockClosedIcon, ArrowRightIcon, ArrowRightOnRectangleIcon, ArrowPathIcon, UserPlusIcon, CheckCircleIcon, SparklesIcon, ExclamationCircleIcon } from '@heroicons/react/24/solid';
 
 export default function SignInPage() {
   const mousePosition = useThrottledMouse();
@@ -153,7 +153,7 @@ export default function SignInPage() {
 
           {/* Bottom - Decorative elements */}
           <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)]">
-            <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
+            <SparklesIcon className="w-4 h-4 text-[var(--accent-primary)]" />
             <span>Built for deep work</span>
           </div>
         </div>
@@ -194,13 +194,13 @@ export default function SignInPage() {
           {/* Error/Success Messages */}
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <ExclamationCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
           {success && (
             <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-green-400">{success}</p>
             </div>
           )}
@@ -289,12 +289,12 @@ export default function SignInPage() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <ArrowPathIcon className="w-5 h-5 animate-spin" />
                   <span>{isSignUp ? 'Creating account...' : 'Signing in...'}</span>
                 </>
               ) : (
                 <>
-                  {isSignUp ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+                  {isSignUp ? <UserPlusIcon className="w-5 h-5" /> : <ArrowRightOnRectangleIcon className="w-5 h-5" />}
                   <span>{isSignUp ? 'Create account' : 'Sign in'}</span>
                 </>
               )}

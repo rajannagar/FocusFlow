@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from '@/components/common';
 import { APP_STORE_URL } from '@/lib/constants';
-import { Menu, X, Download, LogIn, ChevronRight, Sparkles, Timer, CheckSquare, TrendingUp, Crown } from 'lucide-react';
+import { Bars3Icon, XMarkIcon, ArrowDownTrayIcon, ArrowRightIcon, ArrowRightOnRectangleIcon, ChevronRightIcon, SparklesIcon, ClockIcon, CheckCircleIcon, ChartBarIcon, SwatchIcon } from '@heroicons/react/24/solid';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -80,10 +80,10 @@ export default function Header() {
 
   // Mobile menu links with icons
   const mobileNavLinks = [
-    { href: '/', label: 'Home', icon: Sparkles, desc: 'Discover FocusFlow' },
-    { href: '/features', label: 'Features', icon: Timer, desc: 'Explore capabilities' },
-    { href: '/pricing', label: 'Pricing', icon: Crown, desc: 'Plans & pricing' },
-    { href: '/about', label: 'About', icon: CheckSquare, desc: 'Our story' },
+    { href: '/', label: 'Home', icon: SparklesIcon, desc: 'Discover FocusFlow' },
+    { href: '/features', label: 'Features', icon: ClockIcon, desc: 'Explore capabilities' },
+    { href: '/pricing', label: 'Pricing', icon: SwatchIcon, desc: 'Plans & pricing' },
+    { href: '/about', label: 'About', icon: CheckCircleIcon, desc: 'Our story' },
   ];
 
   const toggleMenu = () => {
@@ -180,7 +180,7 @@ export default function Header() {
                 className="group relative px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all duration-200 flex items-center gap-2"
               >
                 <span className="absolute inset-0 bg-[var(--background-elevated)] rounded-xl opacity-0 group-hover:opacity-50 transition-opacity duration-200" />
-                <LogIn className="w-4 h-4 relative" strokeWidth={2} />
+                <ArrowRightOnRectangleIcon className="w-4 h-4 relative" strokeWidth={2} />
                 <span className="relative">Sign In</span>
               </Link>
               
@@ -194,7 +194,7 @@ export default function Header() {
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative z-10 flex items-center gap-2">
-                  <Download className="w-4 h-4" strokeWidth={2.5} />
+                  <ArrowDownTrayIcon className="w-4 h-4" strokeWidth={2.5} />
                   <span>Download</span>
                 </div>
               </a>
@@ -221,11 +221,11 @@ export default function Header() {
                 }}
               >
                 <div className="relative w-6 h-6">
-                  <Menu 
+                  <Bars3Icon 
                     className={`absolute inset-0 w-6 h-6 transition-all duration-300 ${isMenuOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'}`} 
                     strokeWidth={2} 
                   />
-                  <X 
+                  <XMarkIcon 
                     className={`absolute inset-0 w-6 h-6 transition-all duration-300 ${isMenuOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'}`} 
                     strokeWidth={2} 
                   />
@@ -300,7 +300,7 @@ export default function Header() {
                       {link.desc}
                     </div>
                   </div>
-                  <ChevronRight className={`w-5 h-5 text-[var(--foreground-subtle)] transition-all duration-300 ${
+                  <ChevronRightIcon className={`w-5 h-5 text-[var(--foreground-subtle)] transition-all duration-300 ${
                     isActive(link.href) ? 'text-[var(--accent-primary)]' : 'group-hover:text-[var(--accent-primary)] group-hover:translate-x-1'
                   }`} />
                 </Link>
@@ -322,7 +322,7 @@ export default function Header() {
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                <LogIn className="w-5 h-5" strokeWidth={2} />
+                <ArrowRightOnRectangleIcon className="w-5 h-5" strokeWidth={2} />
                 Sign In
               </Link>
               
@@ -340,7 +340,7 @@ export default function Header() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-active:opacity-100 transition-opacity duration-200" />
-                <Download className="w-5 h-5 relative z-10" strokeWidth={2.5} />
+                <ArrowDownTrayIcon className="w-5 h-5 relative z-10" strokeWidth={2.5} />
                 <span className="relative z-10">Download FocusFlow</span>
               </a>
             </div>

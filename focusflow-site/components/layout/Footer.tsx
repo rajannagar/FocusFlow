@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { APP_STORE_URL, CONTACT_EMAIL, COMPANY_LOCATION, SITE_DESCRIPTION } from '@/lib/constants';
 import { 
-  Download, Mail, MapPin, Sparkles, ArrowUpRight, 
-  Heart, Timer, CheckSquare, TrendingUp, User,
-  Shield, Zap, ExternalLink
-} from 'lucide-react';
+  ArrowDownTrayIcon, EnvelopeIcon, MapPinIcon, SparklesIcon, ArrowUpRightIcon, 
+  HeartIcon, ClockIcon, CheckCircleIcon, ChartBarIcon, UserIcon,
+  ShieldCheckIcon, BoltIcon, ArrowTopRightOnSquareIcon
+} from '@heroicons/react/24/solid';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -42,10 +42,10 @@ export default function Footer() {
 
   // Feature highlights for footer
   const highlights = [
-    { icon: Timer, label: 'Focus Timer' },
-    { icon: CheckSquare, label: 'Smart Tasks' },
-    { icon: TrendingUp, label: 'Progress' },
-    { icon: Shield, label: 'Privacy First' },
+    { icon: ClockIcon, label: 'Focus Timer' },
+    { icon: CheckCircleIcon, label: 'Smart Tasks' },
+    { icon: ChartBarIcon, label: 'Progress' },
+    { icon: ShieldCheckIcon, label: 'Privacy First' },
   ];
 
   return (
@@ -110,7 +110,7 @@ export default function Footer() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-dark)]" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary-light)] to-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <Download className="w-4 h-4 relative z-10" strokeWidth={2.5} />
+                <ArrowDownTrayIcon className="w-4 h-4 relative z-10" strokeWidth={2.5} />
                 <span className="relative z-10">Download on App Store</span>
               </a>
 
@@ -120,11 +120,11 @@ export default function Footer() {
                   href={`mailto:${CONTACT_EMAIL}`}
                   className="flex items-center gap-2.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--accent-primary)] transition-colors group"
                 >
-                  <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={2} />
+                  <EnvelopeIcon className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={2} />
                   <span>{CONTACT_EMAIL}</span>
                 </a>
                 <div className="flex items-center gap-2.5 text-sm text-[var(--foreground-muted)]">
-                  <MapPin className="w-4 h-4" strokeWidth={2} />
+                  <MapPinIcon className="w-4 h-4" strokeWidth={2} />
                   <span>{COMPANY_LOCATION}</span>
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function Footer() {
                       className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
                     >
                       {link.label}
-                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                      <ArrowUpRightIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
                     </a>
                   ) : (
                     <Link
@@ -155,7 +155,7 @@ export default function Footer() {
                       className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
                     >
                       {link.label}
-                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                      <ArrowUpRightIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
                     </Link>
                   )
                 ))}
@@ -178,7 +178,7 @@ export default function Footer() {
                       className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
                     >
                       {link.label}
-                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                      <ArrowUpRightIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
                     </a>
                   ) : (
                     <Link
@@ -187,7 +187,7 @@ export default function Footer() {
                       className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
                     >
                       {link.label}
-                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                      <ArrowUpRightIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
                     </Link>
                   )
                 ))}
@@ -207,7 +207,7 @@ export default function Footer() {
                     className="group flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
                   >
                     {link.label}
-                    <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+                    <ArrowUpRightIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
                   </Link>
                 ))}
               </nav>
@@ -244,7 +244,7 @@ export default function Footer() {
               <span className="text-[var(--foreground)] font-medium">Soft Computers</span>. All rights reserved.
             </div>
             <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)]">
-              <Heart className="w-4 h-4 text-rose-400 animate-pulse-slow" fill="currentColor" strokeWidth={0} />
+              <HeartIcon className="w-4 h-4 text-rose-400 animate-pulse-slow" fill="currentColor" strokeWidth={0} />
               <span>Built with intention</span>
             </div>
           </div>

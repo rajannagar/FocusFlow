@@ -461,16 +461,16 @@ export default {
 
 ```tsx
 // app/layout.tsx
-import { Sora, Inter } from 'next/font/google';
+import { Inter, Inter_Tight } from 'next/font/google';
 
-// Display font - geometric, modern
-const sora = Sora({
+// Display font (headings)
+const interTight = Inter_Tight({
   variable: '--font-clash',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
 });
 
-// Body font - clean, readable
+// Body font (paragraphs/UI)
 const inter = Inter({
   variable: '--font-cabinet',
   subsets: ['latin'],

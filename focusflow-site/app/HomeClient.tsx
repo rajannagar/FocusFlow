@@ -9,7 +9,7 @@ import { APP_STORE_URL } from '@/lib/constants';
 import { 
   Timer, CheckSquare, TrendingUp, Shield, Zap, Moon, Star, 
   ArrowRight, Play, Sparkles, Bot, Clock, Target, Award,
-  Music, Cloud, Smartphone, ChevronDown, Quote, Users,
+  Music, Cloud, Smartphone, Quote, Users,
   Heart, Flame, Brain, Waves
 } from 'lucide-react';
 
@@ -86,11 +86,6 @@ const FeatureCard = ({
     <div className={`absolute -inset-0.5 bg-gradient-to-r ${gradient} rounded-3xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-500`} />
     
     <div className="relative h-full p-8 md:p-10 rounded-3xl bg-[var(--background-elevated)] border border-[var(--border)] hover:border-transparent transition-all duration-500 overflow-hidden">
-      {/* Background pattern */}
-      <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
-        <Icon className="w-full h-full" strokeWidth={0.5} />
-      </div>
-      
       <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
         <Icon className="w-7 h-7 md:w-8 md:h-8 text-white" strokeWidth={1.5} />
       </div>
@@ -156,7 +151,7 @@ export default function HomeClient() {
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION - Immersive & Cinematic
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-start md:items-center justify-center overflow-hidden py-12 sm:py-16 md:py-0">
         {/* Animated gradient orbs */}
         <div className="absolute inset-0 overflow-hidden">
           <div 
@@ -194,7 +189,7 @@ export default function HomeClient() {
         <Container>
           <div 
             ref={heroRef}
-            className="relative z-10 max-w-7xl mx-auto pt-20 md:pt-0"
+            className="relative z-10 max-w-7xl mx-auto"
             style={{ transform: `translateY(${scrollY * 0.1}px)` }}
           >
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -238,15 +233,13 @@ export default function HomeClient() {
                     href={APP_STORE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group relative px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(245,240,232,0.3)]"
+                    className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[var(--foreground)] text-[var(--background)] font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(245,240,232,0.3)]"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="relative z-10 flex items-center justify-center gap-3 group-hover:text-white transition-colors">
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                      </svg>
-                      <span>Download Free</span>
-                    </div>
+                    <svg className="relative z-10 w-6 h-6 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                    </svg>
+                    <span className="relative z-10 group-hover:text-white transition-colors">Download Free</span>
                   </a>
                   
                   <button
@@ -304,11 +297,6 @@ export default function HomeClient() {
               </div>
             </div>
 
-            {/* Scroll indicator */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 animate-bounce-slow">
-              <span className="text-xs text-[var(--foreground-subtle)] uppercase tracking-widest">Scroll to explore</span>
-              <ChevronDown className="w-5 h-5 text-[var(--foreground-subtle)]" />
-            </div>
           </div>
         </Container>
       </section>
@@ -699,13 +687,13 @@ export default function HomeClient() {
               </div>
 
               {/* Pro */}
-              <div className="relative p-8 rounded-3xl bg-gradient-to-br from-[var(--accent-primary)]/10 to-[var(--accent-secondary)]/10 border-2 border-[var(--accent-primary)]/30">
+              <div className="relative pt-12 p-8 rounded-3xl bg-gradient-to-br from-[var(--accent-primary)]/10 to-[var(--accent-secondary)]/10 border-2 border-[var(--accent-primary)]/30">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white text-sm font-medium">
                   Most Popular
                 </div>
                 <div className="text-sm text-[var(--accent-primary)] mb-2">Pro</div>
-                <div className="text-4xl font-bold text-[var(--foreground)] mb-1">$3.99<span className="text-lg font-normal text-[var(--foreground-muted)]">/mo</span></div>
-                <div className="text-sm text-[var(--foreground-muted)] mb-6">or $44.99/year (save 6%)</div>
+                <div className="text-4xl font-bold text-[var(--foreground)] mb-1">$5.99<span className="text-lg font-normal text-[var(--foreground-muted)]">/mo</span></div>
+                <div className="text-sm text-[var(--foreground-muted)] mb-6">or $59.99/year (save ~17%)</div>
                 <ul className="space-y-3 text-left text-[var(--foreground-muted)]">
                   <li className="flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 flex items-center justify-center">

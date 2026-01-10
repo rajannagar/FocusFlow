@@ -6,9 +6,9 @@ import { Container } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { 
-  FileText, Shield, User, CreditCard, Bot, AlertTriangle, 
-  Scale, Lock, Trash2, ChevronRight, Mail
-} from 'lucide-react';
+  DocumentTextIcon, ShieldCheckIcon, UserIcon, CreditCardIcon, LightBulbIcon, ExclamationTriangleIcon, 
+  ScaleIcon, LockClosedIcon, TrashIcon, ChevronRightIcon, EnvelopeIcon, SparklesIcon
+} from '@heroicons/react/24/solid';
 
 // Animated section wrapper
 const AnimatedSection = ({ 
@@ -110,14 +110,14 @@ export default function TermsClient() {
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] mb-6">
               <Link href="/" className="hover:text-[var(--accent-primary)] transition-colors">Home</Link>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRightIcon className="w-4 h-4" />
               <span className="text-[var(--foreground)]">Terms of Service</span>
             </div>
             
             {/* Header */}
             <div className="flex items-start gap-6 mb-8">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[var(--accent-primary)]/20">
-                <FileText className="w-8 h-8 text-white" strokeWidth={1.5} />
+                <DocumentTextIcon className="w-8 h-8 text-white" strokeWidth={1.5} />
               </div>
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold text-[var(--foreground)] mb-2">Terms of Service</h1>
@@ -272,7 +272,7 @@ export default function TermsClient() {
                     </h2>
                     <div className="p-6 rounded-2xl bg-purple-500/10 border border-purple-500/20 mb-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <Bot className="w-6 h-6 text-purple-400" />
+                        <SparklesIcon className="w-6 h-6 text-purple-400" />
                         <span className="font-semibold text-[var(--foreground)]">Flow AI — Powered by OpenAI GPT-4o</span>
                       </div>
                     </div>
@@ -498,7 +498,7 @@ export default function TermsClient() {
                         href={`mailto:${CONTACT_EMAIL}`}
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent-primary)] text-white font-semibold hover:bg-[var(--accent-primary-dark)] transition-colors"
                       >
-                        <Mail className="w-5 h-5" />
+                        <EnvelopeIcon className="w-5 h-5" />
                         <span>{CONTACT_EMAIL}</span>
                       </a>
                     </div>

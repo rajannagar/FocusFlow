@@ -123,7 +123,7 @@ export function generateProductSchema() {
       {
         '@type': 'Offer',
         name: 'FocusFlow Pro Monthly',
-        price: '3.99',
+        price: '5.99',
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
         url: APP_STORE_URL || SITE_URL,
@@ -131,7 +131,7 @@ export function generateProductSchema() {
       {
         '@type': 'Offer',
         name: 'FocusFlow Pro Yearly',
-        price: '44.99',
+        price: '59.99',
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
         url: APP_STORE_URL || SITE_URL,
@@ -168,7 +168,7 @@ export function generateSoftwareAppSchema() {
     },
     offers: {
       '@type': 'Offer',
-      price: '3.99',
+      price: '5.99',
       priceCurrency: 'USD',
       availability: 'https://schema.org/InStock',
       url: APP_STORE_URL || SITE_URL,

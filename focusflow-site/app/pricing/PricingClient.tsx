@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Container, CurrencySelector } from '@/components';
+import { Container } from '@/components';
 import { useThrottledMouse } from '@/hooks';
 import { APP_STORE_URL, PRICING } from '@/lib/constants';
 import { 
-  Check, X, DollarSign, HelpCircle, Sparkles, Infinity, Cloud, Award, Music, 
-  LayoutGrid, Zap, Bot, ArrowRight, Crown, Shield, Star, Timer, Palette,
-  TrendingUp, MessageSquare, Smartphone, Bell
-} from 'lucide-react';
+  CheckIcon, XMarkIcon, CurrencyDollarIcon, QuestionMarkCircleIcon, SparklesIcon, EllipsisHorizontalIcon, CloudIcon, AcademicCapIcon, MusicalNoteIcon,
+  Squares2X2Icon, BoltIcon, LightBulbIcon, ArrowRightIcon, StarIcon, ShieldCheckIcon, ClockIcon, SwatchIcon,
+  ChartBarIcon, ChatBubbleLeftIcon, DevicePhoneMobileIcon, BellIcon
+} from '@heroicons/react/24/solid';
 
 // Animated section wrapper
 const AnimatedSection = ({ 
@@ -50,11 +50,10 @@ const AnimatedSection = ({
 
 export default function PricingClient() {
   const mousePosition = useThrottledMouse();
-  const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'CAD'>('CAD');
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
 
-  const proMonthlyPrice = PRICING.pro.monthly[selectedCurrency];
-  const proYearlyPrice = PRICING.pro.yearly[selectedCurrency];
+  const proMonthlyPrice = PRICING.pro.monthly;
+  const proYearlyPrice = PRICING.pro.yearly;
   const monthlyEquivalentYearly = proMonthlyPrice * 12;
   const savings = monthlyEquivalentYearly - proYearlyPrice;
   const savingsPercentage = ((savings / monthlyEquivalentYearly) * 100).toFixed(0);
@@ -84,7 +83,7 @@ export default function PricingClient() {
           <div className="relative z-10 max-w-5xl mx-auto text-center">
             {/* Pro badge */}
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 border border-[var(--accent-primary)]/30 text-[var(--accent-primary)] text-sm font-medium mb-8">
-              <Crown className="w-4 h-4" />
+              <SparklesIcon className="w-4 h-4" />
               <span>Unlock Your Full Potential</span>
             </div>
             
@@ -98,10 +97,8 @@ export default function PricingClient() {
               Start free, upgrade when you're ready. Every feature is designed to help you build better focus habits.
             </p>
 
-            {/* Currency selector */}
-            <div className="flex justify-center">
-              <CurrencySelector onCurrencyChange={setSelectedCurrency} defaultCurrency="CAD" />
-            </div>
+            {/* Single pricing in USD */}
+            <div className="text-sm text-[var(--foreground-muted)]">Pricing shown in USD.</div>
           </div>
         </Container>
       </section>
@@ -126,7 +123,7 @@ export default function PricingClient() {
                   {/* Header */}
                   <div className="text-center mb-8">
                     <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-center">
-                      <Timer className="w-8 h-8 text-[var(--foreground-muted)]" strokeWidth={1.5} />
+                      <ClockIcon className="w-8 h-8 text-[var(--foreground-muted)]" />
                     </div>
                     <h3 className="text-2xl font-bold text-[var(--foreground)] mb-2">Free</h3>
                     <p className="text-[var(--foreground-muted)]">Perfect for getting started</p>
@@ -155,9 +152,9 @@ export default function PricingClient() {
                     ].map((feature, i) => (
                       <li key={i} className={`flex items-start gap-3 ${!feature.included ? 'opacity-40' : ''}`}>
                         {feature.included ? (
-                          <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                          <CheckIcon className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
                         ) : (
-                          <X className="w-5 h-5 text-[var(--foreground-subtle)] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                          <XMarkIcon className="w-5 h-5 text-[var(--foreground-subtle)] flex-shrink-0 mt-0.5" />
                         )}
                         <span className="text-[var(--foreground-muted)]">{feature.text}</span>
                       </li>
@@ -182,7 +179,7 @@ export default function PricingClient() {
                 {/* Best value badge */}
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-20">
                   <div className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white text-sm font-bold shadow-xl shadow-[var(--accent-primary)]/40">
-                    <Star className="w-4 h-4" />
+                    <StarIcon className="w-4 h-4" />
                     <span>Best Value</span>
                   </div>
                 </div>
@@ -194,7 +191,7 @@ export default function PricingClient() {
                   {/* Header */}
                   <div className="text-center mb-8">
                     <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/30">
-                      <Crown className="w-8 h-8 text-white" strokeWidth={1.5} />
+                      <SparklesIcon className="w-8 h-8 text-white" />
                     </div>
                     <h3 className="text-2xl font-bold text-gradient mb-2">Pro Yearly</h3>
                     <p className="text-[var(--foreground-muted)]">For dedicated focus masters</p>
@@ -211,7 +208,7 @@ export default function PricingClient() {
                   {/* Savings badge */}
                   <div className="flex justify-center mb-8">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-400 text-sm font-semibold border border-emerald-500/30">
-                      <DollarSign className="w-4 h-4" />
+                      <CurrencyDollarIcon className="w-4 h-4" />
                       Save {savingsPercentage}% — Just ${yearlyMonthlyPrice}/mo
                     </div>
                   </div>
@@ -235,7 +232,7 @@ export default function PricingClient() {
                       'Flow AI assistant',
                     ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                        <CheckIcon className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" strokeWidth={2} />
                         <span className="text-[var(--foreground)] font-medium">{feature}</span>
                       </li>
                     ))}
@@ -251,7 +248,7 @@ export default function PricingClient() {
                     <div className="absolute inset-0 bg-white/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
                     <span className="relative z-10 flex items-center justify-center gap-2">
                       Start Free Trial
-                      <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                      <ArrowRightIcon className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                     </span>
                   </a>
                 </div>
@@ -269,7 +266,7 @@ export default function PricingClient() {
                   {/* Header */}
                   <div className="text-center mb-8">
                     <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)]/20 to-[var(--accent-secondary)]/10 border border-[var(--accent-primary)]/30 flex items-center justify-center">
-                      <Zap className="w-8 h-8 text-[var(--accent-primary)]" strokeWidth={1.5} />
+                      <BoltIcon className="w-8 h-8 text-[var(--accent-primary)]" strokeWidth={1.5} />
                     </div>
                     <h3 className="text-2xl font-bold text-[var(--foreground)] mb-2">Pro Monthly</h3>
                     <p className="text-[var(--foreground-muted)]">Flexible month-to-month</p>
@@ -302,7 +299,7 @@ export default function PricingClient() {
                       'Flow AI assistant',
                     ].map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" strokeWidth={2} />
+                        <CheckIcon className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" strokeWidth={2} />
                         <span className="text-[var(--foreground-muted)]">{feature}</span>
                       </li>
                     ))}
@@ -316,7 +313,7 @@ export default function PricingClient() {
                     className="px-8 py-5 rounded-2xl border-2 border-[var(--border)] text-[var(--foreground)] font-semibold text-lg text-center hover:border-[var(--accent-primary)]/50 hover:bg-[var(--background)] transition-all duration-300 flex items-center justify-center gap-2"
                   >
                     Start Free Trial
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRightIcon className="w-5 h-5" />
                   </a>
                 </div>
               </div>
@@ -325,17 +322,17 @@ export default function PricingClient() {
             {/* Trust badges */}
             <div className="mt-12 flex flex-wrap justify-center items-center gap-6 text-[var(--foreground-muted)]">
               <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-emerald-500" />
+                <ShieldCheckIcon className="w-5 h-5 text-emerald-500" />
                 <span>Cancel anytime</span>
               </div>
               <div className="w-px h-4 bg-[var(--border)]" />
               <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-amber-500" />
+                <BoltIcon className="w-5 h-5 text-amber-500" />
                 <span>Instant access</span>
               </div>
               <div className="w-px h-4 bg-[var(--border)]" />
               <div className="flex items-center gap-2">
-                <Cloud className="w-5 h-5 text-[var(--accent-primary)]" />
+                <CloudIcon className="w-5 h-5 text-[var(--accent-primary)]" />
                 <span>Sync across devices</span>
               </div>
             </div>
@@ -353,7 +350,7 @@ export default function PricingClient() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 text-[var(--accent-primary)] text-sm mb-6">
-                <Sparkles className="w-4 h-4" />
+                <SparklesIcon className="w-4 h-4" />
                 <span>Pro Features</span>
               </div>
               <h2 className="text-4xl md:text-6xl font-bold mb-4">
@@ -367,55 +364,55 @@ export default function PricingClient() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 { 
-                  icon: LayoutGrid, 
+                  icon: Squares2X2Icon, 
                   title: 'All Premium Content', 
                   desc: '14 backgrounds, 11 sounds, 10 themes',
                   color: 'from-violet-500 to-purple-600'
                 },
                 { 
-                  icon: Infinity, 
+                  icon: EllipsisHorizontalIcon, 
                   title: 'Unlimited Everything', 
                   desc: 'Tasks, presets, and full history',
                   color: 'from-emerald-500 to-teal-600'
                 },
                 { 
-                  icon: Award, 
+                  icon: AcademicCapIcon, 
                   title: 'Gamification', 
                   desc: 'XP, 50 levels, badges & journey view',
                   color: 'from-amber-500 to-orange-600'
                 },
                 { 
-                  icon: Cloud, 
+                  icon: CloudIcon, 
                   title: 'Cloud Sync', 
                   desc: 'Access everything on all devices',
                   color: 'from-cyan-500 to-blue-600'
                 },
                 { 
-                  icon: Smartphone, 
+                  icon: DevicePhoneMobileIcon, 
                   title: 'Interactive Widgets', 
                   desc: 'Control timer from home screen',
                   color: 'from-rose-500 to-pink-600'
                 },
                 { 
-                  icon: Bell, 
+                  icon: BellIcon, 
                   title: 'Live Activity', 
                   desc: 'Dynamic Island & Lock Screen',
                   color: 'from-indigo-500 to-violet-600'
                 },
                 { 
-                  icon: Music, 
+                  icon: MusicalNoteIcon, 
                   title: 'Music Integration', 
                   desc: 'Spotify, Apple Music, YouTube Music',
                   color: 'from-green-500 to-emerald-600'
                 },
                 { 
-                  icon: Bot, 
+                  icon: SparklesIcon, 
                   title: 'Flow AI', 
                   desc: 'Intelligent assistant powered by GPT-4o',
                   color: 'from-purple-500 to-pink-600'
                 },
                 { 
-                  icon: Shield, 
+                  icon: ShieldCheckIcon, 
                   title: 'Priority Support', 
                   desc: 'Direct access to our team',
                   color: 'from-slate-500 to-slate-600'
@@ -504,7 +501,7 @@ export default function PricingClient() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background)] border border-[var(--border)] text-[var(--foreground-muted)] text-sm mb-6">
-                <HelpCircle className="w-4 h-4" />
+                <QuestionMarkCircleIcon className="w-4 h-4" />
                 <span>FAQ</span>
               </div>
               <h2 className="text-4xl md:text-5xl font-bold">Common questions</h2>
@@ -591,7 +588,7 @@ export default function PricingClient() {
                   className="px-10 py-5 rounded-2xl border-2 border-[var(--border)] text-[var(--foreground)] font-semibold text-xl hover:border-[var(--accent-primary)]/50 hover:bg-[var(--background-elevated)] transition-all duration-300 flex items-center justify-center gap-3"
                 >
                   Explore Features
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRightIcon className="w-5 h-5" />
                 </Link>
               </div>
             </div>
