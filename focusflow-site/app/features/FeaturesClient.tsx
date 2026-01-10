@@ -222,39 +222,6 @@ export default function FeaturesClient() {
                 />
               </div>
             </div>
-
-            {/* Backgrounds showcase */}
-            <div className="mt-16 p-8 rounded-3xl bg-[var(--background-elevated)] border border-[var(--border)]">
-              <h4 className="text-lg font-semibold text-[var(--foreground)] mb-6 text-center">All Ambient Backgrounds</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
-                {[
-                  { name: 'Minimal', free: true },
-                  { name: 'Stars', free: true },
-                  { name: 'Forest', free: true },
-                  { name: 'Aurora', free: false },
-                  { name: 'Night Sky', free: false },
-                  { name: 'Ocean', free: false },
-                  { name: 'Desert', free: false },
-                  { name: 'Mountains', free: false },
-                  { name: 'Fireplace', free: false },
-                  { name: 'Rain', free: false },
-                  { name: 'Sakura', free: false },
-                  { name: 'Underwater', free: false },
-                  { name: 'Nebula', free: false },
-                  { name: 'Northern Lights', free: false },
-                ].map((bg, i) => (
-                  <div 
-                    key={i} 
-                    className={`relative p-3 rounded-xl text-center ${bg.free ? 'bg-[var(--background)]' : 'bg-gradient-to-br from-[var(--accent-primary)]/5 to-[var(--accent-secondary)]/5'} border border-[var(--border)]`}
-                  >
-                    <span className="text-sm text-[var(--foreground-muted)]">{bg.name}</span>
-                    {!bg.free && (
-                      <span className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-primary)] text-white">PRO</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </Container>
       </AnimatedSection>
@@ -574,33 +541,6 @@ export default function FeaturesClient() {
                     { icon: '⚙️', title: 'Settings', desc: 'Configure', gradient: 'from-rose-500 to-pink-600' },
                   ]}
                 />
-              </div>
-            </div>
-
-            {/* Themes showcase */}
-            <div className="mt-16 p-8 rounded-3xl bg-[var(--background-elevated)] border border-[var(--border)]">
-              <h4 className="text-lg font-semibold text-[var(--foreground)] mb-6 text-center">Available Themes</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                {[
-                  { name: 'Forest', color: 'bg-emerald-600', free: true },
-                  { name: 'Neon Glow', color: 'bg-violet-600', free: true },
-                  { name: 'Soft Peach', color: 'bg-orange-300', free: false },
-                  { name: 'Cyber Violet', color: 'bg-purple-600', free: false },
-                  { name: 'Ocean Mist', color: 'bg-cyan-500', free: false },
-                  { name: 'Sunrise Coral', color: 'bg-rose-400', free: false },
-                  { name: 'Solar Amber', color: 'bg-amber-500', free: false },
-                  { name: 'Mint Aura', color: 'bg-teal-400', free: false },
-                  { name: 'Royal Indigo', color: 'bg-indigo-600', free: false },
-                  { name: 'Cosmic Slate', color: 'bg-slate-600', free: false },
-                ].map((theme, i) => (
-                  <div key={i} className="relative text-center">
-                    <div className={`w-full aspect-[3/2] ${theme.color} rounded-xl mb-2`} />
-                    <span className="text-sm text-[var(--foreground-muted)]">{theme.name}</span>
-                    {!theme.free && (
-                      <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-black/50 text-white">PRO</span>
-                    )}
-                  </div>
-                ))}
               </div>
             </div>
           </div>
