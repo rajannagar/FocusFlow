@@ -1987,140 +1987,265 @@ private struct EditProfileSheet: View {
     @State private var showingAvatars = false
 
     var body: some View {
+        NavigationStack {
             ZStack {
-                PremiumAppBackground(theme: theme, showParticles: false)
-
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Edit Profile")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
-                    Spacer()
-                    Button {
-                        Haptics.impact(.light)
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.10))
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
-                    }
-                    .buttonStyle(FFPressButtonStyle())
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
+                // Themed gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.1),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
                 
-                ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                        // Avatar/Photo Section
-                        VStack(spacing: 16) {
-                    ZStack {
-                        if let data = settings.profileImageData, let ui = UIImage(data: data) {
-                            Image(uiImage: ui)
-                                .resizable()
-                                .scaledToFill()
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.15),
+                        theme.accentSecondary.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header with Avatar
+                        VStack(spacing: 20) {
+                            ZStack {
+                                if let data = settings.profileImageData, let ui = UIImage(data: data) {
+                                    // Glow behind avatar
+                                    Circle()
+                                        .fill(theme.accentPrimary.opacity(0.2))
+                                        .frame(width: 140, height: 140)
+                                        .blur(radius: 30)
+                                    
+                                    Image(uiImage: ui)
+                                        .resizable()
+                                        .scaledToFill()
                                         .frame(width: 120, height: 120)
-                                .clipShape(Circle())
-                                        .overlay(Circle().stroke(theme.accentPrimary.opacity(0.3), lineWidth: 3))
-                        } else {
-                            let opt = AvatarLibrary.option(for: settings.avatarID)
-                            Circle()
-                                .fill(LinearGradient(colors: [opt.gradientA, opt.gradientB], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                        .clipShape(Circle())
+                                        .overlay(
+                                            Circle()
+                                                .stroke(
+                                                    LinearGradient(
+                                                        colors: [theme.accentPrimary, theme.accentSecondary],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    ),
+                                                    lineWidth: 3
+                                                )
+                                        )
+                                } else {
+                                    let opt = AvatarLibrary.option(for: settings.avatarID)
+                                    
+                                    // Glow behind avatar
+                                    Circle()
+                                        .fill(opt.gradientA.opacity(0.3))
+                                        .frame(width: 140, height: 140)
+                                        .blur(radius: 30)
+                                    
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [opt.gradientA, opt.gradientB],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
                                         .frame(width: 120, height: 120)
-                                .overlay(
-                                    Image(systemName: opt.symbol)
+                                        .overlay(
+                                            Image(systemName: opt.symbol)
                                                 .font(.system(size: 50, weight: .semibold))
-                                        .foregroundColor(.white.opacity(0.9))
-                                )
-                                        .overlay(Circle().stroke(theme.accentPrimary.opacity(0.3), lineWidth: 3))
-                                        .shadow(color: opt.gradientA.opacity(0.3), radius: 12, x: 0, y: 4)
+                                                .foregroundColor(.white.opacity(0.9))
+                                        )
+                                        .overlay(
+                                            Circle()
+                                                .stroke(
+                                                    LinearGradient(
+                                                        colors: [theme.accentPrimary.opacity(0.5), theme.accentSecondary.opacity(0.3)],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    ),
+                                                    lineWidth: 2
+                                                )
+                                        )
+                                }
+                            }
+                            
+                            Text("Edit Profile")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text("Customize your profile picture and display name")
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
                         }
-                    }
-
-                    HStack(spacing: 12) {
-                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        .padding(.top, 20)
+                        
+                        // Avatar Options Section
+                        VStack(spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "photo.on.rectangle")
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text("Photo Options")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            
+                            HStack(spacing: 12) {
+                                PhotosPicker(selection: $selectedPhoto, matching: .images) {
                                     HStack {
                                         Image(systemName: "photo")
                                         Text("Photo")
                                     }
                                     .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
+                                    .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(Color.white.opacity(0.12))
+                                    .padding(.vertical, 14)
+                                    .background(Color.white.opacity(0.08))
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
                                 }
-
-                                Button { 
+                                
+                                Button {
                                     Haptics.impact(.light)
-                                    showingAvatars = true 
+                                    showingAvatars = true
                                 } label: {
                                     HStack {
                                         Image(systemName: "face.smiling")
                                         Text("Avatar")
                                     }
                                     .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
+                                    .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(Color.white.opacity(0.12))
+                                    .padding(.vertical, 14)
+                                    .background(Color.white.opacity(0.08))
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
-
-                        if settings.profileImageData != nil {
-                                    Button { 
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                                }
+                                
+                                if settings.profileImageData != nil {
+                                    Button {
                                         Haptics.impact(.light)
-                                        settings.profileImageData = nil 
+                                        settings.profileImageData = nil
                                     } label: {
                                         Image(systemName: "trash")
                                             .font(.system(size: 14, weight: .semibold))
-                                            .foregroundColor(.red.opacity(0.8))
-                                            .frame(width: 44, height: 44)
+                                            .foregroundColor(.red.opacity(0.9))
+                                            .frame(width: 48, height: 48)
                                             .background(Color.red.opacity(0.15))
                                             .clipShape(RoundedRectangle(cornerRadius: 12))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                                            )
                                     }
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
-
-                        // Name Section
-                        VStack(alignment: .leading, spacing: 10) {
-                        Text("Display Name")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
-
-                        FFLabeledTextField(
-                            label: "",
-                            placeholder: "Your name",
-                            text: $name
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.06))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                )
                         )
-                    }
-                    .padding(.horizontal, 20)
-
+                        .padding(.horizontal, 20)
+                        
+                        // Name Section
+                        VStack(spacing: 16) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.text.rectangle")
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                Text("Display Name")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            
+                            FFLabeledTextField(
+                                label: "",
+                                placeholder: "Your name",
+                                text: $name
+                            )
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.06))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                )
+                        )
+                        .padding(.horizontal, 20)
+                        
                         // Save Button
-                    FFPrimaryButton(
-                        title: "Save Changes",
-                        height: 54,
-                        cornerRadius: DS.Radius.md,
-                        theme: theme
-                    ) {
-                        settings.displayName = name
-                        dismiss()
-                    }
-                    .padding(.horizontal, 20)
-                        .padding(.bottom, 32)
+                        Button {
+                            Haptics.impact(.medium)
+                            settings.displayName = name
+                            dismiss()
+                        } label: {
+                            Text("Save Changes")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 18)
+                                .background(
+                                    LinearGradient(
+                                        colors: [theme.accentPrimary, theme.accentSecondary],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .shadow(color: theme.accentPrimary.opacity(0.4), radius: 16, y: 8)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     }
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
+                }
+            }
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
         .onAppear { name = settings.displayName }
         .sheet(isPresented: $showingAvatars) {
             AvatarPickerSheet(avatarID: $settings.avatarID, theme: theme)
