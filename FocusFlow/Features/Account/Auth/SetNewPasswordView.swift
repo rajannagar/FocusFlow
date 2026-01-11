@@ -18,8 +18,30 @@ struct SetNewPasswordView: View {
         let theme = appSettings.selectedTheme
 
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: true, particleCount: 14)
-                .ignoresSafeArea()
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
 
             if showSuccess {
                 successView(theme: theme)

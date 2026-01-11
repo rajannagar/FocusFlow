@@ -117,6 +117,30 @@ struct FocusView: View {
         // ✅ Type-erasure here prevents "unable to type-check" explosions
         let root = AnyView(
             ZStack {
+                // Premium gradient background (beneath ambient visuals)
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.1),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.15),
+                        theme.accentSecondary.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
+
                 AmbientBackground(
                     mode: ambientMode,
                     theme: theme,
@@ -478,29 +502,26 @@ struct FocusView: View {
             
             // Bell + Info buttons
             HStack(spacing: DS.Spacing.sm) {
-                Button {
-                    simpleTap()
-                    showingNotificationCenter = true
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: hasUnread ? "bell.fill" : "bell")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
-                            .frame(width: DS.IconButton.md, height: DS.IconButton.md)
-                            .background(Color.white.opacity(DS.Glass.thin))
-                            .clipShape(Circle())
-                        
-                        if hasUnread {
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 8, height: 8)
-                                .offset(x: 2, y: -2)
+                ZStack(alignment: .topTrailing) {
+                    FFIconButton(
+                        icon: hasUnread ? "bell.fill" : "bell",
+                        size: DS.IconButton.md,
+                        iconSize: 16,
+                        action: {
+                            simpleTap()
+                            showingNotificationCenter = true
                         }
+                    )
+                    .accessibilityLabel(hasUnread ? "Notifications, unread messages" : "Notifications")
+                    .accessibilityHint("Opens the notification center")
+
+                    if hasUnread {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 2, y: -2)
                     }
                 }
-                .buttonStyle(FFPressButtonStyle())
-                .accessibilityLabel(hasUnread ? "Notifications, unread messages" : "Notifications")
-                .accessibilityHint("Opens the notification center")
                 
                 FFIconButton(
                     icon: "info.circle",
@@ -1333,7 +1354,30 @@ struct FocusView: View {
     // MARK: - Time picker sheet (with PremiumAppBackground)
     private var timePickerSheet: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
 
             VStack(spacing: 14) {
                 Capsule()

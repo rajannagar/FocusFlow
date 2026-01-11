@@ -157,19 +157,39 @@ struct PaywallView: View {
     }
 
     var body: some View {
-        ZStack {
-            // Background
-            PremiumAppBackground(theme: theme)
-            
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    // Close button
-                    closeButton
-                        .padding(.top, 8)
+        NavigationStack {
+            ZStack {
+                // Premium gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.08),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.12),
+                        theme.accentSecondary.opacity(0.04),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
+                
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
                     
                     // Hero Section - Contextual Visual
                     heroSection
-                        .padding(.top, 20)
+                        .padding(.top, 32)
                     
                     // Benefits Checklist
                     benefitsChecklist
@@ -189,6 +209,16 @@ struct PaywallView: View {
                         .padding(.bottom, DS.Spacing.huge)
                 }
                 .padding(.horizontal, DS.Spacing.xxl)
+            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done") {
+                    Haptics.impact(.light)
+                    dismiss()
+                }
+                .buttonStyle(FFPressButtonStyle())
             }
         }
         .onAppear {
@@ -260,6 +290,7 @@ struct PaywallView: View {
                     await refreshSubscriptionStatusWithRetry()
                 }
             }
+        }
         }
     }
     

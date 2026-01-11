@@ -36,15 +36,37 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.08),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.12),
+                    theme.accentSecondary.opacity(0.04),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 500
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                header
                 settingsContent
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingReset) {
             ResetConfirmationSheet(
                 resetText: $resetText,
@@ -116,45 +138,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Header
-    
-    private var header: some View {
-        HStack {
-            Button {
-                Haptics.impact(.light)
-                dismiss()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                    Text("Back")
-                        .font(.system(size: 16, weight: .medium))
-                }
-                .foregroundColor(.white.opacity(0.8))
-            }
-            
-            Spacer()
-            
-            Text("Settings")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            // Invisible spacer to balance the back button
-            HStack(spacing: 6) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                Text("Back")
-                    .font(.system(size: 16, weight: .medium))
-            }
-            .opacity(0)
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.top, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.md)
-    }
-    
     private var settingsContent: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -858,31 +841,32 @@ struct ResetConfirmationSheet: View {
     }
     
     var body: some View {
-        ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
-            
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Spacer()
-                    Button {
-                        Haptics.impact(.light)
-                        onCancel()
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
-                            .background(Color.white.opacity(DS.Glass.regular))
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1))
-                    }
-                    .buttonStyle(FFPressButtonStyle())
-                }
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.top, DS.Spacing.sm)
-                .padding(.bottom, DS.Spacing.xl)
+        NavigationStack {
+            ZStack {
+                // Premium gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.08),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.12),
+                        theme.accentSecondary.opacity(0.04),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -896,7 +880,7 @@ struct ResetConfirmationSheet: View {
                                 .font(.system(size: 36, weight: .semibold))
                                 .foregroundColor(.red.opacity(0.9))
                         }
-                        .padding(.top, DS.Spacing.sm)
+                        .padding(.top, 20)
                         
                         // Title
                         Text("Reset All Data")
@@ -1096,9 +1080,19 @@ struct ResetConfirmationSheet: View {
                     }
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        Haptics.impact(.light)
+                        onCancel()
+                        dismiss()
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
+                }
+            }
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
     }
 }
 
@@ -1120,31 +1114,32 @@ struct DeleteAccountConfirmationSheet: View {
     }
     
     var body: some View {
-        ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
-            
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Spacer()
-                    Button {
-                        Haptics.impact(.light)
-                        onCancel()
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: DS.IconButton.sm, height: DS.IconButton.sm)
-                            .background(Color.white.opacity(DS.Glass.regular))
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(DS.Glass.borderMedium), lineWidth: 1))
-                    }
-                    .buttonStyle(FFPressButtonStyle())
-                }
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.top, DS.Spacing.sm)
-                .padding(.bottom, DS.Spacing.xl)
+        NavigationStack {
+            ZStack {
+                // Premium gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.08),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.12),
+                        theme.accentSecondary.opacity(0.04),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -1158,7 +1153,7 @@ struct DeleteAccountConfirmationSheet: View {
                                 .font(.system(size: 36, weight: .semibold))
                                 .foregroundColor(.red.opacity(0.9))
                         }
-                        .padding(.top, 8)
+                        .padding(.top, 20)
                         
                         // Title
                         Text("Delete Account")
@@ -1296,9 +1291,19 @@ struct DeleteAccountConfirmationSheet: View {
                     }
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        Haptics.impact(.light)
+                        onCancel()
+                        dismiss()
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
+                }
+            }
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
     }
 }
 

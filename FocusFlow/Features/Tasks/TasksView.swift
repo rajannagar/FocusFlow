@@ -106,7 +106,30 @@ struct TasksView: View {
     
     var body: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, particleCount: 12)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.08),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.12),
+                    theme.accentSecondary.opacity(0.04),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 500
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Header
@@ -1249,7 +1272,30 @@ private struct QuickAddSheet: View {
     
     var body: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 20) {
                 // Header
@@ -1350,7 +1396,30 @@ private struct JumpToDateSheet: View {
     
     var body: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Header
@@ -1468,7 +1537,30 @@ private struct TaskEditorSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PremiumAppBackground(theme: theme, showParticles: false)
+                // Premium gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.1),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.15),
+                        theme.accentSecondary.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
@@ -1680,7 +1772,30 @@ private struct TaskEditorSheet: View {
     
     private var datePickerSheet: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 14) {
                 Capsule()
@@ -1762,7 +1877,30 @@ private struct TaskEditorSheet: View {
     
     private var timePickerSheet: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 14) {
                 Capsule()
@@ -1837,7 +1975,30 @@ private struct TaskEditorSheet: View {
     
     private var durationPickerSheet: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 14) {
                 Capsule()
@@ -1942,7 +2103,30 @@ private struct TaskEditorSheet: View {
     
     private var repeatPickerSheet: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 14) {
                 Capsule()

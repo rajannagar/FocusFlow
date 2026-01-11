@@ -418,8 +418,30 @@ struct FlowChatView: View {
     private var chatInterface: some View {
         GeometryReader { geo in
             ZStack {
-                // Premium background
-                PremiumAppBackground(theme: theme, particleCount: 15)
+                // Premium gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.08),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.12),
+                        theme.accentSecondary.opacity(0.04),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Header
@@ -926,7 +948,30 @@ struct FlowChatView: View {
     
     private var paywallPrompt: some View {
         ZStack {
-            PremiumAppBackground(theme: theme)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 40) {
                 ZStack {

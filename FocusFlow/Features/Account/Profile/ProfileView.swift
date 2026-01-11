@@ -507,7 +507,30 @@ struct ProfileView: View {
         NavigationStack {
             GeometryReader { _ in
                 ZStack {
-                    PremiumAppBackground(theme: theme)
+                    // Premium gradient background
+                    LinearGradient(
+                        colors: [
+                            Color.black,
+                            theme.accentPrimary.opacity(0.08),
+                            Color.black.opacity(0.95)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .ignoresSafeArea()
+                    
+                    // Subtle radial glow
+                    RadialGradient(
+                        colors: [
+                            theme.accentPrimary.opacity(0.12),
+                            theme.accentSecondary.opacity(0.04),
+                            Color.clear
+                        ],
+                        center: .top,
+                        startRadius: 0,
+                        endRadius: 500
+                    )
+                    .ignoresSafeArea()
 
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 24) {
@@ -541,7 +564,6 @@ struct ProfileView: View {
                     }
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(isPresented: $navigateToJourney) {
                 if pro.isPro {
                     JourneyView()
@@ -582,32 +604,34 @@ struct ProfileView: View {
         .onReceive(NotificationCenter.default.publisher(for: AppSyncManager.taskCompleted)) { _ in dataVersion += 1 }
     }
 
-    // MARK: - Identity Card
-
     private var identityCard: some View {
         VStack(spacing: 0) {
             HStack(alignment: .center) {
                 if pro.isPro { ProBadge() }
                 Spacer()
                 
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     FFIconButton(
                         icon: "pencil",
-                        backgroundColor: .white.opacity(DS.Glass.subtle),
-                        showBorder: false
-                    ) {
-                        showingEditProfile = true
-                    }
+                        size: 36,
+                        iconSize: 14,
+                        action: {
+                            Haptics.impact(.light)
+                            showingEditProfile = true
+                        }
+                    )
                     .accessibilityLabel("Edit profile")
                     .accessibilityHint("Opens the profile editor to change your name and avatar")
                     
                     FFIconButton(
                         icon: "gearshape.fill",
-                        backgroundColor: .white.opacity(DS.Glass.subtle),
-                        showBorder: false
-                    ) {
-                        navigateToSettings = true
-                    }
+                        size: 36,
+                        iconSize: 14,
+                        action: {
+                            Haptics.impact(.light)
+                            navigateToSettings = true
+                        }
+                    )
                     .accessibilityLabel("Settings")
                     .accessibilityHint("Opens app settings and preferences")
                 }
@@ -621,6 +645,7 @@ struct ProfileView: View {
             } label: {
                 ZStack {
                     // Show level progress ring only for Pro users
+
                     if pro.isPro {
                         RingProgress(progress: levelProgress, lineWidth: 4, color: theme.accentPrimary)
                             .frame(width: 96, height: 96)
@@ -2373,131 +2398,195 @@ private struct AvatarPickerSheet: View {
     }
 
     var body: some View {
-        ZStack {
-            PremiumAppBackground(theme: theme, showParticles: false)
+        NavigationStack {
+            ZStack {
+                // Premium gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.08),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.12),
+                        theme.accentSecondary.opacity(0.04),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Choose Avatar")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
-                    Spacer()
-                    Button {
-                        Haptics.impact(.light)
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 34, height: 34)
-                            .background(Color.white.opacity(0.10))
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.10), lineWidth: 1))
-                    }
-                    .buttonStyle(FFPressButtonStyle())
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 20)
-                
-                // Category Picker
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(AvatarOption.AvatarCategory.allCases, id: \.self) { category in
-                        Button {
-                                Haptics.impact(.light)
-                                selectedCategory = category
-                            } label: {
-                                Text(category.rawValue)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(selectedCategory == category ? .white : .white.opacity(0.6))
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        selectedCategory == category 
-                                            ? theme.accentPrimary.opacity(0.3)
-                                            : Color.white.opacity(0.1)
-                                    )
-                                    .clipShape(Capsule())
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                }
-                .padding(.bottom, 20)
-                
-                // Avatar Grid
-                ScrollView(showsIndicators: false) {
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        ForEach(filteredAvatars) { opt in
-                            Button {
-                                Haptics.impact(.light)
-                            avatarID = opt.id
-                            dismiss()
-                        } label: {
-                                VStack(spacing: 8) {
-                                    ZStack {
-                                        // Outer glow effect
+                VStack(spacing: 0) {
+                    // Header with gradient icon
+                    VStack(spacing: 12) {
+                        ZStack {
                             Circle()
-                                            .fill(opt.gradientA.opacity(0.25))
-                                            .frame(width: 82, height: 82)
-                                            .blur(radius: 10)
-                                        
-                                        // Main gradient circle
-                                        Circle()
-                                            .fill(
-                                                LinearGradient(
-                                                    colors: [opt.gradientA, opt.gradientB],
-                                                    startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing
-                                                )
-                                            )
-                                            .frame(width: 72, height: 72)
-                                            .shadow(color: opt.gradientA.opacity(0.5), radius: 12, x: 0, y: 6)
-                                        
-                                        // Icon
-                                    Image(systemName: opt.symbol)
-                                            .font(.system(size: 34, weight: .semibold))
-                                            .foregroundColor(.white.opacity(0.95))
-                                        
-                                        // Selection indicator
-                                        if avatarID == opt.id {
-                                            Circle()
-                                                .stroke(Color.white, lineWidth: 3.5)
-                                                .frame(width: 72, height: 72)
-                                            
-                                            // Checkmark badge
-                                            ZStack {
-                                                Circle()
-                                                    .fill(Color.white)
-                                                    .frame(width: 26, height: 26)
-                                                
-                                                Image(systemName: "checkmark")
-                                                    .font(.system(size: 13, weight: .bold))
-                                                    .foregroundColor(opt.gradientA)
-                                            }
-                                            .offset(x: 28, y: -28)
-                                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                                        }
+                                .fill(
+                                    LinearGradient(
+                                        colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.2)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 72, height: 72)
+                            
+                            Image(systemName: "person.crop.circle.fill")
+                                .font(.system(size: 36, weight: .semibold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [theme.accentPrimary, theme.accentSecondary],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                        
+                        Text("Choose Avatar")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.top, 20)
+                    .padding(.bottom, 24)
+                    
+                    // Category Picker
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(AvatarOption.AvatarCategory.allCases, id: \.self) { category in
+                                Button {
+                                    Haptics.impact(.light)
+                                    withAnimation(.spring(response: 0.3)) {
+                                        selectedCategory = category
                                     }
-                                    
-                                    Text(opt.name)
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.75))
-                                        .lineLimit(1)
+                                } label: {
+                                    Text(category.rawValue)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(selectedCategory == category ? .white : .white.opacity(0.5))
+                                        .padding(.horizontal, 18)
+                                        .padding(.vertical, 10)
+                                        .background(
+                                            Group {
+                                                if selectedCategory == category {
+                                                    LinearGradient(
+                                                        colors: [theme.accentPrimary.opacity(0.4), theme.accentSecondary.opacity(0.3)],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    )
+                                                } else {
+                                                    LinearGradient(
+                                                        colors: [Color.white.opacity(0.08), Color.white.opacity(0.04)],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    )
+                                                }
+                                            }
+                                        )
+                                        .clipShape(Capsule())
+                                        .overlay(
+                                            Capsule()
+                                                .stroke(
+                                                    selectedCategory == category 
+                                                        ? theme.accentPrimary.opacity(0.3)
+                                                        : Color.white.opacity(0.08),
+                                                    lineWidth: 1
+                                                )
+                                        )
                                 }
                             }
-                            .buttonStyle(FFPressButtonStyle())
                         }
+                        .padding(.horizontal, 20)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 20)
+                    
+                    // Avatar Grid
+                    ScrollView(showsIndicators: false) {
+                        LazyVGrid(columns: columns, spacing: 20) {
+                            ForEach(filteredAvatars) { opt in
+                                Button {
+                                    Haptics.impact(.light)
+                                    avatarID = opt.id
+                                    dismiss()
+                                } label: {
+                                    VStack(spacing: 8) {
+                                        ZStack {
+                                            // Outer glow effect
+                                            Circle()
+                                                .fill(opt.gradientA.opacity(0.25))
+                                                .frame(width: 82, height: 82)
+                                                .blur(radius: 10)
+                                            
+                                            // Main gradient circle
+                                            Circle()
+                                                .fill(
+                                                    LinearGradient(
+                                                        colors: [opt.gradientA, opt.gradientB],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    )
+                                                )
+                                                .frame(width: 72, height: 72)
+                                                .shadow(color: opt.gradientA.opacity(0.5), radius: 12, x: 0, y: 6)
+                                            
+                                            // Icon
+                                            Image(systemName: opt.symbol)
+                                                .font(.system(size: 34, weight: .semibold))
+                                                .foregroundColor(.white.opacity(0.95))
+                                            
+                                            // Selection indicator
+                                            if avatarID == opt.id {
+                                                Circle()
+                                                    .stroke(Color.white, lineWidth: 3.5)
+                                                    .frame(width: 72, height: 72)
+                                                
+                                                // Checkmark badge
+                                                ZStack {
+                                                    Circle()
+                                                        .fill(Color.white)
+                                                        .frame(width: 26, height: 26)
+                                                    
+                                                    Image(systemName: "checkmark")
+                                                        .font(.system(size: 13, weight: .bold))
+                                                        .foregroundColor(opt.gradientA)
+                                                }
+                                                .offset(x: 28, y: -28)
+                                                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                                            }
+                                        }
+                                        
+                                        Text(opt.name)
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.75))
+                                            .lineLimit(1)
+                                    }
+                                }
+                                .buttonStyle(FFPressButtonStyle())
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 32)
+                    }
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        Haptics.impact(.light)
+                        dismiss()
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
                 }
             }
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
     }
 }
 

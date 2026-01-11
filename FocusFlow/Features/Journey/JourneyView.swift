@@ -48,14 +48,35 @@ struct JourneyView: View {
     
     var body: some View {
         ZStack {
-            PremiumAppBackground(theme: theme, particleCount: 8)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.08),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.12),
+                    theme.accentSecondary.opacity(0.04),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 500
+            )
+            .ignoresSafeArea()
             
             SwipeBackGestureEnabler()
                 .frame(width: 0, height: 0)
             
             VStack(spacing: 0) {
-                header
-                
                 if journeyManager.summaries.isEmpty {
                     emptyState
                 } else {
@@ -63,64 +84,37 @@ struct JourneyView: View {
                 }
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle("Journey")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    ForEach(FilterMode.allCases, id: \.self) { mode in
+                        Button {
+                            Haptics.impact(.light)
+                            withAnimation(.spring(response: 0.3)) {
+                                filterMode = mode
+                            }
+                        } label: {
+                            HStack {
+                                Text(mode.rawValue)
+                                if filterMode == mode {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+        }
         .onAppear {
             journeyManager.refresh()
             Haptics.impact(.light)
         }
-    }
-    
-    // MARK: - Header
-    
-    private var header: some View {
-        HStack {
-            Button {
-                Haptics.impact(.light)
-                dismiss()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                    Text("Back")
-                        .font(.system(size: 16, weight: .medium))
-                }
-                .foregroundColor(.white.opacity(0.8))
-            }
-            
-            Spacer()
-            
-            Text("Journey")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            Menu {
-                ForEach(FilterMode.allCases, id: \.self) { mode in
-                    Button {
-                        Haptics.impact(.light)
-                        withAnimation(.spring(response: 0.3)) {
-                            filterMode = mode
-                        }
-                    } label: {
-                        HStack {
-                            Text(mode.rawValue)
-                            if filterMode == mode {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            } label: {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-            }
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.top, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.md)
     }
     
     // MARK: - Empty State

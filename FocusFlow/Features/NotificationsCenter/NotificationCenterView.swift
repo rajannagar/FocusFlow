@@ -14,9 +14,30 @@ struct NotificationCenterView: View {
         let accentSecondary = theme.accentSecondary
 
         ZStack {
-            // ✅ PremiumAppBackground (same as Profile/Progress/FocusView)
-            PremiumAppBackground(theme: theme, showParticles: true, particleCount: 16)
-                .ignoresSafeArea()
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    accentPrimary.opacity(0.15),
+                    accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header(accentPrimary: accentPrimary, accentSecondary: accentSecondary)

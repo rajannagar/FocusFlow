@@ -20,14 +20,65 @@ struct NotificationSettingsView: View {
     private var prefs: NotificationPreferences { prefsStore.preferences }
     
     var body: some View {
-        ZStack {
-            // Premium background
-            PremiumAppBackground(theme: theme, showParticles: false)
-            
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    // Header
-                    header
+        NavigationStack {
+            ZStack {
+                // Premium gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.08),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.12),
+                        theme.accentSecondary.opacity(0.04),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
+                
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        // Header with gradient icon
+                        VStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary.opacity(0.3), theme.accentSecondary.opacity(0.2)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 72, height: 72)
+                                
+                                Image(systemName: "bell.fill")
+                                    .font(.system(size: 36, weight: .semibold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [theme.accentPrimary, theme.accentSecondary],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                            
+                            Text("Notifications")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.top, 20)
+                        .padding(.bottom, 8)
                     
                     // Permission banner (if denied)
                     if authService.isDenied {
@@ -71,44 +122,23 @@ struct NotificationSettingsView: View {
                 .padding(.top, DS.Spacing.lg)
             }
         }
-        .navigationBarHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        Haptics.impact(.light)
+                        dismiss()
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(theme.accentPrimary)
+                }
+            }
+        }
         .task {
             await authService.refreshStatus()
         }
     }
     
-    // MARK: - Header
-    
-    private var header: some View {
-        HStack {
-            Button {
-                Haptics.impact(.light)
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
-                    .frame(width: DS.IconButton.lg, height: DS.IconButton.lg)
-                    .background(Color.white.opacity(DS.Glass.thin))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(FFPressButtonStyle())
-            
-            Spacer()
-            
-            Text("Notifications")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            // Invisible spacer for centering
-            Color.clear
-                .frame(width: 40, height: 40)
-        }
-    }
-    
-    // MARK: - Permission Denied Banner
     
     private var permissionDeniedBanner: some View {
         VStack(spacing: 12) {

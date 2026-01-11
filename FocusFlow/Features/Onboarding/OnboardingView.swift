@@ -17,8 +17,30 @@ struct OnboardingView: View {
     
     var body: some View {
         ZStack {
-            // Premium background
-            PremiumAppBackground(theme: theme, particleCount: 10)
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
             
             // Welcome page glow - at root level so it's not clipped by TabView
             if manager.currentPage == 0 {

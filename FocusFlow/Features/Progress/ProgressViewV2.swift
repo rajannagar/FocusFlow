@@ -53,8 +53,30 @@ struct ProgressViewV2: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                // Premium animated background
-                PremiumAppBackground(theme: theme)
+                // Premium gradient background
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        theme.accentPrimary.opacity(0.08),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [
+                        theme.accentPrimary.opacity(0.12),
+                        theme.accentSecondary.opacity(0.04),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     // Header (sticky - outside ScrollView)
@@ -304,7 +326,11 @@ struct ProgressViewV2: View {
     
     private var dateNavigator: some View {
         HStack(spacing: 12) {
-            Button {
+            FFIconButton(
+                icon: "chevron.left",
+                size: DS.IconButton.lg,
+                iconSize: 14
+            ) {
                 Haptics.impact(.light)
                 if pro.isPro {
                     stepDay(-1)
@@ -320,13 +346,6 @@ struct ProgressViewV2: View {
                         showingPaywall = true
                     }
                 }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.6))
-                    .frame(width: DS.IconButton.lg, height: DS.IconButton.lg)
-                    .background(Color.white.opacity(DS.Glass.thin))
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .accessibilityLabel("Previous day")
             .accessibilityHint(pro.isPro ? "Goes to the previous day" : "Goes to the previous day, requires Pro for dates beyond 3 days ago")
@@ -362,16 +381,13 @@ struct ProgressViewV2: View {
             .accessibilityLabel("Date picker, \(dayTitle(selectedDate))\(cal.isDateInToday(selectedDate) ? ", today" : "")")
             .accessibilityHint("Opens the date picker to select a different date")
 
-            Button {
+            FFIconButton(
+                icon: "chevron.right",
+                size: DS.IconButton.lg,
+                iconSize: 14
+            ) {
                 Haptics.impact(.light)
                 stepDay(1)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.6))
-                    .frame(width: DS.IconButton.lg, height: DS.IconButton.lg)
-                    .background(Color.white.opacity(DS.Glass.thin))
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .accessibilityLabel("Next day")
             .accessibilityHint("Goes to the next day")
@@ -1664,28 +1680,54 @@ private struct GoalSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            VStack(spacing: 12) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(theme.accentPrimary.opacity(0.15))
-                        .frame(width: 50, height: 50)
-                    Image(systemName: "scope")
-                        .font(.system(size: 22))
-                        .foregroundColor(theme.accentPrimary)
+        ZStack {
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 12) {
+                    // Icon
+                    ZStack {
+                        Circle()
+                            .fill(theme.accentPrimary.opacity(0.15))
+                            .frame(width: 50, height: 50)
+                        Image(systemName: "scope")
+                            .font(.system(size: 22))
+                            .foregroundColor(theme.accentPrimary)
+                    }
+                    .padding(.top, 32)
+
+                    Text("Daily Focus Goal")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text("Set a target you can hit consistently")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
                 }
-                .padding(.top, 32)
-
-                Text("Daily Focus Goal")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-
-                Text("Set a target you can hit consistently")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
-            }
             
             // Preview of selected time
             Text(formattedGoal)
@@ -1772,8 +1814,8 @@ private struct GoalSheet: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 30)
+            }
         }
-        .background(Color(red: 0.08, green: 0.08, blue: 0.10))
         .colorScheme(.dark)
     }
 }
@@ -1801,7 +1843,33 @@ private struct DatePickerSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack {
+            // Premium gradient background
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    theme.accentPrimary.opacity(0.1),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Subtle radial glow
+            RadialGradient(
+                colors: [
+                    theme.accentPrimary.opacity(0.15),
+                    theme.accentSecondary.opacity(0.05),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 0,
+                endRadius: 400
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -1884,8 +1952,8 @@ private struct DatePickerSheet: View {
             }
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, 30)
+            }
         }
-        .background(Color(red: 0.08, green: 0.08, blue: 0.10))
         .colorScheme(.dark)
     }
 }
